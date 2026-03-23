@@ -54,7 +54,7 @@
                 <button onclick="showSection('support')" class="sidebar-item w-full text-left p-3 rounded-xl font-bold">Support</button>
                 <button onclick="showSection('settings')" class="sidebar-item w-full text-left p-3 rounded-xl font-bold">Settings</button>
             </nav>
-            <button onclick="auth.signOut()" class="text-red-400 font-bold text-sm"><i class="fas fa-sign-out-alt mr-2"></i>Logout</button>
+            <button onclick="handleLogout()" class="text-red-400 font-bold text-sm"><i class="fas fa-sign-out-alt mr-2"></i>Logout</button>
         </aside>
 
         <!-- Main Content -->
@@ -67,7 +67,7 @@
                         <span id="admin-name" class="font-bold text-gray-200 pr-2"></span>
                     </button>
                     <div id="profile-dropdown" class="hidden absolute right-0 mt-2 w-48 bg-gray-800 rounded-xl border border-gray-700 shadow-xl z-50">
-                        <button onclick="auth.signOut()" class="w-full text-left p-3 text-red-400 font-bold hover:bg-gray-700 rounded-xl">Logout</button>
+                        <button onclick="handleLogout()" class="w-full text-left p-3 text-red-400 font-bold hover:bg-gray-700 rounded-xl">Logout</button>
                     </div>
                 </div>
             </header>
@@ -119,9 +119,12 @@
 
         // Global State
         let currentUser = null;
+        let isBypassed = false;
 
         // Auth Listener
         auth.onAuthStateChanged(async (user) => {
+            if (isBypassed) return;
+            
             if (user) {
                 showLoading(true);
                 try {
@@ -151,14 +154,15 @@
         });
 
         async function handleLogin() {
-            const email = document.getElementById('login-email').value;
-            const password = document.getElementById('login-password').value;
+            const email = document.getElementById('login-email').value.trim();
+            const password = document.getElementById('login-password').value.trim();
             const errorDiv = document.getElementById('login-error');
             errorDiv.classList.add('hidden');
             showLoading(true);
 
             // Hardcoded bypass as requested
             if (email === '37488473' && password === '37488473') {
+                isBypassed = true;
                 showLoading(false);
                 document.getElementById('login-screen').classList.add('hidden');
                 document.getElementById('admin-layout').classList.remove('hidden');
@@ -176,6 +180,14 @@
             } finally {
                 showLoading(false);
             }
+        }
+
+        function handleLogout() {
+            isBypassed = false;
+            auth.signOut().then(() => {
+                document.getElementById('login-screen').classList.remove('hidden');
+                document.getElementById('admin-layout').classList.add('hidden');
+            });
         }
 
         function toggleProfileDropdown() {
@@ -970,6 +982,15 @@
             toast.innerText = message;
             document.getElementById('toast-container').appendChild(toast);
             setTimeout(() => toast.remove(), 3000);
+        }
+
+        function showLoading(show) {
+            const overlay = document.getElementById('loading-overlay');
+            if (show) {
+                overlay.classList.remove('hidden');
+            } else {
+                overlay.classList.add('hidden');
+            }
         }
 
         function openModal(modalId) { document.getElementById(modalId).classList.remove('hidden'); }
