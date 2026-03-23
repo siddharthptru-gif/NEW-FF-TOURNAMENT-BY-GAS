@@ -1,0 +1,980 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AddaClashX Admin Panel</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-auth.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-database.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-storage.js"></script>
+    <style>
+        body { font-family: 'Inter', sans-serif; }
+        .dark-theme { background-color: #0f172a; color: #f8fafc; }
+        .sidebar-item:hover { background-color: #1e293b; }
+        .sidebar-item.active { background-color: #3b82f6; }
+    </style>
+</head>
+<body class="dark-theme">
+
+    <!-- Loading Overlay -->
+    <div id="loading-overlay" class="fixed inset-0 bg-gray-900/80 z-50 flex items-center justify-center hidden">
+        <i class="fas fa-spinner fa-spin text-4xl text-blue-500"></i>
+    </div>
+
+    <!-- Toast Container -->
+    <div id="toast-container" class="fixed top-4 right-4 z-50 space-y-2"></div>
+
+    <!-- Login Screen -->
+    <div id="login-screen" class="fixed inset-0 flex items-center justify-center bg-gray-900 z-40">
+        <div class="bg-gray-800 p-8 rounded-3xl shadow-xl w-full max-w-sm border border-gray-700">
+            <h2 class="text-2xl font-black text-white mb-6 uppercase text-center">Admin Login</h2>
+            <div id="login-error" class="text-red-500 mb-4 text-sm hidden text-center"></div>
+            <input type="text" id="login-email" placeholder="Username or Email" class="w-full p-4 bg-gray-700 rounded-xl mb-4 text-white outline-none">
+            <input type="password" id="login-password" placeholder="Password" class="w-full p-4 bg-gray-700 rounded-xl mb-6 text-white outline-none">
+            <button onclick="handleLogin()" class="w-full py-4 bg-blue-600 text-white font-black rounded-xl uppercase">Login</button>
+        </div>
+    </div>
+
+    <!-- Admin Layout -->
+    <div id="admin-layout" class="hidden flex h-screen">
+        <!-- Sidebar -->
+        <aside class="w-64 bg-gray-800 p-6 flex flex-col">
+            <h1 class="text-xl font-black text-blue-500 mb-8 uppercase">AddaClashX Admin</h1>
+            <nav class="space-y-2 flex-1">
+                <button onclick="showSection('dashboard')" class="sidebar-item w-full text-left p-3 rounded-xl font-bold active">Dashboard</button>
+                <button onclick="showSection('analytics')" class="sidebar-item w-full text-left p-3 rounded-xl font-bold">Analytics</button>
+                <button onclick="showSection('users')" class="sidebar-item w-full text-left p-3 rounded-xl font-bold">Users</button>
+                <button onclick="showSection('moderation')" class="sidebar-item w-full text-left p-3 rounded-xl font-bold">Moderation</button>
+                <button onclick="showSection('tournaments')" class="sidebar-item w-full text-left p-3 rounded-xl font-bold">Tournaments</button>
+                <button onclick="showSection('wallet')" class="sidebar-item w-full text-left p-3 rounded-xl font-bold">Wallet</button>
+                <button onclick="showSection('bulk')" class="sidebar-item w-full text-left p-3 rounded-xl font-bold">Bulk Tools</button>
+                <button onclick="showSection('support')" class="sidebar-item w-full text-left p-3 rounded-xl font-bold">Support</button>
+                <button onclick="showSection('settings')" class="sidebar-item w-full text-left p-3 rounded-xl font-bold">Settings</button>
+            </nav>
+            <button onclick="auth.signOut()" class="text-red-400 font-bold text-sm"><i class="fas fa-sign-out-alt mr-2"></i>Logout</button>
+        </aside>
+
+        <!-- Main Content -->
+        <main class="flex-1 overflow-y-auto p-8">
+            <header class="flex justify-between items-center mb-8">
+                <h2 id="section-title" class="text-3xl font-black uppercase">Dashboard</h2>
+                <div class="relative">
+                    <button onclick="toggleProfileDropdown()" class="flex items-center space-x-3 bg-gray-700 p-2 rounded-full">
+                        <img id="admin-pic" src="https://ui-avatars.com/api/?name=Admin" class="w-10 h-10 rounded-full">
+                        <span id="admin-name" class="font-bold text-gray-200 pr-2"></span>
+                    </button>
+                    <div id="profile-dropdown" class="hidden absolute right-0 mt-2 w-48 bg-gray-800 rounded-xl border border-gray-700 shadow-xl z-50">
+                        <button onclick="auth.signOut()" class="w-full text-left p-3 text-red-400 font-bold hover:bg-gray-700 rounded-xl">Logout</button>
+                    </div>
+                </div>
+            </header>
+            <div id="content-area" class="bg-gray-800 p-6 rounded-3xl border border-gray-700 min-h-[500px]">
+                <!-- Dynamic Content -->
+            </div>
+        </main>
+    </div>
+
+    <!-- Create Match Modal -->
+    <div id="create-match-modal" class="fixed inset-0 bg-gray-900/80 z-50 flex items-center justify-center hidden">
+        <div class="bg-gray-800 p-8 rounded-3xl shadow-xl w-full max-w-lg border border-gray-700 max-h-[90vh] overflow-y-auto">
+            <h2 class="text-2xl font-black text-white mb-6 uppercase text-center">Create Match</h2>
+            <input type="text" id="match-name" placeholder="Title" class="w-full p-4 bg-gray-700 rounded-xl mb-4 text-white outline-none">
+            <input type="text" id="match-category" placeholder="Category" class="w-full p-4 bg-gray-700 rounded-xl mb-4 text-white outline-none">
+            <input type="number" id="match-entry" placeholder="Entry Fee" class="w-full p-4 bg-gray-700 rounded-xl mb-4 text-white outline-none">
+            <input type="number" id="match-prize" placeholder="Prize Pool" class="w-full p-4 bg-gray-700 rounded-xl mb-4 text-white outline-none">
+            <input type="number" id="match-perkill" placeholder="Per Kill Prize" class="w-full p-4 bg-gray-700 rounded-xl mb-4 text-white outline-none">
+            <input type="number" id="match-maxplayers" placeholder="Max Players" class="w-full p-4 bg-gray-700 rounded-xl mb-4 text-white outline-none">
+            <input type="datetime-local" id="match-time" class="w-full p-4 bg-gray-700 rounded-xl mb-4 text-white outline-none">
+            <textarea id="match-rules" placeholder="Rules" class="w-full p-4 bg-gray-700 rounded-xl mb-4 text-white outline-none"></textarea>
+            <div class="mb-6">
+                <input type="text" id="match-image" placeholder="Image URL" class="w-full p-4 bg-gray-700 rounded-xl mb-2 text-white outline-none">
+                <p class="text-center text-gray-400 mb-2">OR</p>
+                <input type="file" id="match-image-upload" accept="image/*" class="w-full text-gray-400">
+            </div>
+            <div class="flex space-x-4">
+                <button onclick="closeModal('create-match-modal')" class="flex-1 py-4 bg-gray-600 text-white font-black rounded-xl uppercase">Cancel</button>
+                <button onclick="createMatch()" class="flex-1 py-4 bg-blue-600 text-white font-black rounded-xl uppercase">Create</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Firebase Config (Placeholder)
+        const firebaseConfig = {
+          apiKey: "AIzaSyClTcvC7JJgGWIGsEwMStyMMfJn0ZOuOFM",
+          authDomain: "freefire-tournament-e9506.firebaseapp.com",
+          databaseURL: "https://freefire-tournament-e9506-default-rtdb.asia-southeast1.firebasedatabase.app",
+          projectId: "freefire-tournament-e9506",
+          storageBucket: "freefire-tournament-e9506.firebasestorage.app",
+          messagingSenderId: "999640805909",
+          appId: "1:999640805909:web:87f6956b47d13c4134541c"
+        };
+        firebase.initializeApp(firebaseConfig);
+        const auth = firebase.auth();
+        const db = firebase.database();
+        const storage = firebase.storage();
+
+        // Global State
+        let currentUser = null;
+
+        // Auth Listener
+        auth.onAuthStateChanged(async (user) => {
+            if (user) {
+                showLoading(true);
+                try {
+                    const snap = await db.ref(`users/${user.uid}/role`).once('value');
+                    const role = snap.val();
+                    if (role === 'admin' || role === 'super admin') {
+                        currentUser = user;
+                        document.getElementById('login-screen').classList.add('hidden');
+                        document.getElementById('admin-layout').classList.remove('hidden');
+                        document.getElementById('admin-name').innerText = user.email.split('@')[0];
+                        document.getElementById('admin-pic').src = `https://ui-avatars.com/api/?name=${user.email.split('@')[0]}`;
+                        showSection('dashboard');
+                    } else {
+                        showToast("Access Denied: Admin only.", 'error');
+                        auth.signOut();
+                    }
+                } catch (e) {
+                    console.error(e);
+                    showToast("Error checking admin role.", 'error');
+                } finally {
+                    showLoading(false);
+                }
+            } else {
+                document.getElementById('login-screen').classList.remove('hidden');
+                document.getElementById('admin-layout').classList.add('hidden');
+            }
+        });
+
+        async function handleLogin() {
+            const email = document.getElementById('login-email').value;
+            const password = document.getElementById('login-password').value;
+            const errorDiv = document.getElementById('login-error');
+            errorDiv.classList.add('hidden');
+            showLoading(true);
+
+            // Hardcoded bypass as requested
+            if (email === '37488473' && password === '37488473') {
+                showLoading(false);
+                document.getElementById('login-screen').classList.add('hidden');
+                document.getElementById('admin-layout').classList.remove('hidden');
+                document.getElementById('admin-name').innerText = 'Admin';
+                document.getElementById('admin-pic').src = `https://ui-avatars.com/api/?name=Admin`;
+                showSection('dashboard');
+                return;
+            }
+
+            try {
+                await auth.signInWithEmailAndPassword(email, password);
+            } catch (e) {
+                errorDiv.innerText = e.message;
+                errorDiv.classList.remove('hidden');
+            } finally {
+                showLoading(false);
+            }
+        }
+
+        function toggleProfileDropdown() {
+            document.getElementById('profile-dropdown').classList.toggle('hidden');
+        }
+
+        // Navigation
+        function showSection(sectionId) {
+            document.getElementById('section-title').innerText = sectionId.charAt(0).toUpperCase() + sectionId.slice(1);
+            const contentArea = document.getElementById('content-area');
+            
+            document.querySelectorAll('.sidebar-item').forEach(btn => {
+                btn.classList.toggle('active', btn.innerText.toLowerCase() === sectionId);
+            });
+
+            if (sectionId === 'dashboard') {
+                contentArea.innerHTML = `
+                    <div id="alert-container" class="mb-6 hidden"></div>
+                    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+                        ${createStatCard('Total Users', 'users', 'fa-users', 'text-blue-500')}
+                        ${createStatCard('Total Tournaments', 'tournaments', 'fa-trophy', 'text-yellow-500')}
+                        ${createStatCard('Pending Deposits', 'deposits', 'fa-wallet', 'text-green-500')}
+                        ${createStatCard('Pending Withdrawals', 'withdrawals', 'fa-money-bill-wave', 'text-red-500')}
+                    </div>
+                    <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                        <div class="lg:col-span-2 bg-gray-700 p-6 rounded-3xl">
+                            <h3 class="text-xl font-bold mb-4">Recent Activity</h3>
+                            <div id="activity-feed" class="space-y-4"></div>
+                        </div>
+                        <div class="bg-gray-700 p-6 rounded-3xl">
+                            <h3 class="text-xl font-bold mb-4">Quick Actions</h3>
+                            <div class="space-y-3">
+                                <button onclick="showSection('tournaments')" class="w-full p-4 bg-blue-600 rounded-xl font-bold">Create Tournament</button>
+                                <button onclick="showSection('wallet')" class="w-full p-4 bg-green-600 rounded-xl font-bold">Approve Deposits</button>
+                                <button onclick="showSection('support')" class="w-full p-4 bg-purple-600 rounded-xl font-bold">View Support Tickets</button>
+                            </div>
+                        </div>
+                    </div>
+                `;
+                initDashboard();
+            } else if (sectionId === 'tournaments') {
+                contentArea.innerHTML = `
+                    <div class="mb-6">
+                        <button onclick="openModal('create-match-modal')" class="bg-blue-600 text-white px-6 py-3 rounded-xl font-bold uppercase">Create Match</button>
+                    </div>
+                    <div id="matches-list" class="space-y-4">
+                        <!-- Matches will be loaded here -->
+                    </div>
+                `;
+                loadMatches();
+            } else if (sectionId === 'wallet') {
+                contentArea.innerHTML = `
+                    <div class="flex space-x-4 mb-6">
+                        <button onclick="loadWallet('deposits')" class="bg-gray-700 text-white px-6 py-3 rounded-xl font-bold uppercase">Deposits</button>
+                        <button onclick="loadWallet('withdrawals')" class="bg-gray-700 text-white px-6 py-3 rounded-xl font-bold uppercase">Withdrawals</button>
+                        <button onclick="loadManualWallet()" class="bg-gray-700 text-white px-6 py-3 rounded-xl font-bold uppercase">Manual Wallet</button>
+                        <button onclick="loadTransactionLogs()" class="bg-gray-700 text-white px-6 py-3 rounded-xl font-bold uppercase">Logs</button>
+                    </div>
+                    <div id="wallet-list" class="space-y-4">
+                        <!-- Wallet requests will be loaded here -->
+                    </div>
+                `;
+                loadWallet('deposits');
+            } else if (sectionId === 'users') {
+                contentArea.innerHTML = `
+                    <div class="mb-6 flex gap-4">
+                        <input type="text" id="user-search" placeholder="Search by username, email, UID..." class="flex-1 p-3 bg-gray-700 rounded-xl text-white outline-none">
+                        <select id="user-filter" class="p-3 bg-gray-700 rounded-xl text-white outline-none">
+                            <option value="all">All Roles</option>
+                            <option value="admin">Admin</option>
+                            <option value="user">User</option>
+                        </select>
+                    </div>
+                    <div id="users-list" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4"></div>
+                `;
+                document.getElementById('user-search').addEventListener('input', loadUsers);
+                document.getElementById('user-filter').addEventListener('change', loadUsers);
+                loadUsers();
+            } else if (sectionId === 'support') {
+                contentArea.innerHTML = `
+                    <div class="flex space-x-4 mb-6">
+                        <button onclick="loadTickets()" class="bg-gray-700 text-white px-6 py-3 rounded-xl font-bold uppercase">Tickets</button>
+                        <button onclick="loadReports()" class="bg-gray-700 text-white px-6 py-3 rounded-xl font-bold uppercase">Reports</button>
+                    </div>
+                    <div id="support-content" class="space-y-4">
+                        <!-- Content will be loaded here -->
+                    </div>
+                `;
+                loadTickets();
+            } else if (sectionId === 'settings') {
+                contentArea.innerHTML = `
+                    <div class="space-y-8">
+                        <div class="bg-gray-700 p-6 rounded-3xl">
+                            <h3 class="text-xl font-bold mb-4">General Settings</h3>
+                            <input type="text" id="set-app-name" placeholder="App Name" class="w-full p-3 bg-gray-600 rounded-xl mb-2 text-white">
+                            <input type="number" id="set-min-withdrawal" placeholder="Min Withdrawal" class="w-full p-3 bg-gray-600 rounded-xl mb-2 text-white">
+                            <label class="flex items-center space-x-2">
+                                <input type="checkbox" id="set-maintenance" class="w-5 h-5">
+                                <span>Maintenance Mode</span>
+                            </label>
+                            <button onclick="saveSettings()" class="mt-4 w-full p-3 bg-blue-600 rounded-xl font-bold">Save Settings</button>
+                        </div>
+                        <div class="bg-gray-700 p-6 rounded-3xl">
+                            <h3 class="text-xl font-bold mb-4">QR Code</h3>
+                            <img id="qr-preview" src="" class="w-32 h-32 mb-4 rounded-xl border border-gray-500">
+                            <input type="text" id="set-qr-url" placeholder="QR Code URL" class="w-full p-3 bg-gray-600 rounded-xl mb-2 text-white">
+                            <p class="text-center text-gray-400 mb-2">OR</p>
+                            <input type="file" id="set-qr-upload" accept="image/*" class="w-full text-gray-400 mb-4">
+                            <button onclick="saveQr()" class="w-full p-3 bg-green-600 rounded-xl font-bold">Save QR</button>
+                        </div>
+                        <div class="bg-gray-700 p-6 rounded-3xl">
+                            <h3 class="text-xl font-bold mb-4">Category Images</h3>
+                            <div class="space-y-4" id="category-images-list">
+                                <!-- Loaded dynamically -->
+                            </div>
+                        </div>
+                    </div>
+                `;
+                loadSettings();
+            } else if (sectionId === 'analytics') {
+                contentArea.innerHTML = `
+                    <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                        <div class="bg-gray-700 p-6 rounded-3xl">
+                            <h3 class="text-xl font-bold mb-4">User Growth</h3>
+                            <div id="user-growth-stats" class="space-y-4">Loading...</div>
+                        </div>
+                        <div class="bg-gray-700 p-6 rounded-3xl">
+                            <h3 class="text-xl font-bold mb-4">Revenue & Matches</h3>
+                            <div id="revenue-stats" class="space-y-4">Loading...</div>
+                        </div>
+                    </div>
+                `;
+                loadAnalytics();
+            } else if (sectionId === 'moderation') {
+                contentArea.innerHTML = `
+                    <div class="mb-6">
+                        <h3 class="text-xl font-bold mb-4">Suspicious Activity & Blacklist</h3>
+                        <div class="flex space-x-4 mb-4">
+                            <input type="text" id="blacklist-uid" placeholder="UID to Blacklist" class="flex-1 p-3 bg-gray-700 rounded-xl text-white outline-none">
+                            <button onclick="addToBlacklist()" class="bg-red-600 text-white px-6 py-3 rounded-xl font-bold uppercase">Blacklist</button>
+                        </div>
+                    </div>
+                    <div id="suspicious-list" class="space-y-4">
+                        <!-- Suspicious users will be loaded here -->
+                    </div>
+                `;
+                loadModeration();
+            } else if (sectionId === 'bulk') {
+                contentArea.innerHTML = `
+                    <div class="space-y-6">
+                        <div class="bg-gray-700 p-6 rounded-3xl">
+                            <h3 class="text-xl font-bold mb-4">Bulk Wallet Credit</h3>
+                            <input type="number" id="bulk-amount" placeholder="Amount to credit all users" class="w-full p-3 bg-gray-600 rounded-xl mb-4 text-white outline-none">
+                            <button onclick="bulkCredit()" class="w-full p-3 bg-green-600 rounded-xl font-bold">Credit All Users</button>
+                        </div>
+                        <div class="bg-gray-700 p-6 rounded-3xl">
+                            <h3 class="text-xl font-bold mb-4">Bulk Announcement</h3>
+                            <textarea id="bulk-message" placeholder="Message to all users" class="w-full p-3 bg-gray-600 rounded-xl mb-4 text-white outline-none"></textarea>
+                            <button onclick="bulkAnnounce()" class="w-full p-3 bg-blue-600 rounded-xl font-bold">Send Announcement</button>
+                        </div>
+                        <div class="bg-gray-700 p-6 rounded-3xl">
+                            <h3 class="text-xl font-bold mb-4 text-red-400">Danger Zone</h3>
+                            <button onclick="bulkDeleteMatches()" class="w-full p-3 bg-red-800 rounded-xl font-bold">Delete All Completed Matches</button>
+                        </div>
+                    </div>
+                `;
+            } else {
+                contentArea.innerHTML = `<p class="text-gray-400">Content for ${sectionId} goes here.</p>`;
+            }
+        }
+
+        // Dashboard Logic
+        function createStatCard(title, id, icon, color) {
+            return `
+                <div class="bg-gray-700 p-6 rounded-3xl border border-gray-600">
+                    <div class="flex justify-between items-center mb-4">
+                        <h4 class="text-gray-400 font-bold uppercase text-sm">${title}</h4>
+                        <i class="fas ${icon} ${color}"></i>
+                    </div>
+                    <div id="stat-${id}" class="text-3xl font-black">0</div>
+                </div>
+            `;
+        }
+
+        function initDashboard() {
+            const stats = ['users', 'tournaments', 'deposits', 'withdrawals'];
+            stats.forEach(stat => {
+                db.ref(stat).on('value', (snap) => {
+                    const count = snap.val() ? Object.keys(snap.val()).length : 0;
+                    document.getElementById(`stat-${stat}`).innerText = count;
+                });
+            });
+
+            db.ref('audit_logs').limitToLast(5).on('value', (snap) => {
+                const feed = document.getElementById('activity-feed');
+                feed.innerHTML = '';
+                const logs = snap.val();
+                if (logs) {
+                    Object.values(logs).reverse().forEach(log => {
+                        feed.innerHTML += `<div class="p-3 bg-gray-600 rounded-xl text-sm">${log.message || 'Activity'}</div>`;
+                    });
+                }
+            });
+
+            db.ref('tickets').orderByChild('status').equalTo('open').on('value', (snap) => {
+                const openTickets = snap.val() ? Object.keys(snap.val()).length : 0;
+                if (openTickets > 0) {
+                    showToast(`New support ticket! (${openTickets} open)`);
+                }
+            });
+
+            db.ref('withdrawals').orderByChild('status').equalTo('pending').on('value', (snap) => {
+                const pending = snap.val() ? Object.keys(snap.val()).length : 0;
+                const alert = document.getElementById('alert-container');
+                if (pending > 5) {
+                    alert.innerHTML = `<div class="bg-red-600 p-4 rounded-xl font-bold">Warning: ${pending} pending withdrawals!</div>`;
+                    alert.classList.remove('hidden');
+                } else {
+                    alert.classList.add('hidden');
+                }
+            });
+        }
+
+        // User Logic
+        function loadUsers() {
+            const usersList = document.getElementById('users-list');
+            const searchTerm = document.getElementById('user-search') ? document.getElementById('user-search').value.toLowerCase() : '';
+            const filterRole = document.getElementById('user-filter') ? document.getElementById('user-filter').value : 'all';
+
+            db.ref('users').on('value', (snapshot) => {
+                if (!usersList) return;
+                usersList.innerHTML = '';
+                const users = snapshot.val();
+                if (users) {
+                    Object.keys(users).forEach(uid => {
+                        const user = users[uid];
+                        if ((user.email.toLowerCase().includes(searchTerm) || uid.includes(searchTerm)) && 
+                            (filterRole === 'all' || user.role === filterRole)) {
+                            usersList.innerHTML += `
+                                <div class="bg-gray-700 p-4 rounded-xl cursor-pointer" onclick="openUserModal('${uid}')">
+                                    <h3 class="font-bold text-lg">${user.email || 'Unknown'}</h3>
+                                    <p class="text-sm text-gray-400">Role: ${user.role || 'user'}</p>
+                                    <p class="text-sm text-gray-400">Dep: ${user.deposit || 0} | Win: ${user.win || 0}</p>
+                                </div>
+                            `;
+                        }
+                    });
+                }
+            });
+        }
+
+        function openUserModal(uid) {
+            db.ref(`users/${uid}`).once('value', (snap) => {
+                const user = snap.val();
+                const modal = document.createElement('div');
+                modal.id = 'user-detail-modal';
+                modal.className = 'fixed inset-0 bg-gray-900/90 z-50 flex items-center justify-center p-4';
+                modal.innerHTML = `
+                    <div class="bg-gray-800 p-8 rounded-3xl w-full max-w-lg border border-gray-700 max-h-[90vh] overflow-y-auto">
+                        <h2 class="text-2xl font-black mb-4">${user.email}</h2>
+                        <div class="space-y-2 mb-6 text-gray-300">
+                            <p>UID: ${uid}</p>
+                            <p>Deposit: ${user.deposit || 0}</p>
+                            <p>Winnings: ${user.win || 0}</p>
+                            <p>Role: ${user.role || 'user'}</p>
+                        </div>
+                        <div class="grid grid-cols-2 gap-2">
+                            <button onclick="updateWallet('${uid}', 100)" class="bg-green-600 p-2 rounded-xl">Add 100</button>
+                            <button onclick="updateWallet('${uid}', -100)" class="bg-red-600 p-2 rounded-xl">Remove 100</button>
+                            <button onclick="banUser('${uid}')" class="bg-yellow-600 p-2 rounded-xl">Ban/Unban</button>
+                            <button onclick="promoteUser('${uid}')" class="bg-blue-600 p-2 rounded-xl">Promote</button>
+                            <button onclick="deleteUser('${uid}')" class="bg-red-800 p-2 rounded-xl col-span-2">Delete User</button>
+                        </div>
+                        <button onclick="document.getElementById('user-detail-modal').remove()" class="mt-6 w-full p-3 bg-gray-600 rounded-xl">Close</button>
+                    </div>
+                `;
+                document.body.appendChild(modal);
+            });
+        }
+
+        function updateWallet(uid, amount) {
+            db.ref(`users/${uid}/deposit`).transaction(current => (current || 0) + amount);
+            showToast('Wallet updated!');
+        }
+
+        function promoteUser(uid) {
+            db.ref(`users/${uid}/role`).set('admin').then(() => showToast('Promoted to admin!'));
+        }
+
+        function banUser(uid) {
+            db.ref(`users/${uid}/banned`).transaction(current => !current).then(() => showToast('User ban status toggled!'));
+        }
+
+        function deleteUser(uid) {
+            confirmAction('Delete user permanently?', () => {
+                db.ref(`users/${uid}`).remove().then(() => {
+                    showToast('User deleted!');
+                    document.getElementById('user-detail-modal').remove();
+                });
+            });
+        }
+
+        // Support Logic
+        function loadTickets() {
+            const content = document.getElementById('support-content');
+            content.innerHTML = '<p class="text-gray-400">Loading tickets...</p>';
+            db.ref('tickets').on('value', (snapshot) => {
+                content.innerHTML = '';
+                const tickets = snapshot.val();
+                if (tickets) {
+                    Object.keys(tickets).forEach(key => {
+                        const ticket = tickets[key];
+                        content.innerHTML += `
+                            <div class="bg-gray-700 p-4 rounded-xl flex justify-between items-center cursor-pointer" onclick="openTicket('${key}')">
+                                <div>
+                                    <h3 class="font-bold text-lg">${ticket.subject}</h3>
+                                    <p class="text-sm text-gray-400">Status: ${ticket.status}</p>
+                                </div>
+                                ${ticket.status === 'open' ? '<span class="bg-blue-600 px-2 py-1 rounded-full text-xs">New</span>' : ''}
+                            </div>
+                        `;
+                    });
+                }
+            });
+        }
+
+        function openTicket(key) {
+            const content = document.getElementById('support-content');
+            db.ref(`tickets/${key}`).on('value', (snap) => {
+                const ticket = snap.val();
+                content.innerHTML = `
+                    <div class="bg-gray-800 p-6 rounded-3xl">
+                        <h2 class="text-2xl font-black mb-4">${ticket.subject}</h2>
+                        <div id="chat-thread" class="h-64 overflow-y-auto bg-gray-700 p-4 rounded-xl mb-4 space-y-2">
+                            ${Object.values(ticket.messages || {}).map(m => `<p class="${m.sender === 'admin' ? 'text-blue-400' : 'text-gray-300'}">${m.sender}: ${m.text}</p>`).join('')}
+                        </div>
+                        <input type="text" id="reply-text" placeholder="Reply..." class="w-full p-3 bg-gray-700 rounded-xl mb-2 text-white outline-none">
+                        <div class="flex space-x-2">
+                            <button onclick="replyToTicket('${key}')" class="flex-1 p-3 bg-blue-600 rounded-xl font-bold">Reply</button>
+                            <button onclick="updateTicketStatus('${key}', 'closed')" class="flex-1 p-3 bg-gray-600 rounded-xl font-bold">Close Ticket</button>
+                        </div>
+                    </div>
+                `;
+                document.getElementById('chat-thread').scrollTop = document.getElementById('chat-thread').scrollHeight;
+            });
+        }
+
+        function replyToTicket(key) {
+            const text = document.getElementById('reply-text').value;
+            if (!text) return;
+            db.ref(`tickets/${key}/messages`).push({ sender: 'admin', text, timestamp: Date.now() });
+            db.ref(`tickets/${key}/status`).set('answered');
+            document.getElementById('reply-text').value = '';
+        }
+
+        function updateTicketStatus(key, status) {
+            db.ref(`tickets/${key}/status`).set(status).then(() => showToast('Status updated!'));
+        }
+
+        function loadReports() {
+            const content = document.getElementById('support-content');
+            content.innerHTML = '<p class="text-gray-400">Loading reports...</p>';
+            db.ref('reports').on('value', (snapshot) => {
+                content.innerHTML = '';
+                const reports = snapshot.val();
+                if (reports) {
+                    Object.keys(reports).forEach(key => {
+                        const report = reports[key];
+                        content.innerHTML += `
+                            <div class="bg-gray-700 p-4 rounded-xl">
+                                <h3 class="font-bold text-lg">Reported: ${report.reportedUid}</h3>
+                                <p class="text-sm text-gray-400">Reason: ${report.reason}</p>
+                                <div class="mt-2 space-x-2">
+                                    <button onclick="banUser('${report.reportedUid}')" class="bg-red-600 px-3 py-1 rounded-xl text-xs font-bold">Ban User</button>
+                                    <button onclick="addAdminNote('${report.reportedUid}', 'Reported for: ${report.reason}')" class="bg-gray-600 px-3 py-1 rounded-xl text-xs font-bold">Add Note</button>
+                                </div>
+                            </div>
+                        `;
+                    });
+                }
+            });
+        }
+
+        function addAdminNote(uid, note) {
+            const noteText = prompt('Add admin note:', note);
+            if (noteText) {
+                db.ref(`users/${uid}/adminNotes`).push({ note: noteText, timestamp: Date.now() });
+                showToast('Note added!');
+            }
+        }
+
+        // Wallet Logic
+        function loadWallet(type) {
+            const walletList = document.getElementById('wallet-list');
+            walletList.innerHTML = `<p class="text-gray-400">Loading ${type}...</p>`;
+            
+            db.ref(type).on('value', (snapshot) => {
+                walletList.innerHTML = '';
+                const requests = snapshot.val();
+                const utrs = {};
+                
+                if (requests) {
+                    Object.keys(requests).forEach(key => {
+                        const req = requests[key];
+                        if (req.utr) {
+                            utrs[req.utr] = (utrs[req.utr] || 0) + 1;
+                        }
+                    });
+
+                    Object.keys(requests).forEach(key => {
+                        const req = requests[key];
+                        const isSuspicious = utrs[req.utr] > 1;
+                        
+                        walletList.innerHTML += `
+                            <div class="bg-gray-700 p-4 rounded-xl flex justify-between items-center ${isSuspicious ? 'border-2 border-red-500' : ''}">
+                                <div>
+                                    <h3 class="font-bold text-lg">${req.userName || 'Unknown'} - ${req.amount}</h3>
+                                    <p class="text-sm ${isSuspicious ? 'text-red-400' : 'text-gray-400'}">UTR: ${req.utr || 'N/A'} ${isSuspicious ? '(Duplicate)' : ''}</p>
+                                    ${req.screenshot ? `<a href="${req.screenshot}" target="_blank" class="text-blue-400 text-xs underline">View Screenshot</a>` : ''}
+                                </div>
+                                <div class="space-x-2">
+                                    <button onclick="processWallet('${type}', '${key}', 'approved', ${req.amount}, '${req.uid}')" class="bg-green-600 text-white px-4 py-2 rounded-xl font-bold">Approve</button>
+                                    <button onclick="processWallet('${type}', '${key}', 'rejected', 0, '${req.uid}')" class="bg-red-600 text-white px-4 py-2 rounded-xl font-bold">Reject</button>
+                                </div>
+                            </div>
+                        `;
+                    });
+                } else {
+                    walletList.innerHTML = `<p class="text-gray-400">No ${type} found.</p>`;
+                }
+            });
+        }
+
+        function processWallet(type, key, status, amount, uid) {
+            const updates = { status };
+            if (status === 'approved') {
+                const walletField = type === 'deposits' ? 'deposit' : 'win';
+                db.ref(`users/${uid}/${walletField}`).transaction(current => (current || 0) + (type === 'deposits' ? amount : -amount));
+            }
+            db.ref(`${type}/${key}`).update(updates).then(() => showToast(`Request ${status}!`));
+        }
+
+        function loadManualWallet() {
+            const walletList = document.getElementById('wallet-list');
+            walletList.innerHTML = `
+                <div class="bg-gray-700 p-6 rounded-xl">
+                    <input type="text" id="manual-uid" placeholder="User UID" class="w-full p-3 bg-gray-600 rounded-xl mb-2 text-white">
+                    <input type="number" id="manual-amount" placeholder="Amount" class="w-full p-3 bg-gray-600 rounded-xl mb-2 text-white">
+                    <button onclick="manualWalletAction('credit')" class="bg-green-600 text-white px-4 py-2 rounded-xl font-bold">Credit</button>
+                    <button onclick="manualWalletAction('debit')" class="bg-red-600 text-white px-4 py-2 rounded-xl font-bold">Debit</button>
+                </div>
+            `;
+        }
+
+        function manualWalletAction(action) {
+            const uid = document.getElementById('manual-uid').value;
+            const amount = parseFloat(document.getElementById('manual-amount').value);
+            if (!uid || !amount) return showToast('Fill all fields', 'error');
+            
+            db.ref(`users/${uid}/deposit`).transaction(current => (current || 0) + (action === 'credit' ? amount : -amount));
+            showToast(`Wallet ${action}ed!`);
+        }
+
+        function loadTransactionLogs() {
+            const walletList = document.getElementById('wallet-list');
+            walletList.innerHTML = '<p class="text-gray-400">Loading logs...</p>';
+            db.ref('transactions').on('value', (snapshot) => {
+                walletList.innerHTML = '';
+                const logs = snapshot.val();
+                if (logs) {
+                    Object.keys(logs).forEach(key => {
+                        const log = logs[key];
+                        walletList.innerHTML += `
+                            <div class="bg-gray-700 p-4 rounded-xl">
+                                <p class="text-sm text-gray-300">${log.message}</p>
+                            </div>
+                        `;
+                    });
+                }
+            });
+        }
+
+        // Tournament Logic
+        function loadMatches() {
+            const matchesList = document.getElementById('matches-list');
+            matchesList.innerHTML = '<p class="text-gray-400">Loading matches...</p>';
+            db.ref('matches').on('value', (snapshot) => {
+                matchesList.innerHTML = '';
+                const matches = snapshot.val();
+                if (matches) {
+                    Object.keys(matches).forEach(key => {
+                        const match = matches[key];
+                        matchesList.innerHTML += `
+                            <div class="bg-gray-700 p-6 rounded-3xl border border-gray-600">
+                                <div class="flex justify-between items-start mb-4">
+                                    <div>
+                                        <h3 class="font-black text-xl">${match.title}</h3>
+                                        <p class="text-sm text-gray-400">${match.category} | ${match.matchTime}</p>
+                                    </div>
+                                    <span class="px-3 py-1 rounded-full text-xs font-bold ${match.status === 'live' ? 'bg-green-600' : match.status === 'completed' ? 'bg-gray-600' : 'bg-blue-600'}">${match.status.toUpperCase()}</span>
+                                </div>
+                                <div class="grid grid-cols-3 gap-4 text-sm mb-4">
+                                    <p>Entry: ${match.entryFee}</p>
+                                    <p>Prize: ${match.prizePool}</p>
+                                    <p>Players: ${Object.keys(match.participants || {}).length}/${match.maxPlayers}</p>
+                                </div>
+                                <div class="flex space-x-2">
+                                    <button onclick="openMatchDetails('${key}')" class="flex-1 p-2 bg-gray-600 rounded-xl font-bold">Manage</button>
+                                    <button onclick="deleteMatch('${key}')" class="p-2 bg-red-600 rounded-xl font-bold"><i class="fas fa-trash"></i></button>
+                                </div>
+                            </div>
+                        `;
+                    });
+                } else {
+                    matchesList.innerHTML = '<p class="text-gray-400">No matches found.</p>';
+                }
+            });
+        }
+
+        async function createMatch() {
+            const fileInput = document.getElementById('match-image-upload');
+            let imageUrl = document.getElementById('match-image').value;
+
+            if (fileInput.files.length > 0) {
+                showLoading(true);
+                const file = fileInput.files[0];
+                const storageRef = storage.ref(`matches/${Date.now()}_${file.name}`);
+                try {
+                    await storageRef.put(file);
+                    imageUrl = await storageRef.getDownloadURL();
+                } catch (e) {
+                    showLoading(false);
+                    return showToast('Image upload failed: ' + e.message, 'error');
+                }
+                showLoading(false);
+            }
+
+            const matchData = {
+                title: document.getElementById('match-name').value,
+                category: document.getElementById('match-category').value,
+                entryFee: parseFloat(document.getElementById('match-entry').value),
+                prizePool: parseFloat(document.getElementById('match-prize').value),
+                perKillPrize: parseFloat(document.getElementById('match-perkill').value),
+                maxPlayers: parseInt(document.getElementById('match-maxplayers').value),
+                matchTime: document.getElementById('match-time').value,
+                rules: document.getElementById('match-rules').value,
+                imageUrl: imageUrl,
+                status: 'upcoming',
+                roomId: '',
+                roomPassword: '',
+                participants: {},
+                adminNotes: ''
+            };
+            
+            db.ref('matches').push(matchData).then(() => {
+                showToast('Match created successfully!');
+                closeModal('create-match-modal');
+            }).catch(e => showToast(e.message, 'error'));
+        }
+
+        function openMatchDetails(key) {
+            db.ref(`matches/${key}`).once('value', (snap) => {
+                const match = snap.val();
+                const modal = document.createElement('div');
+                modal.id = 'match-detail-modal';
+                modal.className = 'fixed inset-0 bg-gray-900/90 z-50 flex items-center justify-center p-4';
+                modal.innerHTML = `
+                    <div class="bg-gray-800 p-8 rounded-3xl w-full max-w-4xl border border-gray-700 max-h-[90vh] overflow-y-auto">
+                        <h2 class="text-3xl font-black mb-6">${match.title}</h2>
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
+                            <div>
+                                <h3 class="text-xl font-bold mb-4">Live Control</h3>
+                                <div class="flex space-x-2 mb-6">
+                                    <button onclick="updateMatchStatus('${key}', 'upcoming')" class="p-3 bg-blue-600 rounded-xl">Upcoming</button>
+                                    <button onclick="updateMatchStatus('${key}', 'live')" class="p-3 bg-green-600 rounded-xl">Live</button>
+                                    <button onclick="updateMatchStatus('${key}', 'completed')" class="p-3 bg-gray-600 rounded-xl">Completed</button>
+                                </div>
+                                <h3 class="text-xl font-bold mb-4">Room Control</h3>
+                                <input type="text" id="room-id" value="${match.roomId || ''}" placeholder="Room ID" class="w-full p-3 bg-gray-700 rounded-xl mb-2 text-white outline-none">
+                                <input type="text" id="room-pass" value="${match.roomPassword || ''}" placeholder="Room Password" class="w-full p-3 bg-gray-700 rounded-xl mb-4 text-white outline-none">
+                                <button onclick="pushRoomDetails('${key}')" class="w-full p-3 bg-blue-600 rounded-xl font-bold">Push Room Details</button>
+                            </div>
+                            <div>
+                                <h3 class="text-xl font-bold mb-4">Participants (${Object.keys(match.participants || {}).length})</h3>
+                                <div class="h-64 overflow-y-auto bg-gray-700 p-4 rounded-xl mb-4">
+                                    ${Object.keys(match.participants || {}).map(uid => `<p class="text-sm">${uid}</p>`).join('')}
+                                </div>
+                            </div>
+                        </div>
+                        <button onclick="document.getElementById('match-detail-modal').remove()" class="mt-6 w-full p-3 bg-gray-600 rounded-xl">Close</button>
+                    </div>
+                `;
+                document.body.appendChild(modal);
+            });
+        }
+
+        function updateMatchStatus(key, status) {
+            db.ref(`matches/${key}/status`).set(status).then(() => showToast('Status updated!'));
+        }
+
+        function pushRoomDetails(key) {
+            const roomId = document.getElementById('room-id').value;
+            const roomPassword = document.getElementById('room-pass').value;
+            db.ref(`matches/${key}`).update({ roomId, roomPassword }).then(() => showToast('Room details pushed!'));
+        }
+
+        function deleteMatch(key) {
+            confirmAction('Are you sure you want to delete this match?', () => {
+                db.ref(`matches/${key}`).remove().then(() => showToast('Match deleted!'));
+            });
+        }
+
+        // Settings Logic
+        function loadSettings() {
+            db.ref('settings').once('value', (snap) => {
+                const settings = snap.val() || {};
+                document.getElementById('set-app-name').value = settings.appName || '';
+                document.getElementById('set-min-withdrawal').value = settings.minWithdrawal || 0;
+                document.getElementById('set-maintenance').checked = settings.maintenance || false;
+                document.getElementById('set-qr-url').value = settings.qrUrl || '';
+                document.getElementById('qr-preview').src = settings.qrUrl || '';
+                
+                const catList = document.getElementById('category-images-list');
+                const categories = ['BGMI', 'FreeFire', 'PUBG', 'CallOfDuty'];
+                catList.innerHTML = categories.map(cat => `
+                    <div class="flex items-center space-x-4">
+                        <span class="w-24 font-bold">${cat}</span>
+                        <input type="text" id="cat-img-${cat}" value="${settings.categoryImages?.[cat] || ''}" placeholder="Image URL" class="flex-1 p-2 bg-gray-600 rounded-xl text-white">
+                        <button onclick="saveCategoryImage('${cat}')" class="bg-blue-600 px-4 py-2 rounded-xl font-bold">Save</button>
+                    </div>
+                `).join('');
+            });
+        }
+
+        function saveSettings() {
+            const settings = {
+                appName: document.getElementById('set-app-name').value,
+                minWithdrawal: parseFloat(document.getElementById('set-min-withdrawal').value),
+                maintenance: document.getElementById('set-maintenance').checked
+            };
+            db.ref('settings').update(settings).then(() => showToast('Settings saved!'));
+        }
+
+        async function saveQr() {
+            const fileInput = document.getElementById('set-qr-upload');
+            let qrUrl = document.getElementById('set-qr-url').value;
+
+            if (fileInput.files.length > 0) {
+                showLoading(true);
+                const file = fileInput.files[0];
+                const storageRef = storage.ref(`settings/qr_${Date.now()}_${file.name}`);
+                try {
+                    await storageRef.put(file);
+                    qrUrl = await storageRef.getDownloadURL();
+                } catch (e) {
+                    showLoading(false);
+                    return showToast('QR upload failed: ' + e.message, 'error');
+                }
+                showLoading(false);
+            }
+
+            db.ref('settings/qrUrl').set(qrUrl).then(() => {
+                document.getElementById('qr-preview').src = qrUrl;
+                document.getElementById('set-qr-url').value = qrUrl;
+                showToast('QR Code updated!');
+            });
+        }
+
+        function saveCategoryImage(category) {
+            const url = document.getElementById(`cat-img-${category}`).value;
+            db.ref(`settings/categoryImages/${category}`).set(url).then(() => showToast(`${category} image updated!`));
+        }
+
+        // Analytics Logic
+        function loadAnalytics() {
+            db.ref('users').once('value', (snap) => {
+                const users = snap.val() || {};
+                const totalUsers = Object.keys(users).length;
+                let totalDeposits = 0;
+                let totalWins = 0;
+                Object.values(users).forEach(u => {
+                    totalDeposits += (u.deposit || 0);
+                    totalWins += (u.win || 0);
+                });
+                document.getElementById('user-growth-stats').innerHTML = `
+                    <p class="text-gray-300">Total Registered Users: <span class="font-bold text-white">${totalUsers}</span></p>
+                    <p class="text-gray-300">Total User Deposits: <span class="font-bold text-green-400">₹${totalDeposits}</span></p>
+                    <p class="text-gray-300">Total User Winnings: <span class="font-bold text-blue-400">₹${totalWins}</span></p>
+                `;
+            });
+
+            db.ref('matches').once('value', (snap) => {
+                const matches = snap.val() || {};
+                const totalMatches = Object.keys(matches).length;
+                let completed = 0;
+                let totalPrizePool = 0;
+                Object.values(matches).forEach(m => {
+                    if (m.status === 'completed') completed++;
+                    totalPrizePool += (m.prizePool || 0);
+                });
+                document.getElementById('revenue-stats').innerHTML = `
+                    <p class="text-gray-300">Total Matches Created: <span class="font-bold text-white">${totalMatches}</span></p>
+                    <p class="text-gray-300">Completed Matches: <span class="font-bold text-white">${completed}</span></p>
+                    <p class="text-gray-300">Total Prize Pool Offered: <span class="font-bold text-yellow-400">₹${totalPrizePool}</span></p>
+                `;
+            });
+        }
+
+        // Moderation Logic
+        function loadModeration() {
+            const list = document.getElementById('suspicious-list');
+            list.innerHTML = '<p class="text-gray-400">Loading blacklisted users...</p>';
+            db.ref('users').orderByChild('banned').equalTo(true).on('value', (snap) => {
+                list.innerHTML = '';
+                const users = snap.val();
+                if (users) {
+                    Object.keys(users).forEach(uid => {
+                        list.innerHTML += `
+                            <div class="bg-gray-700 p-4 rounded-xl flex justify-between items-center">
+                                <div>
+                                    <h3 class="font-bold text-lg">${users[uid].email || 'Unknown'}</h3>
+                                    <p class="text-sm text-red-400">Banned</p>
+                                </div>
+                                <button onclick="banUser('${uid}')" class="bg-green-600 text-white px-4 py-2 rounded-xl font-bold">Unban</button>
+                            </div>
+                        `;
+                    });
+                } else {
+                    list.innerHTML = '<p class="text-gray-400">No blacklisted users.</p>';
+                }
+            });
+        }
+
+        function addToBlacklist() {
+            const uid = document.getElementById('blacklist-uid').value;
+            if (!uid) return showToast('Enter a UID', 'error');
+            db.ref(`users/${uid}/banned`).set(true).then(() => {
+                showToast('User blacklisted!');
+                document.getElementById('blacklist-uid').value = '';
+            });
+        }
+
+        // Bulk Tools Logic
+        function bulkCredit() {
+            const amount = parseFloat(document.getElementById('bulk-amount').value);
+            if (!amount) return showToast('Enter an amount', 'error');
+            confirmAction(`Credit ₹${amount} to ALL users?`, () => {
+                db.ref('users').once('value', (snap) => {
+                    const users = snap.val();
+                    if (users) {
+                        const updates = {};
+                        Object.keys(users).forEach(uid => {
+                            updates[`${uid}/deposit`] = (users[uid].deposit || 0) + amount;
+                        });
+                        db.ref('users').update(updates).then(() => showToast('Bulk credit successful!'));
+                    }
+                });
+            });
+        }
+
+        function bulkAnnounce() {
+            const message = document.getElementById('bulk-message').value;
+            if (!message) return showToast('Enter a message', 'error');
+            db.ref('announcements').push({
+                message,
+                timestamp: Date.now(),
+                sender: 'Admin'
+            }).then(() => {
+                showToast('Announcement sent!');
+                document.getElementById('bulk-message').value = '';
+            });
+        }
+
+        function bulkDeleteMatches() {
+            confirmAction('Are you absolutely sure you want to delete ALL completed matches?', () => {
+                db.ref('matches').orderByChild('status').equalTo('completed').once('value', (snap) => {
+                    const matches = snap.val();
+                    if (matches) {
+                        const updates = {};
+                        Object.keys(matches).forEach(key => updates[key] = null);
+                        db.ref('matches').update(updates).then(() => showToast('Completed matches deleted!'));
+                    } else {
+                        showToast('No completed matches found.');
+                    }
+                });
+            });
+        }
+
+        function showToast(message, type = 'info') {
+            const toast = document.createElement('div');
+            toast.className = `p-4 rounded-xl text-white font-bold ${type === 'error' ? 'bg-red-600' : 'bg-blue-600'}`;
+            toast.innerText = message;
+            document.getElementById('toast-container').appendChild(toast);
+            setTimeout(() => toast.remove(), 3000);
+        }
+
+        function openModal(modalId) { document.getElementById(modalId).classList.remove('hidden'); }
+        function closeModal(modalId) { document.getElementById(modalId).classList.add('hidden'); }
+        function confirmAction(message, callback) { if(confirm(message)) callback(); }
+    </script>
+</body>
+</html>
