@@ -6,7 +6,8 @@ import { Tournament, UserData, GlobalChatMessage, PaymentProof } from '../../typ
 const UserHome: React.FC = () => {
   const [userData, setUserData] = useState<UserData | null>(null);
   const [tournaments, setTournaments] = useState<Tournament[]>([]);
-  const [activeCategory, setActiveCategory] = useState<string>('1ST BATTLE ROYALE TOURNAMENT');
+  const [categories, setCategories] = useState<string[]>([]);
+  const [activeCategory, setActiveCategory] = useState<string>('');
   const [selectedTournament, setSelectedTournament] = useState<Tournament | null>(null);
 
   useEffect(() => {
@@ -14,6 +15,15 @@ const UserHome: React.FC = () => {
     if (user) {
       db.ref(`users/${user.uid}`).on('value', s => setUserData(s.val()));
     }
+
+    db.ref('settings/modes').on('value', s => {
+      const modes = s.val() || {};
+      const modeList = Object.keys(modes);
+      setCategories(modeList);
+      if (modeList.length > 0 && !activeCategory) {
+        setActiveCategory(modeList[0]);
+      }
+    });
 
     db.ref('tournaments').on('value', s => {
       const data = s.val() || {};
@@ -23,6 +33,7 @@ const UserHome: React.FC = () => {
 
     return () => {
       db.ref(`users/${user?.uid}`).off();
+      db.ref('settings/modes').off();
       db.ref('tournaments').off();
     };
   }, []);
@@ -57,7 +68,7 @@ const UserHome: React.FC = () => {
 
       {/* Tabs */}
       <div className="flex gap-2 overflow-x-auto hide-scrollbar pb-2">
-        {['1ST BATTLE ROYALE TOURNAMENT', '2ND CLASH SQUAD TOURNAMENT', '3RD LONE WOLF TOURNAMENT', '4TH FREE PRACTICE TOURNAMENT'].map(cat => (
+        {categories.map(cat => (
           <button 
             key={cat}
             onClick={() => setActiveCategory(cat)} 
@@ -66,6 +77,16 @@ const UserHome: React.FC = () => {
             {cat.replace(' TOURNAMENT', '')}
           </button>
         ))}
+        {categories.length === 0 && (
+          ['1ST BATTLE ROYALE TOURNAMENT', '2ND CLASH SQUAD TOURNAMENT', '3RD LONE WOLF TOURNAMENT', '4TH FREE PRACTICE TOURNAMENT'].map(cat => (
+            <button 
+              key={cat}
+              className="whitespace-nowrap px-4 py-2 rounded-xl text-[10px] font-black uppercase bg-white text-gray-400 border shadow-sm opacity-50"
+            >
+              {cat.replace(' TOURNAMENT', '')}
+            </button>
+          ))
+        )}
       </div>
 
       <div className="animate-in fade-in duration-300">

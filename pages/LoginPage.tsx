@@ -2,6 +2,7 @@
 import React, { useState } from 'react';
 import { auth, db } from '../firebase';
 import { UserData } from '../types';
+import firebase from 'firebase/compat/app';
 
 const LoginPage: React.FC = () => {
   const [isLogin, setIsLogin] = useState(true);
@@ -12,6 +13,50 @@ const LoginPage: React.FC = () => {
   const [error, setError] = useState('');
 
   const generateAppId = () => Math.floor(100000 + Math.random() * 900000).toString();
+
+  const handleGoogleLogin = async () => {
+    setError('');
+    setLoading(true);
+    try {
+      const provider = new firebase.auth.GoogleAuthProvider();
+      const userCredential = await auth.signInWithPopup(provider);
+      const user = userCredential.user;
+      
+      if (user) {
+        const userSnap = await db.ref(`users/${user.uid}`).once('value');
+        const userData = userSnap.val();
+        
+        if (userData?.banUntil && userData.banUntil > Date.now()) {
+          await auth.signOut();
+          setError(`Banned until ${new Date(userData.banUntil).toLocaleString()}`);
+          setLoading(false);
+          return;
+        }
+
+        if (!userData) {
+          // New user from Google Login
+          const appId = generateAppId();
+          const role = user.email?.includes('admin') ? 'admin' : 'user';
+          
+          const newUser: Partial<UserData> = {
+            appId, 
+            username: user.displayName || user.email?.split('@')[0] || 'Gamer', 
+            email: user.email || '', 
+            role,
+            wallet_deposit: 0, wallet_winnings: 0,
+            totalKills: 0, totalWins: 0, matchesPlayed: 0, referralCount: 0,
+            createdAt: Date.now()
+          };
+
+          await db.ref(`users/${user.uid}`).set(newUser);
+        }
+      }
+    } catch (err: any) {
+      setError(err.message);
+    } finally {
+      setLoading(false);
+    }
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -81,6 +126,26 @@ const LoginPage: React.FC = () => {
           {loading ? 'Entering...' : isLogin ? 'Enter Arena' : 'Join Arena'}
         </button>
       </form>
+
+      <div className="mt-6">
+        <div className="relative">
+          <div className="absolute inset-0 flex items-center">
+            <div className="w-full border-t border-gray-200"></div>
+          </div>
+          <div className="relative flex justify-center text-sm">
+            <span className="px-2 bg-white text-gray-500 font-bold uppercase">Or continue with</span>
+          </div>
+        </div>
+
+        <button 
+          onClick={handleGoogleLogin} 
+          disabled={loading}
+          className="mt-6 w-full py-4 bg-white border-2 border-gray-100 text-gray-700 rounded-2xl font-black uppercase shadow-sm hover:bg-gray-50 active:scale-95 disabled:opacity-50 flex items-center justify-center gap-3 transition-all"
+        >
+          <img src="https://www.gstatic.com/firebasejs/ui/2.0.0/images/auth/google.svg" alt="Google" className="w-5 h-5" />
+          Google
+        </button>
+      </div>
     </div>
   );
 };

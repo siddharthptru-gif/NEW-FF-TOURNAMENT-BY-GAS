@@ -45,6 +45,17 @@
             <input type="password" id="password-input" placeholder="Password" class="w-full p-4 bg-gray-50 border rounded-2xl outline-none font-bold text-sm">
             <button type="submit" id="auth-btn" class="w-full py-4 custom-gradient text-white font-black rounded-2xl shadow-lg uppercase tracking-widest">Enter Arena</button>
         </form>
+        
+        <div class="flex items-center my-6">
+            <div class="flex-1 border-t border-gray-200"></div>
+            <span class="px-4 text-gray-400 text-[10px] font-bold uppercase tracking-widest">OR</span>
+            <div class="flex-1 border-t border-gray-200"></div>
+        </div>
+        
+        <button type="button" onclick="handleGoogleLogin()" class="w-full py-4 bg-white border border-gray-200 text-gray-700 font-black rounded-2xl shadow-sm uppercase text-[10px] flex items-center justify-center">
+            <img src="https://www.gstatic.com/firebasejs/ui/2.0.0/images/auth/google.svg" class="w-4 h-4 mr-2">
+            Continue with Google
+        </button>
     </div>
 
     <!-- Main App -->
@@ -315,12 +326,22 @@
 
     <!-- Results Modal -->
     <div id="results-modal" class="fixed inset-0 bg-black/60 z-[110] hidden items-center justify-center p-4">
-        <div class="bg-white w-full max-w-sm rounded-[40px] p-8 relative max-h-[80vh] flex flex-col">
+        <div class="bg-white w-full max-w-lg rounded-[40px] p-8 relative max-h-[90vh] flex flex-col">
             <button onclick="closeResultsModal()" class="absolute top-6 right-6 text-gray-300"><i class="fas fa-times"></i></button>
             <h4 id="results-modal-title" class="font-black text-center uppercase mb-6 text-gray-900">Tournament Results</h4>
-            <div id="results-list-container" class="space-y-2 overflow-y-auto hide-scrollbar flex-1">
-                <!-- Participants will be loaded here -->
+            
+            <div class="overflow-y-auto hide-scrollbar flex-1 space-y-4">
+                <div id="results-image-container" class="hidden mb-4">
+                    <p class="text-[8px] font-black uppercase text-indigo-600 mb-2 text-center">Official Result Board</p>
+                    <img id="results-image" src="" class="w-full rounded-2xl border shadow-sm" referrerPolicy="no-referrer">
+                </div>
+
+                <div id="results-list-container" class="space-y-2">
+                    <!-- Participants will be loaded here -->
+                </div>
             </div>
+            
+            <button onclick="closeResultsModal()" class="mt-6 w-full py-4 bg-gray-100 text-gray-400 font-black rounded-2xl uppercase text-xs">Close</button>
         </div>
     </div>
 
@@ -344,7 +365,7 @@
             <h4 id="md-title" class="font-black text-center uppercase mb-4 text-gray-900">Match Details</h4>
             
             <div class="overflow-y-auto hide-scrollbar flex-1 space-y-4">
-                <div class="grid grid-cols-2 gap-2">
+                <div class="grid grid-cols-3 gap-2">
                     <div class="bg-gray-50 p-3 rounded-2xl border text-center">
                         <p id="md-map" class="text-xs font-black uppercase text-gray-900">-</p>
                         <p class="text-[7px] text-gray-400 font-black uppercase">Map / Mode</p>
@@ -352,6 +373,10 @@
                     <div class="bg-gray-50 p-3 rounded-2xl border text-center">
                         <p id="md-players" class="text-xs font-black uppercase text-gray-900">-</p>
                         <p class="text-[7px] text-gray-400 font-black uppercase">Slots Left</p>
+                    </div>
+                    <div class="bg-gray-50 p-3 rounded-2xl border text-center">
+                        <p id="md-time" class="text-xs font-black uppercase text-gray-900">-</p>
+                        <p class="text-[7px] text-gray-400 font-black uppercase">Start Time</p>
                     </div>
                 </div>
 
@@ -362,6 +387,19 @@
                         <div><p class="text-[7px] text-gray-400 font-bold uppercase">2nd</p><p id="md-p2" class="text-[10px] font-black">₹0</p></div>
                         <div><p class="text-[7px] text-gray-400 font-bold uppercase">3rd</p><p id="md-p3" class="text-[10px] font-black">₹0</p></div>
                     </div>
+                </div>
+
+                <div id="md-room-details" class="bg-red-50 p-4 rounded-2xl border border-red-100 hidden">
+                    <p class="text-[8px] font-black uppercase text-red-600 mb-2">Room Details</p>
+                    <div class="space-y-1">
+                        <p class="flex justify-between text-[10px] font-black">Room ID: <span id="md-room-id" class="text-red-600 select-all">-</span></p>
+                        <p class="flex justify-between text-[10px] font-black mt-1">Pass: <span id="md-room-pass" class="text-red-600 select-all">-</span></p>
+                    </div>
+                </div>
+
+                <div id="md-announcement-section" class="bg-blue-50 p-4 rounded-2xl border border-blue-100 hidden">
+                    <p class="text-[8px] font-black uppercase text-blue-600 mb-2">Announcement</p>
+                    <p id="md-announcement" class="text-[10px] font-bold text-gray-700"></p>
                 </div>
 
                 <div class="space-y-2">
@@ -520,6 +558,13 @@
             finally { btn.disabled = false; btn.innerText = "Enter Arena"; }
         };
 
+        async function handleGoogleLogin() {
+            const provider = new firebase.auth.GoogleAuthProvider();
+            try {
+                await auth.signInWithPopup(provider);
+            } catch(e) { handleFirebaseError(e, 'auth', 'googleSignIn'); }
+        }
+
         auth.onAuthStateChanged(u => {
             if(u) {
                 currentUser = u;
@@ -581,6 +626,9 @@
                 const maxP = t.maxPlayers || 48;
                 document.getElementById('md-players').innerText = `${maxP - pCount} Slots`;
                 
+                const matchTime = t.matchTime ? new Date(t.matchTime).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : '-';
+                document.getElementById('md-time').innerText = matchTime;
+                
                 const pd = t.prizeDistribution || { first: 0, second: 0, third: 0 };
                 document.getElementById('md-p1').innerText = `₹${pd.first}`;
                 document.getElementById('md-p2').innerText = `₹${pd.second}`;
@@ -588,6 +636,26 @@
                 
                 document.getElementById('md-rules').innerText = t.rules || 'Standard Free Fire rules apply.';
                 
+                // Room Details (only if joined and status is Live or Upcoming)
+                const joined = t.participants && t.participants[currentUser.uid];
+                const roomSection = document.getElementById('md-room-details');
+                if (joined && (t.status === 'Live' || t.status === 'Upcoming')) {
+                    roomSection.classList.remove('hidden');
+                    document.getElementById('md-room-id').innerText = t.roomId || 'Wait...';
+                    document.getElementById('md-room-pass').innerText = t.roomPassword || 'Wait...';
+                } else {
+                    roomSection.classList.add('hidden');
+                }
+
+                // Announcement
+                const annSection = document.getElementById('md-announcement-section');
+                if (t.announcement) {
+                    annSection.classList.remove('hidden');
+                    document.getElementById('md-announcement').innerText = t.announcement;
+                } else {
+                    annSection.classList.add('hidden');
+                }
+
                 // Comments
                 const comments = t.adminComments || t.pinnedComments || {};
                 const commentsList = Object.values(comments).sort((a,b) => b.timestamp - a.timestamp);
@@ -950,6 +1018,14 @@
                 if(!t) return;
                 document.getElementById('results-modal-title').innerText = t.title + " Results";
                 
+                const imgContainer = document.getElementById('results-image-container');
+                if (t.resultImageUrl) {
+                    imgContainer.classList.remove('hidden');
+                    document.getElementById('results-image').src = t.resultImageUrl;
+                } else {
+                    imgContainer.classList.add('hidden');
+                }
+
                 const participants = t.participants || {};
                 const html = Object.keys(participants).map(uid => {
                     const p = participants[uid];

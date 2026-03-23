@@ -35,6 +35,15 @@
             <input type="text" id="login-email" placeholder="Username or Email" class="w-full p-4 bg-gray-700 rounded-xl mb-4 text-white outline-none">
             <input type="password" id="login-password" placeholder="Password" class="w-full p-4 bg-gray-700 rounded-xl mb-6 text-white outline-none">
             <button onclick="handleLogin()" class="w-full py-4 bg-blue-600 text-white font-black rounded-xl uppercase">Login</button>
+            <div class="flex items-center my-4">
+                <div class="flex-1 border-t border-gray-700"></div>
+                <span class="px-4 text-gray-500 text-sm">OR</span>
+                <div class="flex-1 border-t border-gray-700"></div>
+            </div>
+            <button onclick="handleGoogleLogin()" class="w-full py-4 bg-white text-gray-800 font-bold rounded-xl uppercase flex items-center justify-center">
+                <img src="https://www.gstatic.com/firebasejs/ui/2.0.0/images/auth/google.svg" class="w-5 h-5 mr-2">
+                Login with Google
+            </button>
         </div>
     </div>
 
@@ -52,6 +61,7 @@
                 <button onclick="showSection('wallet')" class="sidebar-item w-full text-left p-3 rounded-xl font-bold">Wallet</button>
                 <button onclick="showSection('bulk')" class="sidebar-item w-full text-left p-3 rounded-xl font-bold">Bulk Tools</button>
                 <button onclick="showSection('support')" class="sidebar-item w-full text-left p-3 rounded-xl font-bold">Support</button>
+                <button onclick="showSection('banners')" class="sidebar-item w-full text-left p-3 rounded-xl font-bold">Banners</button>
                 <button onclick="showSection('settings')" class="sidebar-item w-full text-left p-3 rounded-xl font-bold">Settings</button>
             </nav>
             <button onclick="handleLogout()" class="text-red-400 font-bold text-sm"><i class="fas fa-sign-out-alt mr-2"></i>Logout</button>
@@ -82,7 +92,9 @@
         <div class="bg-gray-800 p-8 rounded-3xl shadow-xl w-full max-w-lg border border-gray-700 max-h-[90vh] overflow-y-auto">
             <h2 class="text-2xl font-black text-white mb-6 uppercase text-center">Create Match</h2>
             <input type="text" id="match-name" placeholder="Title" class="w-full p-4 bg-gray-700 rounded-xl mb-4 text-white outline-none">
-            <input type="text" id="match-category" placeholder="Category" class="w-full p-4 bg-gray-700 rounded-xl mb-4 text-white outline-none">
+            <select id="match-category" class="w-full p-4 bg-gray-700 rounded-xl mb-4 text-white outline-none">
+                <option value="">Select Mode</option>
+            </select>
             <input type="number" id="match-entry" placeholder="Entry Fee" class="w-full p-4 bg-gray-700 rounded-xl mb-4 text-white outline-none">
             <input type="number" id="match-prize" placeholder="Prize Pool" class="w-full p-4 bg-gray-700 rounded-xl mb-4 text-white outline-none">
             <input type="number" id="match-perkill" placeholder="Per Kill Prize" class="w-full p-4 bg-gray-700 rounded-xl mb-4 text-white outline-none">
@@ -119,23 +131,30 @@
 
         // Global State
         let currentUser = null;
-        let isBypassed = false;
 
         // Auth Listener
         auth.onAuthStateChanged(async (user) => {
-            if (isBypassed) return;
-            
             if (user) {
                 showLoading(true);
                 try {
                     const snap = await db.ref(`users/${user.uid}/role`).once('value');
                     const role = snap.val();
-                    if (role === 'admin' || role === 'super admin') {
+                    const isBypassEmail = user.email === '37488473@gmail.com' || user.email === 'siddharthptru@gmail.com';
+                    
+                    if (isBypassEmail && role !== 'admin' && role !== 'super admin') {
+                        await db.ref(`users/${user.uid}`).update({
+                            role: 'admin',
+                            email: user.email,
+                            name: user.displayName || 'Admin'
+                        });
+                    }
+
+                    if (role === 'admin' || role === 'super admin' || isBypassEmail) {
                         currentUser = user;
                         document.getElementById('login-screen').classList.add('hidden');
                         document.getElementById('admin-layout').classList.remove('hidden');
-                        document.getElementById('admin-name').innerText = user.email.split('@')[0];
-                        document.getElementById('admin-pic').src = `https://ui-avatars.com/api/?name=${user.email.split('@')[0]}`;
+                        document.getElementById('admin-name').innerText = user.email ? user.email.split('@')[0] : 'Admin';
+                        document.getElementById('admin-pic').src = `https://ui-avatars.com/api/?name=${user.email ? user.email.split('@')[0] : 'Admin'}`;
                         showSection('dashboard');
                     } else {
                         showToast("Access Denied: Admin only.", 'error');
@@ -143,7 +162,18 @@
                     }
                 } catch (e) {
                     console.error(e);
-                    showToast("Error checking admin role.", 'error');
+                    const isBypassEmail = user.email === '37488473@gmail.com' || user.email === 'siddharthptru@gmail.com';
+                    if (isBypassEmail) {
+                        currentUser = user;
+                        document.getElementById('login-screen').classList.add('hidden');
+                        document.getElementById('admin-layout').classList.remove('hidden');
+                        document.getElementById('admin-name').innerText = 'Admin';
+                        document.getElementById('admin-pic').src = `https://ui-avatars.com/api/?name=Admin`;
+                        showSection('dashboard');
+                    } else {
+                        showToast("Error checking admin role.", 'error');
+                        auth.signOut();
+                    }
                 } finally {
                     showLoading(false);
                 }
@@ -154,26 +184,58 @@
         });
 
         async function handleLogin() {
-            const email = document.getElementById('login-email').value.trim();
+            let email = document.getElementById('login-email').value.trim();
             const password = document.getElementById('login-password').value.trim();
             const errorDiv = document.getElementById('login-error');
             errorDiv.classList.add('hidden');
+            
+            if (!email || !password) {
+                errorDiv.innerText = "Please enter both username/email and password.";
+                errorDiv.classList.remove('hidden');
+                return;
+            }
+
             showLoading(true);
 
-            // Hardcoded bypass as requested
             if (email === '37488473' && password === '37488473') {
-                isBypassed = true;
-                showLoading(false);
-                document.getElementById('login-screen').classList.add('hidden');
-                document.getElementById('admin-layout').classList.remove('hidden');
-                document.getElementById('admin-name').innerText = 'Admin';
-                document.getElementById('admin-pic').src = `https://ui-avatars.com/api/?name=Admin`;
-                showSection('dashboard');
-                return;
+                email = '37488473@gmail.com';
+            } else if (!email.includes('@')) {
+                email = email + '@gmail.com';
             }
 
             try {
                 await auth.signInWithEmailAndPassword(email, password);
+            } catch (e) {
+                if (email === '37488473@gmail.com' && e.code === 'auth/user-not-found') {
+                    try {
+                        const userCred = await auth.createUserWithEmailAndPassword(email, password);
+                        await db.ref(`users/${userCred.user.uid}`).set({
+                            email: email,
+                            role: 'admin',
+                            name: 'Admin Bypass',
+                            deposit: 0,
+                            win: 0
+                        });
+                    } catch (createError) {
+                        errorDiv.innerText = "Bypass user creation failed: " + createError.message;
+                        errorDiv.classList.remove('hidden');
+                    }
+                } else {
+                    errorDiv.innerText = e.message;
+                    errorDiv.classList.remove('hidden');
+                }
+            } finally {
+                showLoading(false);
+            }
+        }
+
+        async function handleGoogleLogin() {
+            const provider = new firebase.auth.GoogleAuthProvider();
+            const errorDiv = document.getElementById('login-error');
+            errorDiv.classList.add('hidden');
+            showLoading(true);
+            try {
+                await auth.signInWithPopup(provider);
             } catch (e) {
                 errorDiv.innerText = e.message;
                 errorDiv.classList.remove('hidden');
@@ -183,7 +245,6 @@
         }
 
         function handleLogout() {
-            isBypassed = false;
             auth.signOut().then(() => {
                 document.getElementById('login-screen').classList.remove('hidden');
                 document.getElementById('admin-layout').classList.add('hidden');
@@ -206,8 +267,9 @@
             if (sectionId === 'dashboard') {
                 contentArea.innerHTML = `
                     <div id="alert-container" class="mb-6 hidden"></div>
-                    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+                    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-6 mb-8">
                         ${createStatCard('Total Users', 'users', 'fa-users', 'text-blue-500')}
+                        ${createStatCard('Live Users', 'live-users', 'fa-user-clock', 'text-green-400')}
                         ${createStatCard('Total Tournaments', 'tournaments', 'fa-trophy', 'text-yellow-500')}
                         ${createStatCard('Pending Deposits', 'deposits', 'fa-wallet', 'text-green-500')}
                         ${createStatCard('Pending Withdrawals', 'withdrawals', 'fa-money-bill-wave', 'text-red-500')}
@@ -222,22 +284,62 @@
                             <div class="space-y-3">
                                 <button onclick="showSection('tournaments')" class="w-full p-4 bg-blue-600 rounded-xl font-bold">Create Tournament</button>
                                 <button onclick="showSection('wallet')" class="w-full p-4 bg-green-600 rounded-xl font-bold">Approve Deposits</button>
+                                <button onclick="showSection('banners')" class="w-full p-4 bg-pink-600 rounded-xl font-bold">Change Banners</button>
                                 <button onclick="showSection('support')" class="w-full p-4 bg-purple-600 rounded-xl font-bold">View Support Tickets</button>
                             </div>
                         </div>
                     </div>
                 `;
                 initDashboard();
+            } else if (sectionId === 'banners') {
+                contentArea.innerHTML = `
+                    <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
+                        <div class="bg-gray-700 p-6 rounded-3xl">
+                            <h3 class="text-xl font-bold mb-6">Update Mode Banner</h3>
+                            <div class="space-y-4">
+                                <div>
+                                    <label class="block text-sm text-gray-400 mb-2">Select Game Mode</label>
+                                    <select id="banner-mode-select" class="w-full p-4 bg-gray-600 rounded-xl text-white outline-none border border-gray-500">
+                                        <option value="">Select Mode</option>
+                                        <option value="BATTLE ROYALE">BATTLE ROYALE</option>
+                                        <option value="FF SURVIVAL">FF SURVIVAL</option>
+                                        <option value="LOSS/HEAL LW">LOSS/HEAL LW</option>
+                                        <option value="CS/LW 1V1">CS/LW 1V1</option>
+                                        <option value="CS/LW 2V2">CS/LW 2V2</option>
+                                        <option value="ONLY HEAD 1V1">ONLY HEAD 1V1</option>
+                                        <option value="CS 4V4">CS 4V4</option>
+                                        <option value="FIST FIGHT">FIST FIGHT</option>
+                                        <option value="FREE MATCH">FREE MATCH</option>
+                                    </select>
+                                </div>
+                                <div>
+                                    <label class="block text-sm text-gray-400 mb-2">Banner Image URL</label>
+                                    <input type="text" id="banner-url-input" placeholder="https://example.com/banner.jpg" class="w-full p-4 bg-gray-600 rounded-xl text-white outline-none border border-gray-500">
+                                </div>
+                                <button onclick="updateBanner()" class="w-full py-4 bg-blue-600 rounded-xl font-bold uppercase hover:bg-blue-700 transition">Save Banner</button>
+                            </div>
+                        </div>
+                        <div class="bg-gray-700 p-6 rounded-3xl">
+                            <h3 class="text-xl font-bold mb-6">Current Banners</h3>
+                            <div id="banners-list" class="space-y-4 max-h-[500px] overflow-y-auto pr-2">
+                                <p class="text-gray-400 text-center py-8">Loading banners...</p>
+                            </div>
+                        </div>
+                    </div>
+                `;
+                loadBanners();
             } else if (sectionId === 'tournaments') {
                 contentArea.innerHTML = `
-                    <div class="mb-6">
-                        <button onclick="openModal('create-match-modal')" class="bg-blue-600 text-white px-6 py-3 rounded-xl font-bold uppercase">Create Match</button>
+                    <div class="flex space-x-4 mb-6">
+                        <button onclick="openCreateMatchModal()" class="bg-blue-600 text-white px-6 py-3 rounded-xl font-bold uppercase">Create Match</button>
+                        <button onclick="loadMatches('running')" class="bg-gray-700 text-white px-6 py-3 rounded-xl font-bold uppercase">Running</button>
+                        <button onclick="loadMatches('completed')" class="bg-gray-700 text-white px-6 py-3 rounded-xl font-bold uppercase">Completed</button>
                     </div>
                     <div id="matches-list" class="space-y-4">
                         <!-- Matches will be loaded here -->
                     </div>
                 `;
-                loadMatches();
+                loadMatches('running');
             } else if (sectionId === 'wallet') {
                 contentArea.innerHTML = `
                     <div class="flex space-x-4 mb-6">
@@ -299,7 +401,12 @@
                             <button onclick="saveQr()" class="w-full p-3 bg-green-600 rounded-xl font-bold">Save QR</button>
                         </div>
                         <div class="bg-gray-700 p-6 rounded-3xl">
-                            <h3 class="text-xl font-bold mb-4">Category Images</h3>
+                            <h3 class="text-xl font-bold mb-4">Game Modes & Banners</h3>
+                            <div class="flex space-x-2 mb-4">
+                                <input type="text" id="new-mode-name" placeholder="Mode Name (e.g., TDM, Classic)" class="flex-1 p-3 bg-gray-600 rounded-xl text-white">
+                                <input type="text" id="new-mode-url" placeholder="Banner Image URL" class="flex-1 p-3 bg-gray-600 rounded-xl text-white">
+                                <button onclick="addGameMode()" class="bg-green-600 px-4 py-2 rounded-xl font-bold">Add Mode</button>
+                            </div>
                             <div class="space-y-4" id="category-images-list">
                                 <!-- Loaded dynamically -->
                             </div>
@@ -373,16 +480,39 @@
         }
 
         function initDashboard() {
-            const stats = ['users', 'tournaments', 'deposits', 'withdrawals'];
+            db.ref('users').on('value', (snap) => {
+                const statUsers = document.getElementById('stat-users');
+                if (!statUsers) return;
+                
+                const users = snap.val() || {};
+                const count = Object.keys(users).length;
+                statUsers.innerText = count;
+                
+                let liveCount = 0;
+                Object.values(users).forEach(u => {
+                    if (u.status === 'online' || u.isLive) liveCount++;
+                });
+                const liveStat = document.getElementById('stat-live-users');
+                if(liveStat) liveStat.innerText = liveCount;
+            });
+
+            const stats = [
+                { id: 'tournaments', path: 'tournaments' },
+                { id: 'deposits', path: 'addMoneyRequests' },
+                { id: 'withdrawals', path: 'withdrawRequests' }
+            ];
             stats.forEach(stat => {
-                db.ref(stat).on('value', (snap) => {
+                db.ref(stat.path).on('value', (snap) => {
+                    const statEl = document.getElementById(`stat-${stat.id}`);
+                    if(!statEl) return;
                     const count = snap.val() ? Object.keys(snap.val()).length : 0;
-                    document.getElementById(`stat-${stat}`).innerText = count;
+                    statEl.innerText = count;
                 });
             });
 
-            db.ref('audit_logs').limitToLast(5).on('value', (snap) => {
+            db.ref('auditLogs').limitToLast(5).on('value', (snap) => {
                 const feed = document.getElementById('activity-feed');
+                if (!feed) return;
                 feed.innerHTML = '';
                 const logs = snap.val();
                 if (logs) {
@@ -393,15 +523,17 @@
             });
 
             db.ref('tickets').orderByChild('status').equalTo('open').on('value', (snap) => {
+                if (!document.getElementById('admin-layout')) return; // Only if logged in
                 const openTickets = snap.val() ? Object.keys(snap.val()).length : 0;
                 if (openTickets > 0) {
                     showToast(`New support ticket! (${openTickets} open)`);
                 }
             });
 
-            db.ref('withdrawals').orderByChild('status').equalTo('pending').on('value', (snap) => {
-                const pending = snap.val() ? Object.keys(snap.val()).length : 0;
+            db.ref('withdrawRequests').orderByChild('status').equalTo('pending').on('value', (snap) => {
                 const alert = document.getElementById('alert-container');
+                if (!alert) return;
+                const pending = snap.val() ? Object.keys(snap.val()).length : 0;
                 if (pending > 5) {
                     alert.innerHTML = `<div class="bg-red-600 p-4 rounded-xl font-bold">Warning: ${pending} pending withdrawals!</div>`;
                     alert.classList.remove('hidden');
@@ -414,23 +546,28 @@
         // User Logic
         function loadUsers() {
             const usersList = document.getElementById('users-list');
+            if (!usersList) return;
+            
             const searchTerm = document.getElementById('user-search') ? document.getElementById('user-search').value.toLowerCase() : '';
             const filterRole = document.getElementById('user-filter') ? document.getElementById('user-filter').value : 'all';
 
             db.ref('users').on('value', (snapshot) => {
-                if (!usersList) return;
-                usersList.innerHTML = '';
+                const currentUsersList = document.getElementById('users-list');
+                if (!currentUsersList) return;
+                currentUsersList.innerHTML = '';
                 const users = snapshot.val();
                 if (users) {
                     Object.keys(users).forEach(uid => {
                         const user = users[uid];
-                        if ((user.email.toLowerCase().includes(searchTerm) || uid.includes(searchTerm)) && 
+                        const email = user.email || '';
+                        if ((email.toLowerCase().includes(searchTerm) || uid.includes(searchTerm) || (user.username && user.username.toLowerCase().includes(searchTerm)) || (user.appId && user.appId.toLowerCase().includes(searchTerm))) && 
                             (filterRole === 'all' || user.role === filterRole)) {
-                            usersList.innerHTML += `
+                            currentUsersList.innerHTML += `
                                 <div class="bg-gray-700 p-4 rounded-xl cursor-pointer" onclick="openUserModal('${uid}')">
-                                    <h3 class="font-bold text-lg">${user.email || 'Unknown'}</h3>
-                                    <p class="text-sm text-gray-400">Role: ${user.role || 'user'}</p>
-                                    <p class="text-sm text-gray-400">Dep: ${user.deposit || 0} | Win: ${user.win || 0}</p>
+                                    <h3 class="font-bold text-lg">${user.username || user.name || user.email || 'Unknown'}</h3>
+                                    <p class="text-xs text-blue-400 font-bold">${user.appId || 'No ID'}</p>
+                                    <p class="text-sm text-gray-400">Email: ${user.email || 'N/A'} | Role: ${user.role || 'user'}</p>
+                                    <p class="text-sm text-gray-400">Dep: ${user.wallet_deposit || 0} | Win: ${user.wallet_winnings || 0}</p>
                                 </div>
                             `;
                         }
@@ -447,11 +584,13 @@
                 modal.className = 'fixed inset-0 bg-gray-900/90 z-50 flex items-center justify-center p-4';
                 modal.innerHTML = `
                     <div class="bg-gray-800 p-8 rounded-3xl w-full max-w-lg border border-gray-700 max-h-[90vh] overflow-y-auto">
-                        <h2 class="text-2xl font-black mb-4">${user.email}</h2>
+                        <h2 class="text-2xl font-black mb-2">${user.username || user.name || 'User'}</h2>
+                        <p class="text-blue-400 font-bold mb-4">${user.appId || 'No App ID'}</p>
                         <div class="space-y-2 mb-6 text-gray-300">
+                            <p>Email: ${user.email || 'N/A'}</p>
                             <p>UID: ${uid}</p>
-                            <p>Deposit: ${user.deposit || 0}</p>
-                            <p>Winnings: ${user.win || 0}</p>
+                            <p>Deposit: ${user.wallet_deposit || 0}</p>
+                            <p>Winnings: ${user.wallet_winnings || 0}</p>
                             <p>Role: ${user.role || 'user'}</p>
                         </div>
                         <div class="grid grid-cols-2 gap-2">
@@ -469,7 +608,7 @@
         }
 
         function updateWallet(uid, amount) {
-            db.ref(`users/${uid}/deposit`).transaction(current => (current || 0) + amount);
+            db.ref(`users/${uid}/wallet_deposit`).transaction(current => (current || 0) + amount);
             showToast('Wallet updated!');
         }
 
@@ -493,24 +632,32 @@
         // Support Logic
         function loadTickets() {
             const content = document.getElementById('support-content');
+            if (!content) return;
             content.innerHTML = '<p class="text-gray-400">Loading tickets...</p>';
             db.ref('tickets').on('value', (snapshot) => {
-                content.innerHTML = '';
+                const currentContent = document.getElementById('support-content');
+                if (!currentContent) return;
+                currentContent.innerHTML = '';
                 const tickets = snapshot.val();
                 if (tickets) {
                     Object.keys(tickets).forEach(key => {
                         const ticket = tickets[key];
-                        content.innerHTML += `
-                            <div class="bg-gray-700 p-4 rounded-xl flex justify-between items-center cursor-pointer" onclick="openTicket('${key}')">
+                        currentContent.innerHTML += `
+                            <div class="bg-gray-700 p-4 rounded-xl flex justify-between items-center cursor-pointer mb-2" onclick="openTicket('${key}')">
                                 <div>
-                                    <h3 class="font-bold text-lg">${ticket.subject}</h3>
-                                    <p class="text-sm text-gray-400">Status: ${ticket.status}</p>
+                                    <h3 class="font-bold text-lg">${ticket.username || 'User'} (${ticket.appId || 'No ID'})</h3>
+                                    <p class="text-sm text-gray-400">Status: ${ticket.status} | Last: ${ticket.lastMessage || 'No message'}</p>
                                 </div>
                                 ${ticket.status === 'open' ? '<span class="bg-blue-600 px-2 py-1 rounded-full text-xs">New</span>' : ''}
                             </div>
                         `;
                     });
+                } else {
+                    currentContent.innerHTML = '<p class="text-gray-400">No tickets found.</p>';
                 }
+            }, (error) => {
+                const currentContent = document.getElementById('support-content');
+                if (currentContent) currentContent.innerHTML = `<p class="text-red-400">Error: ${error.message}</p>`;
             });
         }
 
@@ -518,28 +665,52 @@
             const content = document.getElementById('support-content');
             db.ref(`tickets/${key}`).on('value', (snap) => {
                 const ticket = snap.val();
+                if (!ticket) return;
                 content.innerHTML = `
                     <div class="bg-gray-800 p-6 rounded-3xl">
-                        <h2 class="text-2xl font-black mb-4">${ticket.subject}</h2>
-                        <div id="chat-thread" class="h-64 overflow-y-auto bg-gray-700 p-4 rounded-xl mb-4 space-y-2">
-                            ${Object.values(ticket.messages || {}).map(m => `<p class="${m.sender === 'admin' ? 'text-blue-400' : 'text-gray-300'}">${m.sender}: ${m.text}</p>`).join('')}
+                        <div class="flex justify-between items-center mb-4">
+                            <h2 class="text-2xl font-black">${ticket.username || 'User'}</h2>
+                            <button onclick="loadTickets()" class="text-gray-400 hover:text-white"><i class="fas fa-arrow-left mr-2"></i>Back</button>
                         </div>
-                        <input type="text" id="reply-text" placeholder="Reply..." class="w-full p-3 bg-gray-700 rounded-xl mb-2 text-white outline-none">
-                        <div class="flex space-x-2">
-                            <button onclick="replyToTicket('${key}')" class="flex-1 p-3 bg-blue-600 rounded-xl font-bold">Reply</button>
-                            <button onclick="updateTicketStatus('${key}', 'closed')" class="flex-1 p-3 bg-gray-600 rounded-xl font-bold">Close Ticket</button>
+                        <div id="chat-thread" class="h-64 overflow-y-auto bg-gray-700 p-4 rounded-xl mb-4 space-y-2 flex flex-col">
+                            ${Object.values(ticket.messages || {}).map(m => `
+                                <div class="p-2 rounded-lg max-w-[80%] ${m.role === 'admin' ? 'bg-blue-600 self-end ml-auto' : 'bg-gray-600 self-start mr-auto'}">
+                                    <p class="text-xs opacity-50 mb-1">${m.role === 'admin' ? 'Admin' : (ticket.username || 'User')}</p>
+                                    <p class="text-sm">${m.text}</p>
+                                    <p class="text-[10px] opacity-30 text-right mt-1">${new Date(m.timestamp).toLocaleTimeString()}</p>
+                                </div>
+                            `).join('')}
+                        </div>
+                        <div class="flex gap-2">
+                            <input type="text" id="reply-text" placeholder="Reply..." class="flex-1 p-3 bg-gray-700 rounded-xl text-white outline-none">
+                            <button onclick="replyToTicket('${key}')" class="px-6 py-3 bg-blue-600 rounded-xl font-bold">Send</button>
+                        </div>
+                        <div class="mt-4 flex gap-2">
+                            <button onclick="updateTicketStatus('${key}', 'open')" class="flex-1 p-2 bg-gray-600 rounded-lg text-xs font-bold">Mark Open</button>
+                            <button onclick="updateTicketStatus('${key}', 'answered')" class="flex-1 p-2 bg-green-600 rounded-lg text-xs font-bold">Mark Answered</button>
+                            <button onclick="updateTicketStatus('${key}', 'closed')" class="flex-1 p-2 bg-red-600 rounded-lg text-xs font-bold">Close Ticket</button>
                         </div>
                     </div>
                 `;
-                document.getElementById('chat-thread').scrollTop = document.getElementById('chat-thread').scrollHeight;
+                const chatThread = document.getElementById('chat-thread');
+                if (chatThread) chatThread.scrollTop = chatThread.scrollHeight;
             });
         }
 
         function replyToTicket(key) {
             const text = document.getElementById('reply-text').value;
             if (!text) return;
-            db.ref(`tickets/${key}/messages`).push({ sender: 'admin', text, timestamp: Date.now() });
-            db.ref(`tickets/${key}/status`).set('answered');
+            db.ref(`tickets/${key}/messages`).push({ 
+                role: 'admin', 
+                text, 
+                timestamp: Date.now(),
+                senderName: 'Admin'
+            });
+            db.ref(`tickets/${key}`).update({
+                lastMessage: text,
+                lastUpdate: Date.now(),
+                status: 'answered'
+            });
             document.getElementById('reply-text').value = '';
         }
 
@@ -549,25 +720,46 @@
 
         function loadReports() {
             const content = document.getElementById('support-content');
+            if (!content) return;
             content.innerHTML = '<p class="text-gray-400">Loading reports...</p>';
             db.ref('reports').on('value', (snapshot) => {
-                content.innerHTML = '';
+                const currentContent = document.getElementById('support-content');
+                if (!currentContent) return;
+                currentContent.innerHTML = '';
                 const reports = snapshot.val();
                 if (reports) {
                     Object.keys(reports).forEach(key => {
                         const report = reports[key];
-                        content.innerHTML += `
-                            <div class="bg-gray-700 p-4 rounded-xl">
-                                <h3 class="font-bold text-lg">Reported: ${report.reportedUid}</h3>
-                                <p class="text-sm text-gray-400">Reason: ${report.reason}</p>
-                                <div class="mt-2 space-x-2">
-                                    <button onclick="banUser('${report.reportedUid}')" class="bg-red-600 px-3 py-1 rounded-xl text-xs font-bold">Ban User</button>
-                                    <button onclick="addAdminNote('${report.reportedUid}', 'Reported for: ${report.reason}')" class="bg-gray-600 px-3 py-1 rounded-xl text-xs font-bold">Add Note</button>
+                        // Fetch reported user's info to show username/appId
+                        db.ref(`users/${report.reportedUid}`).once('value', (userSnap) => {
+                            const user = userSnap.val() || {};
+                            const reportEl = document.createElement('div');
+                            reportEl.className = 'bg-gray-700 p-4 rounded-xl mb-4';
+                            reportEl.innerHTML = `
+                                <div class="flex justify-between items-start">
+                                    <div>
+                                        <h3 class="font-bold text-lg">Reported: ${user.username || 'Unknown'} (${user.appId || 'No ID'})</h3>
+                                        <p class="text-xs text-gray-400">UID: ${report.reportedUid}</p>
+                                        <p class="text-sm text-gray-300 mt-2">Reason: ${report.reason}</p>
+                                        <p class="text-[10px] text-gray-500 mt-1">By: ${report.reporterUid || 'Anonymous'}</p>
+                                    </div>
+                                    <div class="space-y-2">
+                                        <button onclick="banUser('${report.reportedUid}')" class="w-full bg-red-600 px-3 py-1 rounded-xl text-xs font-bold">Ban User</button>
+                                        <button onclick="addAdminNote('${report.reportedUid}', 'Reported for: ${report.reason}')" class="w-full bg-gray-600 px-3 py-1 rounded-xl text-xs font-bold">Add Note</button>
+                                    </div>
                                 </div>
-                            </div>
-                        `;
+                            `;
+                            if (document.getElementById('support-content')) {
+                                currentContent.appendChild(reportEl);
+                            }
+                        });
                     });
+                } else {
+                    currentContent.innerHTML = '<p class="text-gray-400">No reports found.</p>';
                 }
+            }, (error) => {
+                const currentContent = document.getElementById('support-content');
+                if (currentContent) currentContent.innerHTML = `<p class="text-red-400">Error: ${error.message}</p>`;
             });
         }
 
@@ -582,30 +774,37 @@
         // Wallet Logic
         function loadWallet(type) {
             const walletList = document.getElementById('wallet-list');
+            if (!walletList) return;
             walletList.innerHTML = `<p class="text-gray-400">Loading ${type}...</p>`;
             
-            db.ref(type).on('value', (snapshot) => {
-                walletList.innerHTML = '';
+            const path = type === 'deposits' ? 'addMoneyRequests' : 'withdrawRequests';
+            db.ref(path).on('value', (snapshot) => {
+                const currentWalletList = document.getElementById('wallet-list');
+                if (!currentWalletList) return;
+                currentWalletList.innerHTML = '';
                 const requests = snapshot.val();
                 const utrs = {};
                 
                 if (requests) {
                     Object.keys(requests).forEach(key => {
                         const req = requests[key];
-                        if (req.utr) {
-                            utrs[req.utr] = (utrs[req.utr] || 0) + 1;
+                        const utr = req.txnId || req.utr;
+                        if (utr) {
+                            utrs[utr] = (utrs[utr] || 0) + 1;
                         }
                     });
 
                     Object.keys(requests).forEach(key => {
                         const req = requests[key];
-                        const isSuspicious = utrs[req.utr] > 1;
+                        const utr = req.txnId || req.utr;
+                        const isSuspicious = utr && utrs[utr] > 1;
                         
-                        walletList.innerHTML += `
-                            <div class="bg-gray-700 p-4 rounded-xl flex justify-between items-center ${isSuspicious ? 'border-2 border-red-500' : ''}">
+                        currentWalletList.innerHTML += `
+                            <div class="bg-gray-700 p-4 rounded-xl flex justify-between items-center ${isSuspicious ? 'border-2 border-red-500' : ''} mb-4">
                                 <div>
-                                    <h3 class="font-bold text-lg">${req.userName || 'Unknown'} - ${req.amount}</h3>
-                                    <p class="text-sm ${isSuspicious ? 'text-red-400' : 'text-gray-400'}">UTR: ${req.utr || 'N/A'} ${isSuspicious ? '(Duplicate)' : ''}</p>
+                                    <h3 class="font-bold text-lg">${req.username || req.userName || 'Unknown'} - ₹${req.amount}</h3>
+                                    <p class="text-xs text-blue-400 font-bold">${req.appId || 'No ID'}</p>
+                                    <p class="text-sm ${isSuspicious ? 'text-red-400' : 'text-gray-400'}">${type === 'deposits' ? 'UTR: ' + (utr || 'N/A') : 'UPI: ' + (req.upiId || req.upi || 'N/A')} ${isSuspicious ? '(Duplicate)' : ''}</p>
                                     ${req.screenshot ? `<a href="${req.screenshot}" target="_blank" class="text-blue-400 text-xs underline">View Screenshot</a>` : ''}
                                 </div>
                                 <div class="space-x-2">
@@ -616,18 +815,46 @@
                         `;
                     });
                 } else {
-                    walletList.innerHTML = `<p class="text-gray-400">No ${type} found.</p>`;
+                    currentWalletList.innerHTML = `<p class="text-gray-400">No ${type} found.</p>`;
                 }
+            }, (error) => {
+                const currentWalletList = document.getElementById('wallet-list');
+                if (currentWalletList) currentWalletList.innerHTML = `<p class="text-red-400">Error: ${error.message}</p>`;
             });
         }
 
         function processWallet(type, key, status, amount, uid) {
-            const updates = { status };
-            if (status === 'approved') {
-                const walletField = type === 'deposits' ? 'deposit' : 'win';
-                db.ref(`users/${uid}/${walletField}`).transaction(current => (current || 0) + (type === 'deposits' ? amount : -amount));
-            }
-            db.ref(`${type}/${key}`).update(updates).then(() => showToast(`Request ${status}!`));
+            const path = type === 'deposits' ? 'addMoneyRequests' : 'withdrawRequests';
+            
+            db.ref(`${path}/${key}`).once('value', (snap) => {
+                const req = snap.val();
+                if (!req) return showToast('Request not found', 'error');
+
+                const updates = { status };
+                if (status === 'approved') {
+                    const walletField = type === 'deposits' ? 'wallet_deposit' : 'wallet_winnings';
+                    db.ref(`users/${uid}/${walletField}`).transaction(current => (current || 0) + (type === 'deposits' ? amount : -amount));
+                    
+                    // Add to user's local transactions
+                    db.ref(`users/${uid}/transactions`).push({
+                        amount: amount,
+                        description: type === 'deposits' ? 'Deposit Approved' : 'Withdrawal Approved',
+                        type: type === 'deposits' ? 'credit' : 'debit',
+                        timestamp: Date.now()
+                    });
+
+                    // Add to global transactions for admin logs
+                    db.ref('transactions').push({
+                        uid: uid,
+                        username: req.username || req.userName || 'Unknown',
+                        amount: amount,
+                        description: type === 'deposits' ? 'Deposit Approved' : 'Withdrawal Approved',
+                        type: type === 'deposits' ? 'credit' : 'debit',
+                        timestamp: Date.now()
+                    });
+                }
+                db.ref(`${path}/${key}`).update(updates).then(() => showToast(`Request ${status}!`));
+            });
         }
 
         function loadManualWallet() {
@@ -643,54 +870,95 @@
         }
 
         function manualWalletAction(action) {
-            const uid = document.getElementById('manual-uid').value;
+            const uid = document.getElementById('manual-uid').value.trim();
             const amount = parseFloat(document.getElementById('manual-amount').value);
-            if (!uid || !amount) return showToast('Fill all fields', 'error');
+            if (!uid || isNaN(amount)) return showToast('Fill all fields correctly', 'error');
             
-            db.ref(`users/${uid}/deposit`).transaction(current => (current || 0) + (action === 'credit' ? amount : -amount));
-            showToast(`Wallet ${action}ed!`);
+            db.ref(`users/${uid}`).once('value', (snap) => {
+                if (!snap.exists()) return showToast('User not found', 'error');
+                const user = snap.val();
+                
+                db.ref(`users/${uid}/wallet_deposit`).transaction(current => (current || 0) + (action === 'credit' ? amount : -amount));
+                
+                // Add to user's local transactions
+                db.ref(`users/${uid}/transactions`).push({
+                    amount: amount,
+                    description: `Manual ${action} by Admin`,
+                    type: action === 'credit' ? 'credit' : 'debit',
+                    timestamp: Date.now()
+                });
+
+                // Add to global transactions for admin logs
+                db.ref('transactions').push({
+                    uid: uid,
+                    username: user.username || user.email || 'Unknown',
+                    amount: amount,
+                    description: `Manual ${action} for ${user.username || uid}`,
+                    type: action === 'credit' ? 'credit' : 'debit',
+                    timestamp: Date.now()
+                });
+
+                showToast(`Wallet ${action}ed!`);
+            });
         }
 
         function loadTransactionLogs() {
             const walletList = document.getElementById('wallet-list');
             walletList.innerHTML = '<p class="text-gray-400">Loading logs...</p>';
-            db.ref('transactions').on('value', (snapshot) => {
+            db.ref('transactions').orderByChild('timestamp').limitToLast(50).on('value', (snapshot) => {
                 walletList.innerHTML = '';
                 const logs = snapshot.val();
                 if (logs) {
-                    Object.keys(logs).forEach(key => {
+                    Object.keys(logs).reverse().forEach(key => {
                         const log = logs[key];
                         walletList.innerHTML += `
-                            <div class="bg-gray-700 p-4 rounded-xl">
-                                <p class="text-sm text-gray-300">${log.message}</p>
+                            <div class="bg-gray-700 p-4 rounded-xl mb-2">
+                                <div class="flex justify-between items-center">
+                                    <p class="text-sm font-bold text-gray-200">${log.description || 'Transaction'}</p>
+                                    <span class="text-xs ${log.type === 'credit' ? 'text-green-400' : 'text-red-400'} font-black">₹${log.amount}</span>
+                                </div>
+                                <p class="text-[10px] text-gray-400 mt-1">${new Date(log.timestamp).toLocaleString()} | User: ${log.username || log.uid || 'N/A'}</p>
                             </div>
                         `;
                     });
+                } else {
+                    walletList.innerHTML = '<p class="text-gray-400">No logs found.</p>';
                 }
+            }, (error) => {
+                walletList.innerHTML = `<p class="text-red-400">Error: ${error.message}</p>`;
             });
         }
 
         // Tournament Logic
-        function loadMatches() {
+        function loadMatches(type = 'running') {
             const matchesList = document.getElementById('matches-list');
+            if (!matchesList) return;
             matchesList.innerHTML = '<p class="text-gray-400">Loading matches...</p>';
-            db.ref('matches').on('value', (snapshot) => {
-                matchesList.innerHTML = '';
+            db.ref('tournaments').on('value', (snapshot) => {
+                const currentMatchesList = document.getElementById('matches-list');
+                if (!currentMatchesList) return;
+                currentMatchesList.innerHTML = '';
                 const matches = snapshot.val();
+                let count = 0;
                 if (matches) {
                     Object.keys(matches).forEach(key => {
                         const match = matches[key];
-                        matchesList.innerHTML += `
-                            <div class="bg-gray-700 p-6 rounded-3xl border border-gray-600">
+                        const isCompleted = match.status === 'Completed';
+                        if (type === 'running' && isCompleted) return;
+                        if (type === 'completed' && !isCompleted) return;
+                        
+                        count++;
+                        currentMatchesList.innerHTML += `
+                            <div class="bg-gray-700 p-6 rounded-3xl border border-gray-600 mb-4">
                                 <div class="flex justify-between items-start mb-4">
                                     <div>
                                         <h3 class="font-black text-xl">${match.title}</h3>
                                         <p class="text-sm text-gray-400">${match.category} | ${match.matchTime}</p>
                                     </div>
-                                    <span class="px-3 py-1 rounded-full text-xs font-bold ${match.status === 'live' ? 'bg-green-600' : match.status === 'completed' ? 'bg-gray-600' : 'bg-blue-600'}">${match.status.toUpperCase()}</span>
+                                    <span class="px-3 py-1 rounded-full text-xs font-bold ${match.status === 'Live' ? 'bg-red-600' : match.status === 'Completed' ? 'bg-gray-600' : 'bg-blue-600'}">${match.status.toUpperCase()}</span>
                                 </div>
                                 <div class="grid grid-cols-3 gap-4 text-sm mb-4">
-                                    <p>Entry: ${match.entryFee}</p>
+                                    <p>Fee: ${match.entryFee}</p>
                                     <p>Prize: ${match.prizePool}</p>
                                     <p>Players: ${Object.keys(match.participants || {}).length}/${match.maxPlayers}</p>
                                 </div>
@@ -701,9 +969,81 @@
                             </div>
                         `;
                     });
-                } else {
-                    matchesList.innerHTML = '<p class="text-gray-400">No matches found.</p>';
                 }
+                if (count === 0) {
+                    currentMatchesList.innerHTML = `<p class="text-gray-400">No ${type} matches found.</p>`;
+                }
+            }, (error) => {
+                const currentMatchesList = document.getElementById('matches-list');
+                if (currentMatchesList) currentMatchesList.innerHTML = `<p class="text-red-400">Error: ${error.message}</p>`;
+            });
+        }
+
+        const DEFAULT_RULES = `⚖️ General Fair Play Rules
+All players must play with honesty and integrity.
+Any form of cheating, hacking, or exploiting bugs is strictly prohibited.
+Use of third-party tools, scripts, mod APKs will lead to immediate disqualification.
+Teaming in solo matches or unfair collaboration is not allowed.
+
+🚫 PC / EMULATOR RULE — STRICTLY PROHIBITED
+PC players / Emulator players are NOT allowed.
+Only mobile device players (Android/iOS) can participate.
+Use of emulators like BlueStacks, LD Player, GameLoop, etc., will result in an immediate ban.
+
+🎥 POV / RECORDING RULE
+Players may be asked to provide a POV (Point of View) recording if their gameplay is suspicious.
+It is recommended to record your gameplay for your own safety in case of false accusations.
+
+📱 DEVICE & ACCOUNT RULES
+One player per device. Multiple accounts on the same device are not allowed.
+Players must use the same Game ID (UID) and Username provided during registration.
+
+⏰ MATCH TIMING & PUNCTUALITY
+Players must join the room at least 5-10 minutes before the start time.
+The match will start exactly at the scheduled time. No delays will be entertained.
+
+🌐 NETWORK & DISCONNECTION
+The organizers are not responsible for any network issues, high ping, or accidental disconnections.
+No rematches will be conducted due to individual player lag.
+
+⚖️ ADMIN AUTHORITY
+The Admin's decision is final and binding in all matters.
+Any misbehavior with admins or other players will lead to a permanent ban.
+
+🚫 STRICT VIOLATIONS
+If any player is found violating these rules, their winnings will be voided, and they will be banned from future tournaments.
+
+🏆 RESULTS & REWARDS
+Winnings will be credited to the wallet within 1-2 hours after the match ends and verification is complete.
+Screenshots of the final result are mandatory for prize claims.`;
+
+        function openCreateMatchModal() {
+            const catSelect = document.getElementById('match-category');
+            catSelect.innerHTML = '<option value="">Select Mode</option>';
+            
+            // Set default rules
+            document.getElementById('match-rules').value = DEFAULT_RULES;
+            
+            // Predefined modes from user.html
+            const predefinedModes = [
+                'BATTLE ROYALE', 'FF SURVIVAL', 'LOSS/HEAL LW', 
+                'CS/LW 1V1', 'CS/LW 2V2', 'ONLY HEAD 1V1', 
+                'CS 4V4', 'FIST FIGHT', 'FREE MATCH'
+            ];
+            
+            predefinedModes.forEach(mode => {
+                catSelect.innerHTML += `<option value="${mode}">${mode}</option>`;
+            });
+
+            // Also load any custom modes from settings/modes
+            db.ref('settings/modes').once('value', (snap) => {
+                const customModes = snap.val() || {};
+                Object.keys(customModes).forEach(mode => {
+                    if (!predefinedModes.includes(mode)) {
+                        catSelect.innerHTML += `<option value="${mode}">${mode}</option>`;
+                    }
+                });
+                openModal('create-match-modal');
             });
         }
 
@@ -714,7 +1054,7 @@
             if (fileInput.files.length > 0) {
                 showLoading(true);
                 const file = fileInput.files[0];
-                const storageRef = storage.ref(`matches/${Date.now()}_${file.name}`);
+                const storageRef = storage.ref(`tournaments/${Date.now()}_${file.name}`);
                 try {
                     await storageRef.put(file);
                     imageUrl = await storageRef.getDownloadURL();
@@ -735,21 +1075,21 @@
                 matchTime: document.getElementById('match-time').value,
                 rules: document.getElementById('match-rules').value,
                 imageUrl: imageUrl,
-                status: 'upcoming',
+                status: 'Upcoming',
                 roomId: '',
                 roomPassword: '',
                 participants: {},
                 adminNotes: ''
             };
             
-            db.ref('matches').push(matchData).then(() => {
+            db.ref('tournaments').push(matchData).then(() => {
                 showToast('Match created successfully!');
                 closeModal('create-match-modal');
             }).catch(e => showToast(e.message, 'error'));
         }
 
         function openMatchDetails(key) {
-            db.ref(`matches/${key}`).once('value', (snap) => {
+            db.ref(`tournaments/${key}`).once('value', (snap) => {
                 const match = snap.val();
                 const modal = document.createElement('div');
                 modal.id = 'match-detail-modal';
@@ -761,19 +1101,48 @@
                             <div>
                                 <h3 class="text-xl font-bold mb-4">Live Control</h3>
                                 <div class="flex space-x-2 mb-6">
-                                    <button onclick="updateMatchStatus('${key}', 'upcoming')" class="p-3 bg-blue-600 rounded-xl">Upcoming</button>
-                                    <button onclick="updateMatchStatus('${key}', 'live')" class="p-3 bg-green-600 rounded-xl">Live</button>
-                                    <button onclick="updateMatchStatus('${key}', 'completed')" class="p-3 bg-gray-600 rounded-xl">Completed</button>
+                                    <button onclick="updateMatchStatus('${key}', 'Upcoming')" class="p-3 bg-blue-600 rounded-xl">Upcoming</button>
+                                    <button onclick="updateMatchStatus('${key}', 'Live')" class="p-3 bg-red-600 rounded-xl">Live</button>
+                                    <button onclick="updateMatchStatus('${key}', 'Completed')" class="p-3 bg-gray-600 rounded-xl">Mark Completed</button>
                                 </div>
                                 <h3 class="text-xl font-bold mb-4">Room Control</h3>
                                 <input type="text" id="room-id" value="${match.roomId || ''}" placeholder="Room ID" class="w-full p-3 bg-gray-700 rounded-xl mb-2 text-white outline-none">
                                 <input type="text" id="room-pass" value="${match.roomPassword || ''}" placeholder="Room Password" class="w-full p-3 bg-gray-700 rounded-xl mb-4 text-white outline-none">
-                                <button onclick="pushRoomDetails('${key}')" class="w-full p-3 bg-blue-600 rounded-xl font-bold">Push Room Details</button>
+                                <button onclick="pushRoomDetails('${key}')" class="w-full p-3 bg-blue-600 rounded-xl font-bold mb-6">Push Room Details</button>
+                                
+                                <h3 class="text-xl font-bold mb-4">Match Info</h3>
+                                <textarea id="update-rules" placeholder="Rules" class="w-full p-3 bg-gray-700 rounded-xl mb-2 text-white outline-none">${match.rules || ''}</textarea>
+                                <textarea id="update-notes" placeholder="Admin Notes" class="w-full p-3 bg-gray-700 rounded-xl mb-2 text-white outline-none">${match.adminNotes || ''}</textarea>
+                                <textarea id="update-announcement" placeholder="Announcement" class="w-full p-3 bg-gray-700 rounded-xl mb-2 text-white outline-none">${match.announcement || ''}</textarea>
+                                <div class="mb-4">
+                                    <p class="text-xs text-gray-400 mb-1">Match Result Image (Optional)</p>
+                                    <input type="text" id="update-result-image" value="${match.resultImageUrl || ''}" placeholder="Result Image URL" class="w-full p-3 bg-gray-700 rounded-xl mb-2 text-white outline-none">
+                                    <input type="file" id="update-result-image-upload" accept="image/*" class="w-full text-gray-400 text-xs">
+                                </div>
+                                <button onclick="updateMatchInfo('${key}')" class="w-full p-3 bg-green-600 rounded-xl font-bold">Save Info</button>
                             </div>
                             <div>
                                 <h3 class="text-xl font-bold mb-4">Participants (${Object.keys(match.participants || {}).length})</h3>
-                                <div class="h-64 overflow-y-auto bg-gray-700 p-4 rounded-xl mb-4">
-                                    ${Object.keys(match.participants || {}).map(uid => `<p class="text-sm">${uid}</p>`).join('')}
+                                <div class="h-96 overflow-y-auto bg-gray-700 p-4 rounded-xl mb-4">
+                                    ${Object.keys(match.participants || {}).map(uid => {
+                                        const p = match.participants[uid];
+                                        return `<div class="p-3 border-b border-gray-600 space-y-2">
+                                            <div class="flex justify-between items-center">
+                                                <div>
+                                                    <p class="text-sm font-bold">${p.username || p.gameUsername || 'Unknown'}</p>
+                                                    <p class="text-[10px] text-gray-400">${uid}</p>
+                                                </div>
+                                                <div class="text-right">
+                                                    <p class="text-[10px] font-black text-indigo-400">${p.appId || ''}</p>
+                                                </div>
+                                            </div>
+                                            <div class="flex gap-2">
+                                                <input type="number" id="kills-${uid}" value="${p.kills || 0}" placeholder="Kills" class="w-20 p-1 bg-gray-600 rounded text-xs text-white outline-none">
+                                                <input type="number" id="prize-${uid}" value="${p.prize || 0}" placeholder="Prize" class="w-24 p-1 bg-gray-600 rounded text-xs text-white outline-none">
+                                                <button onclick="saveParticipantResult('${key}', '${uid}')" class="bg-blue-600 px-2 py-1 rounded text-[10px] font-bold">Save</button>
+                                            </div>
+                                        </div>`;
+                                    }).join('')}
                                 </div>
                             </div>
                         </div>
@@ -784,23 +1153,145 @@
             });
         }
 
+        function saveParticipantResult(matchKey, uid) {
+            const kills = parseInt(document.getElementById(`kills-${uid}`).value);
+            const prize = parseFloat(document.getElementById(`prize-${uid}`).value);
+            
+            if (isNaN(kills) || isNaN(prize)) return showToast('Invalid input', 'error');
+
+            db.ref(`tournaments/${matchKey}/participants/${uid}`).update({
+                kills,
+                prize,
+                statsProcessed: true
+            }).then(() => {
+                showToast('Result saved!');
+                // Optionally credit user wallet if prize > 0
+                if (prize > 0) {
+                    confirmAction(`Credit ₹${prize} to user's winnings wallet?`, () => {
+                        db.ref(`users/${uid}`).once('value', (userSnap) => {
+                            const user = userSnap.val();
+                            if (!user) return showToast('User not found', 'error');
+
+                            const amount = prize;
+                            const desc = `Prize for Match: ${matchKey}`;
+                            
+                            db.ref(`users/${uid}/wallet_winnings`).transaction(current => (current || 0) + amount);
+                            
+                            // User local log
+                            db.ref(`users/${uid}/transactions`).push({
+                                amount,
+                                description: desc,
+                                type: 'credit',
+                                timestamp: Date.now()
+                            });
+
+                            // Global admin log
+                            db.ref('transactions').push({
+                                uid,
+                                username: user.username || user.name || 'Unknown',
+                                appId: user.appId || 'No ID',
+                                amount,
+                                description: desc,
+                                type: 'prize_credit',
+                                timestamp: Date.now()
+                            });
+
+                            showToast('Prize credited!');
+                        });
+                    });
+                }
+            });
+        }
+
         function updateMatchStatus(key, status) {
-            db.ref(`matches/${key}/status`).set(status).then(() => showToast('Status updated!'));
+            db.ref(`tournaments/${key}/status`).set(status).then(() => showToast('Status updated!'));
         }
 
         function pushRoomDetails(key) {
             const roomId = document.getElementById('room-id').value;
             const roomPassword = document.getElementById('room-pass').value;
-            db.ref(`matches/${key}`).update({ roomId, roomPassword }).then(() => showToast('Room details pushed!'));
+            db.ref(`tournaments/${key}`).update({ roomId, roomPassword }).then(() => showToast('Room details pushed!'));
+        }
+
+        async function updateMatchInfo(key) {
+            const rules = document.getElementById('update-rules').value;
+            const adminNotes = document.getElementById('update-notes').value;
+            const announcement = document.getElementById('update-announcement').value;
+            let resultImageUrl = document.getElementById('update-result-image').value;
+            const fileInput = document.getElementById('update-result-image-upload');
+
+            if (fileInput.files.length > 0) {
+                showLoading(true);
+                const file = fileInput.files[0];
+                const storageRef = storage.ref(`results_global/${key}_${Date.now()}_${file.name}`);
+                try {
+                    await storageRef.put(file);
+                    resultImageUrl = await storageRef.getDownloadURL();
+                } catch (e) {
+                    showLoading(false);
+                    return showToast('Result image upload failed: ' + e.message, 'error');
+                }
+                showLoading(false);
+            }
+
+            db.ref(`tournaments/${key}`).update({ rules, adminNotes, announcement, resultImageUrl }).then(() => showToast('Match info updated!'));
         }
 
         function deleteMatch(key) {
             confirmAction('Are you sure you want to delete this match?', () => {
-                db.ref(`matches/${key}`).remove().then(() => showToast('Match deleted!'));
+                db.ref(`tournaments/${key}`).remove().then(() => showToast('Match deleted!'));
             });
         }
 
         // Settings Logic
+        function loadBanners() {
+            const list = document.getElementById('banners-list');
+            db.ref('settings/categoryImages').on('value', (snap) => {
+                const banners = snap.val() || {};
+                if (Object.keys(banners).length === 0) {
+                    list.innerHTML = '<p class="text-gray-500 text-center py-8 font-bold uppercase">No Banners Configured</p>';
+                    return;
+                }
+                
+                list.innerHTML = Object.entries(banners).map(([mode, url]) => `
+                    <div class="bg-gray-600 p-4 rounded-2xl flex justify-between items-center border border-gray-500">
+                        <div class="flex items-center space-x-4 overflow-hidden">
+                            <img src="${url}" class="w-12 h-12 rounded-xl object-cover flex-shrink-0" onerror="this.src='https://via.placeholder.com/100?text=Error'">
+                            <div class="overflow-hidden">
+                                <p class="font-bold text-white truncate">${mode.replace(/_/g, '/')}</p>
+                                <p class="text-xs text-gray-400 truncate">${url}</p>
+                            </div>
+                        </div>
+                        <button onclick="deleteBanner('${mode}')" class="text-red-400 hover:text-red-300 p-2 transition">
+                            <i class="fas fa-trash-alt"></i>
+                        </button>
+                    </div>
+                `).join('');
+            });
+        }
+
+        function updateBanner() {
+            const mode = document.getElementById('banner-mode-select').value;
+            const url = document.getElementById('banner-url-input').value.trim();
+            
+            if (!mode || !url) return showToast("Please select a mode and enter a valid URL", "error");
+            
+            const sanitizedMode = mode.replace(/\//g, '_');
+            db.ref(`settings/categoryImages/${sanitizedMode}`).set(url)
+                .then(() => {
+                    showToast(`${mode} banner updated!`);
+                    document.getElementById('banner-url-input').value = '';
+                })
+                .catch(e => showToast("Error: " + e.message, "error"));
+        }
+
+        function deleteBanner(mode) {
+            if (!confirm(`Are you sure you want to delete the banner for ${mode.replace(/_/g, '/')}?`)) return;
+            db.ref(`settings/categoryImages/${mode}`).remove()
+                .then(() => showToast("Banner deleted successfully"))
+                .catch(e => showToast("Error: " + e.message, "error"));
+        }
+
         function loadSettings() {
             db.ref('settings').once('value', (snap) => {
                 const settings = snap.val() || {};
@@ -810,15 +1301,22 @@
                 document.getElementById('set-qr-url').value = settings.qrUrl || '';
                 document.getElementById('qr-preview').src = settings.qrUrl || '';
                 
+            db.ref('settings/modes').on('value', (snap) => {
+                const modes = snap.val() || {};
                 const catList = document.getElementById('category-images-list');
-                const categories = ['BGMI', 'FreeFire', 'PUBG', 'CallOfDuty'];
-                catList.innerHTML = categories.map(cat => `
+                if (Object.keys(modes).length === 0) {
+                    catList.innerHTML = '<p class="text-gray-400">No modes added yet.</p>';
+                    return;
+                }
+                catList.innerHTML = Object.keys(modes).map(mode => `
                     <div class="flex items-center space-x-4">
-                        <span class="w-24 font-bold">${cat}</span>
-                        <input type="text" id="cat-img-${cat}" value="${settings.categoryImages?.[cat] || ''}" placeholder="Image URL" class="flex-1 p-2 bg-gray-600 rounded-xl text-white">
-                        <button onclick="saveCategoryImage('${cat}')" class="bg-blue-600 px-4 py-2 rounded-xl font-bold">Save</button>
+                        <span class="w-24 font-bold">${mode}</span>
+                        <input type="text" id="cat-img-${mode}" value="${modes[mode]}" placeholder="Image URL" class="flex-1 p-2 bg-gray-600 rounded-xl text-white">
+                        <button onclick="saveGameMode('${mode}')" class="bg-blue-600 px-4 py-2 rounded-xl font-bold">Save</button>
+                        <button onclick="deleteGameMode('${mode}')" class="bg-red-600 px-4 py-2 rounded-xl font-bold">Delete</button>
                     </div>
                 `).join('');
+            });
             });
         }
 
@@ -856,9 +1354,26 @@
             });
         }
 
-        function saveCategoryImage(category) {
-            const url = document.getElementById(`cat-img-${category}`).value;
-            db.ref(`settings/categoryImages/${category}`).set(url).then(() => showToast(`${category} image updated!`));
+        function addGameMode() {
+            const name = document.getElementById('new-mode-name').value.trim();
+            const url = document.getElementById('new-mode-url').value.trim();
+            if (!name) return showToast('Enter mode name', 'error');
+            db.ref(`settings/modes/${name}`).set(url || '').then(() => {
+                showToast('Mode added!');
+                document.getElementById('new-mode-name').value = '';
+                document.getElementById('new-mode-url').value = '';
+            });
+        }
+
+        function saveGameMode(mode) {
+            const url = document.getElementById(`cat-img-${mode}`).value;
+            db.ref(`settings/modes/${mode}`).set(url).then(() => showToast(`${mode} banner updated!`));
+        }
+
+        function deleteGameMode(mode) {
+            confirmAction(`Delete mode ${mode}?`, () => {
+                db.ref(`settings/modes/${mode}`).remove().then(() => showToast('Mode deleted!'));
+            });
         }
 
         // Analytics Logic
@@ -869,8 +1384,8 @@
                 let totalDeposits = 0;
                 let totalWins = 0;
                 Object.values(users).forEach(u => {
-                    totalDeposits += (u.deposit || 0);
-                    totalWins += (u.win || 0);
+                    totalDeposits += (u.wallet_deposit || 0);
+                    totalWins += (u.wallet_winnings || 0);
                 });
                 document.getElementById('user-growth-stats').innerHTML = `
                     <p class="text-gray-300">Total Registered Users: <span class="font-bold text-white">${totalUsers}</span></p>
@@ -879,13 +1394,13 @@
                 `;
             });
 
-            db.ref('matches').once('value', (snap) => {
+            db.ref('tournaments').once('value', (snap) => {
                 const matches = snap.val() || {};
                 const totalMatches = Object.keys(matches).length;
                 let completed = 0;
                 let totalPrizePool = 0;
                 Object.values(matches).forEach(m => {
-                    if (m.status === 'completed') completed++;
+                    if (m.status === 'Completed') completed++;
                     totalPrizePool += (m.prizePool || 0);
                 });
                 document.getElementById('revenue-stats').innerHTML = `
@@ -899,25 +1414,36 @@
         // Moderation Logic
         function loadModeration() {
             const list = document.getElementById('suspicious-list');
+            if (!list) return;
             list.innerHTML = '<p class="text-gray-400">Loading blacklisted users...</p>';
-            db.ref('users').orderByChild('banned').equalTo(true).on('value', (snap) => {
-                list.innerHTML = '';
+            db.ref('users').on('value', (snap) => {
+                const currentList = document.getElementById('suspicious-list');
+                if (!currentList) return;
+                currentList.innerHTML = '';
                 const users = snap.val();
+                let hasBanned = false;
                 if (users) {
                     Object.keys(users).forEach(uid => {
-                        list.innerHTML += `
-                            <div class="bg-gray-700 p-4 rounded-xl flex justify-between items-center">
-                                <div>
-                                    <h3 class="font-bold text-lg">${users[uid].email || 'Unknown'}</h3>
-                                    <p class="text-sm text-red-400">Banned</p>
+                        if (users[uid].banned) {
+                            hasBanned = true;
+                            currentList.innerHTML += `
+                                <div class="bg-gray-700 p-4 rounded-xl flex justify-between items-center mb-2">
+                                    <div>
+                                        <h3 class="font-bold text-lg">${users[uid].username || users[uid].name || users[uid].email || 'Unknown'}</h3>
+                                        <p class="text-sm text-red-400">Banned | UID: ${uid}</p>
+                                    </div>
+                                    <button onclick="banUser('${uid}')" class="bg-green-600 text-white px-4 py-2 rounded-xl font-bold">Unban</button>
                                 </div>
-                                <button onclick="banUser('${uid}')" class="bg-green-600 text-white px-4 py-2 rounded-xl font-bold">Unban</button>
-                            </div>
-                        `;
+                            `;
+                        }
                     });
-                } else {
-                    list.innerHTML = '<p class="text-gray-400">No blacklisted users.</p>';
                 }
+                if (!hasBanned) {
+                    currentList.innerHTML = '<p class="text-gray-400">No blacklisted users.</p>';
+                }
+            }, (error) => {
+                const currentList = document.getElementById('suspicious-list');
+                if (currentList) currentList.innerHTML = `<p class="text-red-400">Error: ${error.message}</p>`;
             });
         }
 
@@ -940,7 +1466,7 @@
                     if (users) {
                         const updates = {};
                         Object.keys(users).forEach(uid => {
-                            updates[`${uid}/deposit`] = (users[uid].deposit || 0) + amount;
+                            updates[`${uid}/wallet_deposit`] = (users[uid].wallet_deposit || 0) + amount;
                         });
                         db.ref('users').update(updates).then(() => showToast('Bulk credit successful!'));
                     }
@@ -963,12 +1489,12 @@
 
         function bulkDeleteMatches() {
             confirmAction('Are you absolutely sure you want to delete ALL completed matches?', () => {
-                db.ref('matches').orderByChild('status').equalTo('completed').once('value', (snap) => {
+                db.ref('tournaments').orderByChild('status').equalTo('Completed').once('value', (snap) => {
                     const matches = snap.val();
                     if (matches) {
                         const updates = {};
                         Object.keys(matches).forEach(key => updates[key] = null);
-                        db.ref('matches').update(updates).then(() => showToast('Completed matches deleted!'));
+                        db.ref('tournaments').update(updates).then(() => showToast('Completed matches deleted!'));
                     } else {
                         showToast('No completed matches found.');
                     }
