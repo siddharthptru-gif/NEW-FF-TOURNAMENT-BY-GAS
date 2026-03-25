@@ -14,6 +14,11 @@ const LoginPage: React.FC = () => {
 
   const generateAppId = () => Math.floor(100000 + Math.random() * 900000).toString();
 
+  const checkUsernameUnique = async (uname: string) => {
+    const snap = await db.ref(`usernames/${uname.toLowerCase()}`).once('value');
+    return !snap.exists();
+  };
+
   const handleGoogleLogin = async () => {
     setError('');
     setLoading(true);
@@ -37,10 +42,22 @@ const LoginPage: React.FC = () => {
           // New user from Google Login
           const appId = generateAppId();
           const role = user.email?.includes('admin') ? 'admin' : 'user';
+          let baseUsername = user.displayName || user.email?.split('@')[0] || 'Gamer';
+          baseUsername = baseUsername.replace(/\s+/g, '').toLowerCase();
           
+          // Ensure uniqueness for Google users too
+          let finalUsername = baseUsername;
+          let isUnique = await checkUsernameUnique(finalUsername);
+          let counter = 1;
+          while (!isUnique) {
+            finalUsername = `${baseUsername}${counter}`;
+            isUnique = await checkUsernameUnique(finalUsername);
+            counter++;
+          }
+
           const newUser: Partial<UserData> = {
             appId, 
-            username: user.displayName || user.email?.split('@')[0] || 'Gamer', 
+            username: finalUsername, 
             email: user.email || '', 
             role,
             wallet_deposit: 0, wallet_winnings: 0,
@@ -48,7 +65,11 @@ const LoginPage: React.FC = () => {
             createdAt: Date.now()
           };
 
-          await db.ref(`users/${user.uid}`).set(newUser);
+          const updates: any = {};
+          updates[`users/${user.uid}`] = newUser;
+          updates[`usernames/${finalUsername.toLowerCase()}`] = user.uid;
+          
+          await db.ref().update(updates);
         }
       }
     } catch (err: any) {
@@ -78,6 +99,17 @@ const LoginPage: React.FC = () => {
           }
         }
       } else {
+        // Signup
+        const cleanUsername = username.trim().toLowerCase();
+        if (cleanUsername.length < 3) {
+          throw new Error("Username must be at least 3 characters.");
+        }
+        
+        const isUnique = await checkUsernameUnique(cleanUsername);
+        if (!isUnique) {
+          throw new Error("Username is already taken. Please choose another.");
+        }
+
         const userCredential = await auth.createUserWithEmailAndPassword(email, password);
         const user = userCredential.user;
         if (user) {
@@ -85,13 +117,20 @@ const LoginPage: React.FC = () => {
           const role = email.includes('admin') ? 'admin' : 'user';
           
           const newUser: Partial<UserData> = {
-            appId, username, email, role,
+            appId, 
+            username: username.trim(), 
+            email, 
+            role,
             wallet_deposit: 0, wallet_winnings: 0,
             totalKills: 0, totalWins: 0, matchesPlayed: 0, referralCount: 0,
             createdAt: Date.now()
           };
 
-          await db.ref(`users/${user.uid}`).set(newUser);
+          const updates: any = {};
+          updates[`users/${user.uid}`] = newUser;
+          updates[`usernames/${cleanUsername}`] = user.uid;
+
+          await db.ref().update(updates);
         }
       }
     } catch (err: any) {

@@ -36,10 +36,22 @@
     </style>
   </head>
   <body class="bg-gray-50 pb-20">
+    <!-- Loading Screen -->
+    <div id="loading-screen" class="fixed inset-0 z-[2000] bg-white flex items-center justify-center">
+      <div class="flex flex-col items-center">
+        <div id="loading-spinner" class="w-12 h-12 border-4 border-blue-600 border-t-transparent rounded-full animate-spin mb-4"></div>
+        <p id="loading-text" class="text-[10px] font-black uppercase tracking-widest text-gray-400">Entering Arena...</p>
+        <button id="loading-retry" onclick="window.location.reload()" class="hidden mt-4 px-6 py-2 bg-blue-600 text-white text-[10px] font-black uppercase rounded-xl shadow-lg">Retry Connection</button>
+      </div>
+    </div>
+
+    <!-- Toast Container -->
+    <div id="toast-container" class="fixed top-4 left-1/2 -translate-x-1/2 z-[3000] w-full max-w-xs space-y-2 pointer-events-none"></div>
+
     <!-- Auth Screen -->
     <div
       id="auth-section"
-      class="max-w-md mx-auto min-h-screen bg-white p-8 flex flex-col justify-center"
+      class="hidden max-w-md mx-auto min-h-screen bg-white p-8 flex flex-col justify-center"
     >
       <div class="text-center mb-8">
         <div
@@ -90,7 +102,7 @@
         <input
           type="text"
           id="email-input"
-          placeholder="Email Address"
+          placeholder="Email or Username"
           class="w-full p-4 bg-gray-50 border rounded-2xl outline-none font-bold text-sm"
           required
         />
@@ -108,6 +120,10 @@
         >
           Enter Arena
         </button>
+        <p class="text-center text-[10px] font-bold text-gray-400 uppercase tracking-widest mt-4">
+          <span id="auth-switch-text">Don't have an account?</span>
+          <button type="button" onclick="toggleAuth(!isLoginMode)" id="auth-switch-btn" class="text-blue-600 ml-1">SIGNUP</button>
+        </p>
       </form>
 
       <div class="flex items-center my-6">
@@ -163,9 +179,15 @@
         <button
           onclick="saveGoogleUsername()"
           id="google-username-btn"
-          class="w-full py-4 custom-gradient text-white font-black rounded-2xl shadow-lg uppercase tracking-widest"
+          class="w-full py-4 custom-gradient text-white font-black rounded-2xl shadow-lg uppercase tracking-widest mb-4"
         >
           Save & Continue
+        </button>
+        <button
+          onclick="logout()"
+          class="w-full py-2 text-gray-400 font-bold uppercase text-[10px] hover:text-red-500 transition-colors"
+        >
+          Cancel & Logout
         </button>
       </div>
     </div>
@@ -431,6 +453,17 @@
 
         <div class="space-y-2">
           <button
+            id="admin-panel-btn"
+            onclick="window.location.href='admin.html'"
+            class="admin-only hidden w-full p-4 bg-indigo-600 text-white font-black rounded-2xl flex items-center justify-between mb-2 shadow-lg"
+          >
+            <div class="flex items-center">
+              <i class="fas fa-user-shield mr-3"></i>
+              <span class="text-sm uppercase tracking-tighter">Admin Control Panel</span>
+            </div>
+            <i class="fas fa-chevron-right text-white/50 text-xs"></i>
+          </button>
+          <button
             onclick="switchPage('support')"
             class="w-full p-4 bg-white border rounded-2xl flex items-center justify-between"
           >
@@ -444,7 +477,7 @@
             <i class="fas fa-chevron-right text-gray-300 text-xs"></i>
           </button>
           <button
-            onclick="auth.signOut()"
+            onclick="logout()"
             class="w-full p-4 bg-red-50 text-red-600 font-black rounded-2xl uppercase text-[10px]"
           >
             Logout Account
@@ -1035,9 +1068,15 @@
       const db = firebase.database();
       const storage = firebase.storage();
 
+      // Set Auth Persistence to LOCAL
+      auth.setPersistence(firebase.auth.Auth.Persistence.LOCAL)
+        .then(() => console.log("Auth persistence set to LOCAL"))
+        .catch((err) => console.error("Persistence error:", err));
+
       let currentUser = null,
         cachedUserData = null,
         isLoginMode = true;
+      let transactionsLoaded = false;
       let selectedMatchId = null;
       let currentTicketId = null;
       let lastListenedTicketId = null;
@@ -1067,6 +1106,9 @@
         const userInp = document.getElementById("email-username");
         if (userInp) userInp.required = !l;
 
+        const emailInp = document.getElementById("email-input");
+        if (emailInp) emailInp.placeholder = l ? "Email or Username" : "Email Address";
+
         if (tabLogin)
           tabLogin.className = l
             ? "flex-1 py-2 rounded-lg font-bold text-sm bg-white shadow-sm text-blue-600"
@@ -1076,6 +1118,10 @@
             ? "flex-1 py-2 rounded-lg font-bold text-sm bg-white shadow-sm text-blue-600"
             : "flex-1 py-2 rounded-lg font-bold text-sm text-gray-500";
         if (authBtn) authBtn.innerText = l ? "Enter Arena" : "Create Account";
+        const switchText = document.getElementById("auth-switch-text");
+        const switchBtn = document.getElementById("auth-switch-btn");
+        if (switchText) switchText.innerText = l ? "Don't have an account?" : "Already have an account?";
+        if (switchBtn) switchBtn.innerText = l ? "SIGNUP" : "LOGIN";
       }
 
       // Expose globally to ensure onclick works even if script scoping changes
@@ -1142,6 +1188,39 @@
 
         const badgeEl = document.getElementById("stat-badge");
         if (badgeEl) badgeEl.innerText = badge;
+      }
+
+      function showToast(msg, type = "info") {
+        const container = document.getElementById("toast-container");
+        if (!container) return;
+
+        const toast = document.createElement("div");
+        toast.className = `p-4 rounded-2xl shadow-xl text-white text-[10px] font-black uppercase tracking-widest transform transition-all duration-300 translate-y-10 opacity-0 pointer-events-auto flex items-center gap-3 ${
+          type === "error" ? "bg-red-600" : type === "success" ? "bg-green-600" : "bg-blue-600"
+        }`;
+        
+        const icon = document.createElement("i");
+        icon.className = `fas ${
+          type === "error" ? "fa-exclamation-circle" : type === "success" ? "fa-check-circle" : "fa-info-circle"
+        }`;
+        
+        const text = document.createElement("span");
+        text.innerText = msg;
+
+        toast.appendChild(icon);
+        toast.appendChild(text);
+        container.appendChild(toast);
+
+        // Animate in
+        setTimeout(() => {
+          toast.classList.remove("translate-y-10", "opacity-0");
+        }, 10);
+
+        // Remove after 3 seconds
+        setTimeout(() => {
+          toast.classList.add("translate-y-[-20px]", "opacity-0");
+          setTimeout(() => toast.remove(), 300);
+        }, 3000);
       }
 
       function handleFirebaseError(error, operationType, path) {
@@ -1246,14 +1325,16 @@
                 return;
               }
 
-              // Check if username exists
-              const snap = await db
-                .ref("users")
-                .orderByChild("username")
-                .equalTo(username)
-                .once("value");
+              if (username.length < 3) {
+                showToast("Username must be at least 3 characters", "error");
+                btn.disabled = false;
+                btn.innerText = "Create Account";
+                return;
+              }
 
-              if (snap.exists()) {
+              // Check if username exists in usernames node
+              const userSnap = await db.ref(`usernames/${username}`).once("value");
+              if (userSnap.exists()) {
                 showToast("Username already taken", "error");
                 btn.disabled = false;
                 btn.innerText = "Create Account";
@@ -1293,13 +1374,17 @@
                 referredBy: null,
                 createdAt: Date.now(),
               };
-              await db
-                .ref(`users/${c.user.uid}`)
-                .set(userData)
-                .catch((err) =>
-                  handleFirebaseError(err, "write", `users/${c.user.uid}`),
-                );
-              console.log("User record created in DB");
+              
+              // Use a transaction or multi-path update for atomicity
+              const updates = {};
+              updates[`users/${c.user.uid}`] = userData;
+              updates[`usernames/${username}`] = c.user.uid;
+              
+              await db.ref().update(updates).catch((err) =>
+                handleFirebaseError(err, "write", "signup-multi-path")
+              );
+              
+              console.log("User record and username mapping created in DB");
               isEmailSignup = false;
             }
           } catch (e) {
@@ -1337,12 +1422,9 @@
         btn.innerText = "Saving...";
 
         try {
-          const snap = await db
-            .ref("users")
-            .orderByChild("username")
-            .equalTo(username)
-            .once("value");
-          if (snap.exists()) {
+          // Check if username exists in usernames node
+          const userSnap = await db.ref(`usernames/${username}`).once("value");
+          if (userSnap.exists()) {
             showToast("Username already taken. Please choose another one.", "error");
             btn.disabled = false;
             btn.innerText = "Save & Continue";
@@ -1385,7 +1467,13 @@
             referredBy: null,
             createdAt: Date.now(),
           };
-          await db.ref(`users/${pendingGoogleUser.uid}`).set(userData);
+          
+          const updates = {};
+          updates[`users/${pendingGoogleUser.uid}`] = userData;
+          updates[`usernames/${username}`] = pendingGoogleUser.uid;
+          
+          await db.ref().update(updates);
+          
           document
             .getElementById("google-username-modal")
             .classList.remove("flex");
@@ -1404,60 +1492,136 @@
         }
       }
 
+      let authTimeout = setTimeout(() => {
+        const loadingScreen = document.getElementById("loading-screen");
+        if (loadingScreen && !loadingScreen.classList.contains("hidden")) {
+          document.getElementById("loading-spinner").classList.add("hidden");
+          document.getElementById("loading-text").innerText = "Connection taking longer than usual...";
+          document.getElementById("loading-retry").classList.remove("hidden");
+        }
+      }, 5000);
+
       auth.onAuthStateChanged(async (u) => {
+        clearTimeout(authTimeout);
         console.log("Auth state changed, user:", u ? u.uid : "null");
+        const loadingScreen = document.getElementById("loading-screen");
+        const authSection = document.getElementById("auth-section");
+        const appSection = document.getElementById("app-section");
+        const googleModal = document.getElementById("google-username-modal");
+
         try {
           if (u) {
+            // User is logged in
             console.log("isEmailSignup:", isEmailSignup);
             if (isEmailSignup) {
+              console.log("Handling email signup flow");
               currentUser = u;
-              document.getElementById("auth-section").classList.add("hidden");
-              document.getElementById("app-section").classList.remove("hidden");
+              authSection.classList.add("hidden");
+              appSection.classList.remove("hidden");
+              googleModal.classList.add("hidden");
+              googleModal.classList.remove("flex");
               startListeners();
             } else {
-              const snap = await db.ref(`users/${u.uid}`).once("value");
-              if (!snap.exists()) {
-                const isGoogle = u.providerData.some(
-                  (p) => p.providerId === "google.com",
-                );
-                if (isGoogle) {
-                  pendingGoogleUser = u;
-                  document.getElementById("auth-section").classList.add("hidden");
-                  document
-                    .getElementById("google-username-modal")
-                    .classList.remove("hidden");
-                  document
-                    .getElementById("google-username-modal")
-                    .classList.add("flex");
+              console.log("Checking DB for user record:", u.uid);
+              try {
+                const snap = await db.ref(`users/${u.uid}`).once("value");
+                if (!snap.exists()) {
+                  console.log("No DB record found for UID:", u.uid);
+                  const isGoogle = u.providerData.some(
+                    (p) => p.providerId === "google.com",
+                  );
+                  if (isGoogle) {
+                    console.log("Google user needs username setup");
+                    pendingGoogleUser = u;
+                    authSection.classList.add("hidden");
+                    appSection.classList.add("hidden");
+                    googleModal.classList.remove("hidden");
+                    googleModal.classList.add("flex");
+                  } else {
+                    console.warn("Email user logged in but no DB record found. Showing app anyway.");
+                    currentUser = u;
+                    authSection.classList.add("hidden");
+                    appSection.classList.remove("hidden");
+                    googleModal.classList.add("hidden");
+                    googleModal.classList.remove("flex");
+                    startListeners();
+                  }
                 } else {
-                  console.warn("Email user logged in but no DB record found.");
+                  console.log("User record found, entering app");
+                  const userData = snap.val();
+                  if (userData && userData.role === "admin") {
+                    document.querySelectorAll(".admin-only").forEach(el => el.classList.remove("hidden"));
+                  } else {
+                    document.querySelectorAll(".admin-only").forEach(el => el.classList.add("hidden"));
+                  }
+                  
                   currentUser = u;
-                  document.getElementById("auth-section").classList.add("hidden");
-                  document.getElementById("app-section").classList.remove("hidden");
+                  authSection.classList.add("hidden");
+                  appSection.classList.remove("hidden");
+                  googleModal.classList.add("hidden");
+                  googleModal.classList.remove("flex");
                   startListeners();
                 }
-              } else {
-                currentUser = u;
-                document.getElementById("auth-section").classList.add("hidden");
-                document.getElementById("app-section").classList.remove("hidden");
-                startListeners();
+              } catch (dbErr) {
+                console.error("Error reading from DB in onAuthStateChanged:", dbErr);
+                if (dbErr.code === "PERMISSION_DENIED") {
+                  console.warn("Permission denied while reading user record. Showing app anyway.");
+                  currentUser = u;
+                  authSection.classList.add("hidden");
+                  appSection.classList.remove("hidden");
+                  startListeners();
+                } else {
+                  throw dbErr;
+                }
               }
             }
           } else {
+            // User is logged out
+            console.log("No user logged in, showing auth section");
             currentUser = null;
             cachedUserData = null;
             transactionsLoaded = false;
-            document.getElementById("auth-section").classList.remove("hidden");
-            document.getElementById("app-section").classList.add("hidden");
-            // Clear inputs on logout to prevent "REMOVE ALL LOGIN DETAILS" confusion
-            document.getElementById("email-input").value = "";
-            document.getElementById("password-input").value = "";
+            authSection.classList.remove("hidden");
+            appSection.classList.add("hidden");
+            googleModal.classList.add("hidden");
+            googleModal.classList.remove("flex");
+            document.querySelectorAll(".admin-only").forEach(el => el.classList.add("hidden"));
+            
+            // Clear inputs on logout
+            const emailInput = document.getElementById("email-input");
+            const passInput = document.getElementById("password-input");
+            if (emailInput) emailInput.value = "";
+            if (passInput) passInput.value = "";
+            
+            // Clear UI state
+            document.getElementById("header-wallet").innerText = "₹0";
+            document.getElementById("stat-kills").innerText = "0";
+            document.getElementById("stat-wins").innerText = "0";
           }
         } catch (err) {
           console.error("Error in onAuthStateChanged:", err);
           handleFirebaseError(err, "auth", "onAuthStateChanged");
+          // Fallback to show auth if something goes wrong
+          authSection.classList.remove("hidden");
+          appSection.classList.add("hidden");
+        } finally {
+          // Always hide loading screen once state is determined
+          if (loadingScreen) {
+            console.log("Hiding loading screen");
+            loadingScreen.classList.add("hidden");
+          }
         }
       });
+
+      function checkAuth() {
+        if (!auth.currentUser) {
+          showToast("Please login to continue", "error");
+          document.getElementById("app-section").classList.add("hidden");
+          document.getElementById("auth-section").classList.remove("hidden");
+          return false;
+        }
+        return true;
+      }
 
       function switchPage(p) {
         document
@@ -2152,6 +2316,7 @@
       }
 
       async function createSupportTicket() {
+        if (!checkAuth()) return;
         if (!cachedUserData) return alert("Please wait for profile to load...");
         const btn = document.getElementById("btn-create-ticket");
         btn.disabled = true;
@@ -2181,6 +2346,7 @@
       }
 
       async function sendSupportMessage() {
+        if (!checkAuth()) return;
         const text = document.getElementById("support-chat-input").value.trim();
         if (!text || !currentTicketId) return;
 
@@ -2340,13 +2506,18 @@
         }
       }
 
+      async function logout() {
+        try {
+          await auth.signOut();
+          window.location.reload(); // Force reload to clear all states
+        } catch (e) {
+          handleFirebaseError(e, "auth", "logout");
+        }
+      }
+
       function openJoinModal(id) {
         console.log("openJoinModal called with id:", id);
-        if (!currentUser) {
-          console.warn("No current user, showing login error");
-          showToast("Please login first!", "error");
-          return;
-        }
+        if (!checkAuth()) return;
         selectedMatchId = id;
         document.getElementById("join-ff-uid").value = "";
         document.getElementById("join-ff-ign").value = "";
@@ -2367,15 +2538,7 @@
       }
 
       async function confirmJoinMatch() {
-        console.log(
-          "confirmJoinMatch called, currentUser:",
-          currentUser,
-          "cachedUserData:",
-          cachedUserData,
-          "selectedMatchId:",
-          selectedMatchId,
-        );
-        if (!currentUser) return showToast("Please login first!", "error");
+        if (!checkAuth()) return;
         if (!cachedUserData)
           return showToast("Profile data not loaded!", "error");
         if (!selectedMatchId) return showToast("No match selected!", "error");
@@ -2470,6 +2633,7 @@
       }
 
       async function reportPlayer(matchId) {
+        if (!checkAuth()) return;
         const reason = prompt(
           "Describe the suspicious activity (e.g., hacking, teaming):",
         );
@@ -2490,7 +2654,6 @@
         }
       }
 
-      let transactionsLoaded = false;
       function loadTransactions() {
         if (transactionsLoaded) return;
         transactionsLoaded = true;
@@ -2623,6 +2786,7 @@
 
       // Wallet Modal Logic
       function openWalletModal(type) {
+        if (!checkAuth()) return;
         document
           .getElementById("wallet-modal")
           .classList.replace("hidden", "flex");
@@ -2751,6 +2915,7 @@
       }
 
       async function submitDeposit() {
+        if (!checkAuth()) return;
         const amount = parseFloat(document.getElementById("dep-amount").value);
         const txn = document.getElementById("dep-txn").value;
         if (!amount || !txn) return alert("Enter Amount & Transaction ID");
@@ -2774,6 +2939,7 @@
       }
 
       async function submitWithdraw() {
+        if (!checkAuth()) return;
         const amount = parseFloat(document.getElementById("with-amount").value);
         const upi = document.getElementById("with-upi").value;
         if (amount < appSettings.minWithdraw)
@@ -2823,6 +2989,7 @@
       }
 
       async function loadNotifications() {
+        if (!checkAuth()) return;
         const snap = await db.ref(`userNotifications/${currentUser.uid}`).once('value');
         const notifications = snap.val() || {};
         const list = Object.entries(notifications).map(([id, n]) => `
@@ -2839,35 +3006,6 @@
         });
       }
 
-      function showToast(message, type = 'info') {
-        let toastContainer = document.getElementById('toast-container');
-        if (!toastContainer) {
-          toastContainer = document.createElement('div');
-          toastContainer.id = 'toast-container';
-          toastContainer.className = 'fixed bottom-20 left-1/2 transform -translate-x-1/2 z-[9999] flex flex-col gap-2 pointer-events-none w-full max-w-sm px-4';
-          document.body.appendChild(toastContainer);
-        }
-        
-        const toast = document.createElement('div');
-        const bgClass = type === 'error' ? 'bg-red-500' : type === 'success' ? 'bg-green-500' : 'bg-gray-800';
-        toast.className = `${bgClass} text-white px-6 py-3 rounded-xl shadow-lg font-bold text-sm transform transition-all duration-300 translate-y-full opacity-0 flex items-center gap-2`;
-        
-        const icon = type === 'error' ? 'fa-exclamation-circle' : type === 'success' ? 'fa-check-circle' : 'fa-info-circle';
-        toast.innerHTML = `<i class="fas ${icon}"></i> <span>${message}</span>`;
-        
-        toastContainer.appendChild(toast);
-        
-        // Animate in
-        requestAnimationFrame(() => {
-          toast.classList.remove('translate-y-full', 'opacity-0');
-        });
-        
-        // Remove after 3 seconds
-        setTimeout(() => {
-          toast.classList.add('translate-y-full', 'opacity-0');
-          setTimeout(() => toast.remove(), 300);
-        }, 3000);
-      }
     </script>
     <!-- Popup Notification -->
     <div

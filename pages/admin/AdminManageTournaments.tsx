@@ -48,14 +48,29 @@ const AdminManageTournaments: React.FC = () => {
     }
   };
 
+  const [gameModes, setGameModes] = useState<string[]>([]);
+
   useEffect(() => {
     const tourRef = db.ref('tournaments');
+    const modesRef = db.ref('settings/modes');
+
     const handleValue = (snapshot: any) => {
       const data = snapshot.val() || {};
       setTournaments(Object.keys(data).map(key => ({ ...data[key], id: key })));
     };
+
+    const handleModes = (snapshot: any) => {
+      const data = snapshot.val() || {};
+      setGameModes(Object.keys(data));
+    };
+
     tourRef.on('value', handleValue);
-    return () => tourRef.off('value', handleValue);
+    modesRef.on('value', handleModes);
+
+    return () => {
+      tourRef.off('value', handleValue);
+      modesRef.off('value', handleModes);
+    };
   }, []);
 
   const [isUploading, setIsUploading] = useState(false);
@@ -300,15 +315,16 @@ const AdminManageTournaments: React.FC = () => {
           <input type="text" placeholder="Match Title" className="w-full p-4 bg-gray-50 border rounded-2xl text-xs font-bold outline-none" value={formData.title} onChange={e => setFormData({ ...formData, title: e.target.value })} required />
           <select className="w-full p-4 bg-gray-50 border rounded-2xl text-xs font-bold outline-none" value={formData.game} onChange={e => setFormData({ ...formData, game: e.target.value })} required>
             <option value="" disabled>Select Category</option>
-            <option value="BATTLE ROYALE">BATTLE ROYALE</option>
-            <option value="FF SURVIVAL">FF SURVIVAL</option>
-            <option value="LOSS/HEAL LW">LOSS/HEAL LW</option>
-            <option value="CS/LW 1V1">CS/LW 1V1</option>
-            <option value="CS/LW 2V2">CS/LW 2V2</option>
-            <option value="ONLY HEAD 1V1">ONLY HEAD 1V1</option>
-            <option value="CS 4V4">CS 4V4</option>
-            <option value="FIST FIGHT">FIST FIGHT</option>
-            <option value="FREE MATCH">FREE MATCH</option>
+            {gameModes.map(mode => (
+              <option key={mode} value={mode}>{mode}</option>
+            ))}
+            {gameModes.length === 0 && (
+              <>
+                <option value="BATTLE ROYALE">BATTLE ROYALE</option>
+                <option value="FF SURVIVAL">FF SURVIVAL</option>
+                <option value="CS 4V4">CS 4V4</option>
+              </>
+            )}
           </select>
           <div className="grid grid-cols-3 gap-2">
             <input type="number" placeholder="Fee" className="p-4 bg-gray-50 border rounded-2xl text-xs font-bold" value={formData.entryFee} onChange={e => setFormData({ ...formData, entryFee: parseFloat(e.target.value) })} required />
@@ -382,15 +398,16 @@ const AdminManageTournaments: React.FC = () => {
             <form onSubmit={handleEditSubmit} className="space-y-3">
               <input type="text" placeholder="Match Title" className="w-full p-4 bg-gray-50 border rounded-2xl text-xs font-bold outline-none" value={editFormData.title} onChange={e => setEditFormData({ ...editFormData, title: e.target.value })} required />
               <select className="w-full p-4 bg-gray-50 border rounded-2xl text-xs font-bold outline-none" value={editFormData.game} onChange={e => setEditFormData({ ...editFormData, game: e.target.value })} required>
-                <option value="BATTLE ROYALE">BATTLE ROYALE</option>
-                <option value="FF SURVIVAL">FF SURVIVAL</option>
-                <option value="LOSS/HEAL LW">LOSS/HEAL LW</option>
-                <option value="CS/LW 1V1">CS/LW 1V1</option>
-                <option value="CS/LW 2V2">CS/LW 2V2</option>
-                <option value="ONLY HEAD 1V1">ONLY HEAD 1V1</option>
-                <option value="CS 4V4">CS 4V4</option>
-                <option value="FIST FIGHT">FIST FIGHT</option>
-                <option value="FREE MATCH">FREE MATCH</option>
+                {gameModes.map(mode => (
+                  <option key={mode} value={mode}>{mode}</option>
+                ))}
+                {gameModes.length === 0 && (
+                  <>
+                    <option value="BATTLE ROYALE">BATTLE ROYALE</option>
+                    <option value="FF SURVIVAL">FF SURVIVAL</option>
+                    <option value="CS 4V4">CS 4V4</option>
+                  </>
+                )}
               </select>
               <div className="grid grid-cols-3 gap-2">
                 <input type="number" placeholder="Fee" className="p-4 bg-gray-50 border rounded-2xl text-xs font-bold" value={editFormData.entryFee} onChange={e => setEditFormData({ ...editFormData, entryFee: parseFloat(e.target.value) })} required />

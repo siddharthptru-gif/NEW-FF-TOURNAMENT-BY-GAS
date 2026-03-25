@@ -80,6 +80,20 @@ const AdminLayout: React.FC = () => {
           <span className="text-[10px] font-bold mt-0.5">Logs</span>
         </NavLink>
         <NavLink 
+          to="/admin/bulk" 
+          className={({ isActive }) => `flex flex-col items-center p-2 min-w-[60px] rounded-lg transition-colors ${isActive ? 'text-indigo-600' : 'text-gray-400'}`}
+        >
+          <i className="fas fa-layer-group text-base"></i>
+          <span className="text-[10px] font-bold mt-0.5">Bulk</span>
+        </NavLink>
+        <NavLink 
+          to="/admin/moderation" 
+          className={({ isActive }) => `flex flex-col items-center p-2 min-w-[60px] rounded-lg transition-colors ${isActive ? 'text-indigo-600' : 'text-gray-400'}`}
+        >
+          <i className="fas fa-user-slash text-base"></i>
+          <span className="text-[10px] font-bold mt-0.5">Banned</span>
+        </NavLink>
+        <NavLink 
           to="/admin/reports" 
           className={({ isActive }) => `flex flex-col items-center p-2 min-w-[60px] rounded-lg transition-colors ${isActive ? 'text-indigo-600' : 'text-gray-400'}`}
         >

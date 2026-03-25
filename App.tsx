@@ -23,6 +23,8 @@ import AdminLogs from './pages/admin/AdminLogs';
 import AdminLeaderboard from './pages/admin/AdminLeaderboard';
 import AdminReports from './pages/admin/AdminReports';
 import AdminMatchImages from './pages/admin/AdminMatchImages';
+import AdminBulkTools from './pages/admin/AdminBulkTools';
+import AdminModeration from './pages/admin/AdminModeration';
 import AdminDynamicFeatures from './pages/admin/AdminDynamicFeatures';
 
 const App: React.FC = () => {
@@ -38,9 +40,19 @@ const App: React.FC = () => {
         const handleValue = (snapshot: any) => {
           const data = snapshot.val();
           if (data) {
-            setUserData({ ...data, uid: currentUser.uid });
+            const role = data.role || 'user';
+            setUserData({ ...data, role, uid: currentUser.uid });
+            setLoading(false);
+          } else {
+            // If data is null, the user exists in Auth but not in DB yet.
+            // This can happen during the brief moment after signup before DB write completes.
+            // We'll wait, but if it persists, we'll provide a minimal userData to avoid loops.
+            const timeout = setTimeout(() => {
+              setUserData({ role: 'user', uid: currentUser.uid } as any);
+              setLoading(false);
+            }, 3000);
+            return () => clearTimeout(timeout);
           }
-          setLoading(false);
         };
         userRef.on('value', handleValue);
         return () => userRef.off('value', handleValue);
@@ -94,6 +106,8 @@ const App: React.FC = () => {
           <Route path="logs" element={<AdminLogs />} />
           <Route path="leaderboard" element={<AdminLeaderboard />} />
           <Route path="reports" element={<AdminReports />} />
+          <Route path="bulk" element={<AdminBulkTools />} />
+          <Route path="moderation" element={<AdminModeration />} />
           <Route path="settings" element={<AdminSettings />} />
         </Route>
 
