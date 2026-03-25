@@ -35,15 +35,6 @@
             <input type="text" id="login-email" placeholder="Username or Email" class="w-full p-4 bg-gray-700 rounded-xl mb-4 text-white outline-none">
             <input type="password" id="login-password" placeholder="Password" class="w-full p-4 bg-gray-700 rounded-xl mb-6 text-white outline-none">
             <button onclick="handleLogin()" class="w-full py-4 bg-blue-600 text-white font-black rounded-xl uppercase">Login</button>
-            <div class="flex items-center my-4">
-                <div class="flex-1 border-t border-gray-700"></div>
-                <span class="px-4 text-gray-500 text-sm">OR</span>
-                <div class="flex-1 border-t border-gray-700"></div>
-            </div>
-            <button onclick="handleGoogleLogin()" class="w-full py-4 bg-white text-gray-800 font-bold rounded-xl uppercase flex items-center justify-center">
-                <img src="https://www.gstatic.com/firebasejs/ui/2.0.0/images/auth/google.svg" class="w-5 h-5 mr-2">
-                Login with Google
-            </button>
         </div>
     </div>
 
@@ -60,6 +51,7 @@
                 <button onclick="showSection('tournaments')" class="sidebar-item w-full text-left p-3 rounded-xl font-bold">Tournaments</button>
                 <button onclick="showSection('wallet')" class="sidebar-item w-full text-left p-3 rounded-xl font-bold">Wallet</button>
                 <button onclick="showSection('bulk')" class="sidebar-item w-full text-left p-3 rounded-xl font-bold">Bulk Tools</button>
+                <button onclick="showSection('notifications')" class="sidebar-item w-full text-left p-3 rounded-xl font-bold">Notifications</button>
                 <button onclick="showSection('support')" class="sidebar-item w-full text-left p-3 rounded-xl font-bold">Support</button>
                 <button onclick="showSection('banners')" class="sidebar-item w-full text-left p-3 rounded-xl font-bold">Banners</button>
                 <button onclick="showSection('settings')" class="sidebar-item w-full text-left p-3 rounded-xl font-bold">Settings</button>
@@ -224,21 +216,6 @@
                     errorDiv.innerText = e.message;
                     errorDiv.classList.remove('hidden');
                 }
-            } finally {
-                showLoading(false);
-            }
-        }
-
-        async function handleGoogleLogin() {
-            const provider = new firebase.auth.GoogleAuthProvider();
-            const errorDiv = document.getElementById('login-error');
-            errorDiv.classList.add('hidden');
-            showLoading(true);
-            try {
-                await auth.signInWithPopup(provider);
-            } catch (e) {
-                errorDiv.innerText = e.message;
-                errorDiv.classList.remove('hidden');
             } finally {
                 showLoading(false);
             }
@@ -461,8 +438,93 @@
                         </div>
                     </div>
                 `;
+            } else if (sectionId === 'notifications') {
+                contentArea.innerHTML = `
+                    <div class="bg-gray-700 p-6 rounded-3xl">
+                        <h3 class="text-xl font-bold mb-6">Send Notification</h3>
+                        <div class="space-y-4">
+                            <div>
+                                <label class="block text-sm text-gray-400 mb-2">Notification Message</label>
+                                <textarea id="notif-message" class="w-full p-4 bg-gray-600 rounded-xl text-white outline-none border border-gray-500" rows="4"></textarea>
+                            </div>
+                            <div>
+                                <label class="block text-sm text-gray-400 mb-2">Target</label>
+                                <select id="notif-target" class="w-full p-4 bg-gray-600 rounded-xl text-white outline-none border border-gray-500" onchange="toggleTargetInput()">
+                                    <option value="bulk">All Users (Bulk)</option>
+                                    <option value="specific">Specific User (by App ID)</option>
+                                </select>
+                            </div>
+                            <div id="notif-appid-container" class="hidden">
+                                <label class="block text-sm text-gray-400 mb-2">User App ID (6 digits)</label>
+                                <input type="text" id="notif-appid" class="w-full p-4 bg-gray-600 rounded-xl text-white outline-none border border-gray-500" maxlength="6">
+                            </div>
+                            <button onclick="sendNotification()" class="w-full py-4 bg-blue-600 rounded-xl font-bold uppercase hover:bg-blue-700 transition">Send Notification</button>
+                        </div>
+                    </div>
+                `;
             } else {
                 contentArea.innerHTML = `<p class="text-gray-400">Content for ${sectionId} goes here.</p>`;
+            }
+        }
+
+        function toggleTargetInput() {
+            const target = document.getElementById('notif-target').value;
+            const container = document.getElementById('notif-appid-container');
+            if (target === 'specific') {
+                container.classList.remove('hidden');
+            } else {
+                container.classList.add('hidden');
+            }
+        }
+
+        async function sendNotification() {
+            const message = document.getElementById('notif-message').value.trim();
+            const target = document.getElementById('notif-target').value;
+            const appId = document.getElementById('notif-appid').value.trim();
+
+            if (!message) return showToast("Please enter a message.", "error");
+            if (target === 'specific' && (!appId || appId.length !== 6)) return showToast("Please enter a valid 6-digit App ID.", "error");
+
+            const notificationData = {
+                message: message,
+                timestamp: Date.now(),
+                read: false
+            };
+
+            try {
+                showLoading(true);
+                if (target === 'bulk') {
+                    const snap = await db.ref('users').once('value');
+                    const users = snap.val();
+                    if (users) {
+                        const updates = {};
+                        const notifId = db.ref().push().key;
+                        Object.keys(users).forEach(uid => {
+                            updates[`userNotifications/${uid}/${notifId}`] = notificationData;
+                        });
+                        await db.ref().update(updates);
+                    }
+                    showToast("Notification sent to all users.");
+                } else {
+                    // Find user by appId
+                    const snap = await db.ref('users').orderByChild('appId').equalTo(appId).once('value');
+                    const users = snap.val();
+                    if (!users) {
+                        showLoading(false);
+                        return showToast("User not found with this App ID.", "error");
+                    }
+                    
+                    const uid = Object.keys(users)[0];
+                    await db.ref(`userNotifications/${uid}`).push(notificationData);
+                    showToast("Notification sent to user.");
+                }
+                document.getElementById('notif-message').value = '';
+                document.getElementById('notif-appid').value = '';
+            } catch (e) {
+                console.error(e);
+                showToast("Error sending notification: " + e.message, "error");
+            } finally {
+                showLoading(false);
             }
         }
 
@@ -510,19 +572,20 @@
                 });
             });
 
-            db.ref('auditLogs').limitToLast(5).on('value', (snap) => {
+            db.ref('auditLogs').on('value', (snap) => {
                 const feed = document.getElementById('activity-feed');
                 if (!feed) return;
                 feed.innerHTML = '';
                 const logs = snap.val();
                 if (logs) {
                     Object.values(logs).reverse().forEach(log => {
-                        feed.innerHTML += `<div class="p-3 bg-gray-600 rounded-xl text-sm">${log.message || 'Activity'}</div>`;
+                        const message = typeof log === 'object' ? (log.message || 'Activity') : log;
+                        feed.innerHTML += `<div class="p-3 bg-gray-600 rounded-xl text-sm">${message}</div>`;
                     });
                 }
             });
 
-            db.ref('tickets').orderByChild('status').equalTo('open').on('value', (snap) => {
+            db.ref('supportTickets').orderByChild('status').equalTo('open').on('value', (snap) => {
                 if (!document.getElementById('admin-layout')) return; // Only if logged in
                 const openTickets = snap.val() ? Object.keys(snap.val()).length : 0;
                 if (openTickets > 0) {
@@ -560,6 +623,9 @@
                     Object.keys(users).forEach(uid => {
                         const user = users[uid];
                         const email = user.email || '';
+                        const username = (user.username || '').trim().toLowerCase();
+                        if (username === 'error' || username === 'top winners' || username === 'undefined') return;
+                        
                         if ((email.toLowerCase().includes(searchTerm) || uid.includes(searchTerm) || (user.username && user.username.toLowerCase().includes(searchTerm)) || (user.appId && user.appId.toLowerCase().includes(searchTerm))) && 
                             (filterRole === 'all' || user.role === filterRole)) {
                             currentUsersList.innerHTML += `
@@ -593,9 +659,18 @@
                             <p>Winnings: ${user.wallet_winnings || 0}</p>
                             <p>Role: ${user.role || 'user'}</p>
                         </div>
+                        
+                        <div class="mb-6 space-y-4">
+                            <input type="number" id="edit-amount" placeholder="Amount" class="w-full p-3 bg-gray-700 rounded-xl text-white outline-none">
+                            <div class="grid grid-cols-2 gap-2">
+                                <button onclick="updateWallet('${uid}', 'wallet_deposit', 1)" class="bg-green-600 p-2 rounded-xl text-xs font-bold">Add to Deposit</button>
+                                <button onclick="updateWallet('${uid}', 'wallet_deposit', -1)" class="bg-red-600 p-2 rounded-xl text-xs font-bold">Sub from Deposit</button>
+                                <button onclick="updateWallet('${uid}', 'wallet_winnings', 1)" class="bg-green-600 p-2 rounded-xl text-xs font-bold">Add to Winnings</button>
+                                <button onclick="updateWallet('${uid}', 'wallet_winnings', -1)" class="bg-red-600 p-2 rounded-xl text-xs font-bold">Sub from Winnings</button>
+                            </div>
+                        </div>
+
                         <div class="grid grid-cols-2 gap-2">
-                            <button onclick="updateWallet('${uid}', 100)" class="bg-green-600 p-2 rounded-xl">Add 100</button>
-                            <button onclick="updateWallet('${uid}', -100)" class="bg-red-600 p-2 rounded-xl">Remove 100</button>
                             <button onclick="banUser('${uid}')" class="bg-yellow-600 p-2 rounded-xl">Ban/Unban</button>
                             <button onclick="promoteUser('${uid}')" class="bg-blue-600 p-2 rounded-xl">Promote</button>
                             <button onclick="deleteUser('${uid}')" class="bg-red-800 p-2 rounded-xl col-span-2">Delete User</button>
@@ -607,8 +682,11 @@
             });
         }
 
-        function updateWallet(uid, amount) {
-            db.ref(`users/${uid}/wallet_deposit`).transaction(current => (current || 0) + amount);
+        function updateWallet(uid, walletType, multiplier) {
+            const amount = parseFloat(document.getElementById('edit-amount').value);
+            if (isNaN(amount)) return showToast('Enter valid amount', 'error');
+            
+            db.ref(`users/${uid}/${walletType}`).transaction(current => (current || 0) + (amount * multiplier));
             showToast('Wallet updated!');
         }
 
@@ -634,7 +712,7 @@
             const content = document.getElementById('support-content');
             if (!content) return;
             content.innerHTML = '<p class="text-gray-400">Loading tickets...</p>';
-            db.ref('tickets').on('value', (snapshot) => {
+            db.ref('supportTickets').on('value', (snapshot) => {
                 const currentContent = document.getElementById('support-content');
                 if (!currentContent) return;
                 currentContent.innerHTML = '';
@@ -663,50 +741,56 @@
 
         function openTicket(key) {
             const content = document.getElementById('support-content');
-            db.ref(`tickets/${key}`).on('value', (snap) => {
+            // Fetch ticket details
+            db.ref(`supportTickets/${key}`).once('value', (snap) => {
                 const ticket = snap.val();
                 if (!ticket) return;
-                content.innerHTML = `
-                    <div class="bg-gray-800 p-6 rounded-3xl">
-                        <div class="flex justify-between items-center mb-4">
-                            <h2 class="text-2xl font-black">${ticket.username || 'User'}</h2>
-                            <button onclick="loadTickets()" class="text-gray-400 hover:text-white"><i class="fas fa-arrow-left mr-2"></i>Back</button>
+                
+                // Fetch messages
+                db.ref(`supportMessages/${key}`).on('value', (msgSnap) => {
+                    const messages = msgSnap.val() || {};
+                    
+                    content.innerHTML = `
+                        <div class="bg-gray-800 p-6 rounded-3xl">
+                            <div class="flex justify-between items-center mb-4">
+                                <h2 class="text-2xl font-black">${ticket.username || 'User'}</h2>
+                                <button onclick="loadTickets()" class="text-gray-400 hover:text-white"><i class="fas fa-arrow-left mr-2"></i>Back</button>
+                            </div>
+                            <div id="chat-thread" class="h-64 overflow-y-auto bg-gray-700 p-4 rounded-xl mb-4 space-y-2 flex flex-col">
+                                ${Object.values(messages).map(m => `
+                                    <div class="p-2 rounded-lg max-w-[80%] ${m.sender === 'admin' ? 'bg-blue-600 self-end ml-auto' : 'bg-gray-600 self-start mr-auto'}">
+                                        <p class="text-xs opacity-50 mb-1">${m.sender === 'admin' ? 'Admin' : (ticket.username || 'User')}</p>
+                                        <p class="text-sm">${m.text}</p>
+                                        <p class="text-[10px] opacity-30 text-right mt-1">${new Date(m.timestamp).toLocaleTimeString()}</p>
+                                    </div>
+                                `).join('')}
+                            </div>
+                            <div class="flex gap-2">
+                                <input type="text" id="reply-text" placeholder="Reply..." class="flex-1 p-3 bg-gray-700 rounded-xl text-white outline-none">
+                                <button onclick="replyToTicket('${key}')" class="px-6 py-3 bg-blue-600 rounded-xl font-bold">Send</button>
+                            </div>
+                            <div class="mt-4 flex gap-2">
+                                <button onclick="updateTicketStatus('${key}', 'open')" class="flex-1 p-2 bg-gray-600 rounded-lg text-xs font-bold">Mark Open</button>
+                                <button onclick="updateTicketStatus('${key}', 'answered')" class="flex-1 p-2 bg-green-600 rounded-lg text-xs font-bold">Mark Answered</button>
+                                <button onclick="updateTicketStatus('${key}', 'closed')" class="flex-1 p-2 bg-red-600 rounded-lg text-xs font-bold">Close Ticket</button>
+                            </div>
                         </div>
-                        <div id="chat-thread" class="h-64 overflow-y-auto bg-gray-700 p-4 rounded-xl mb-4 space-y-2 flex flex-col">
-                            ${Object.values(ticket.messages || {}).map(m => `
-                                <div class="p-2 rounded-lg max-w-[80%] ${m.role === 'admin' ? 'bg-blue-600 self-end ml-auto' : 'bg-gray-600 self-start mr-auto'}">
-                                    <p class="text-xs opacity-50 mb-1">${m.role === 'admin' ? 'Admin' : (ticket.username || 'User')}</p>
-                                    <p class="text-sm">${m.text}</p>
-                                    <p class="text-[10px] opacity-30 text-right mt-1">${new Date(m.timestamp).toLocaleTimeString()}</p>
-                                </div>
-                            `).join('')}
-                        </div>
-                        <div class="flex gap-2">
-                            <input type="text" id="reply-text" placeholder="Reply..." class="flex-1 p-3 bg-gray-700 rounded-xl text-white outline-none">
-                            <button onclick="replyToTicket('${key}')" class="px-6 py-3 bg-blue-600 rounded-xl font-bold">Send</button>
-                        </div>
-                        <div class="mt-4 flex gap-2">
-                            <button onclick="updateTicketStatus('${key}', 'open')" class="flex-1 p-2 bg-gray-600 rounded-lg text-xs font-bold">Mark Open</button>
-                            <button onclick="updateTicketStatus('${key}', 'answered')" class="flex-1 p-2 bg-green-600 rounded-lg text-xs font-bold">Mark Answered</button>
-                            <button onclick="updateTicketStatus('${key}', 'closed')" class="flex-1 p-2 bg-red-600 rounded-lg text-xs font-bold">Close Ticket</button>
-                        </div>
-                    </div>
-                `;
-                const chatThread = document.getElementById('chat-thread');
-                if (chatThread) chatThread.scrollTop = chatThread.scrollHeight;
+                    `;
+                    const chatThread = document.getElementById('chat-thread');
+                    if (chatThread) chatThread.scrollTop = chatThread.scrollHeight;
+                });
             });
         }
 
         function replyToTicket(key) {
             const text = document.getElementById('reply-text').value;
             if (!text) return;
-            db.ref(`tickets/${key}/messages`).push({ 
-                role: 'admin', 
+            db.ref(`supportMessages/${key}`).push({ 
+                sender: 'admin', 
                 text, 
-                timestamp: Date.now(),
-                senderName: 'Admin'
+                timestamp: Date.now()
             });
-            db.ref(`tickets/${key}`).update({
+            db.ref(`supportTickets/${key}`).update({
                 lastMessage: text,
                 lastUpdate: Date.now(),
                 status: 'answered'
@@ -715,7 +799,16 @@
         }
 
         function updateTicketStatus(key, status) {
-            db.ref(`tickets/${key}/status`).set(status).then(() => showToast('Status updated!'));
+            db.ref(`supportTickets/${key}/status`).set(status).then(() => showToast('Status updated!'));
+        }
+
+        function deleteTicket(key) {
+            confirmAction('Are you sure you want to delete this ticket?', () => {
+                db.ref(`supportTickets/${key}`).remove();
+                db.ref(`supportMessages/${key}`).remove();
+                loadTickets();
+                showToast('Ticket deleted!');
+            });
         }
 
         function loadReports() {
@@ -830,7 +923,6 @@
                 const req = snap.val();
                 if (!req) return showToast('Request not found', 'error');
 
-                const updates = { status };
                 if (status === 'approved') {
                     const walletField = type === 'deposits' ? 'wallet_deposit' : 'wallet_winnings';
                     db.ref(`users/${uid}/${walletField}`).transaction(current => (current || 0) + (type === 'deposits' ? amount : -amount));
@@ -853,7 +945,9 @@
                         timestamp: Date.now()
                     });
                 }
-                db.ref(`${path}/${key}`).update(updates).then(() => showToast(`Request ${status}!`));
+                
+                // Remove the request instead of updating status
+                db.ref(`${path}/${key}`).remove().then(() => showToast(`Request ${status}!`));
             });
         }
 
@@ -1480,7 +1574,8 @@ Screenshots of the final result are mandatory for prize claims.`;
             db.ref('announcements').push({
                 message,
                 timestamp: Date.now(),
-                sender: 'Admin'
+                sender: 'Admin',
+                target: 'all'
             }).then(() => {
                 showToast('Announcement sent!');
                 document.getElementById('bulk-message').value = '';
