@@ -453,17 +453,6 @@
 
         <div class="space-y-2">
           <button
-            id="admin-panel-btn"
-            onclick="window.location.href='admin.html'"
-            class="admin-only hidden w-full p-4 bg-indigo-600 text-white font-black rounded-2xl flex items-center justify-between mb-2 shadow-lg"
-          >
-            <div class="flex items-center">
-              <i class="fas fa-user-shield mr-3"></i>
-              <span class="text-sm uppercase tracking-tighter">Admin Control Panel</span>
-            </div>
-            <i class="fas fa-chevron-right text-white/50 text-xs"></i>
-          </button>
-          <button
             onclick="switchPage('support')"
             class="w-full p-4 bg-white border rounded-2xl flex items-center justify-between"
           >
@@ -1501,6 +1490,8 @@
         }
       }, 5000);
 
+      let listenersStarted = false;
+
       auth.onAuthStateChanged(async (u) => {
         clearTimeout(authTimeout);
         console.log("Auth state changed, user:", u ? u.uid : "null");
@@ -1512,67 +1503,65 @@
         try {
           if (u) {
             // User is logged in
+            currentUser = u;
             console.log("isEmailSignup:", isEmailSignup);
-            if (isEmailSignup) {
-              console.log("Handling email signup flow");
-              currentUser = u;
-              authSection.classList.add("hidden");
-              appSection.classList.remove("hidden");
-              googleModal.classList.add("hidden");
-              googleModal.classList.remove("flex");
-              startListeners();
-            } else {
-              console.log("Checking DB for user record:", u.uid);
-              try {
-                const snap = await db.ref(`users/${u.uid}`).once("value");
-                if (!snap.exists()) {
-                  console.log("No DB record found for UID:", u.uid);
-                  const isGoogle = u.providerData.some(
-                    (p) => p.providerId === "google.com",
-                  );
-                  if (isGoogle) {
-                    console.log("Google user needs username setup");
-                    pendingGoogleUser = u;
-                    authSection.classList.add("hidden");
-                    appSection.classList.add("hidden");
-                    googleModal.classList.remove("hidden");
-                    googleModal.classList.add("flex");
-                  } else {
-                    console.warn("Email user logged in but no DB record found. Showing app anyway.");
-                    currentUser = u;
-                    authSection.classList.add("hidden");
-                    appSection.classList.remove("hidden");
-                    googleModal.classList.add("hidden");
-                    googleModal.classList.remove("flex");
-                    startListeners();
-                  }
+            
+            // Check if user exists in DB
+            try {
+              const snap = await db.ref(`users/${u.uid}`).once("value");
+              if (!snap.exists()) {
+                console.log("No DB record found for UID:", u.uid);
+                const isGoogle = u.providerData.some(
+                  (p) => p.providerId === "google.com",
+                );
+                if (isGoogle && !isEmailSignup) {
+                  console.log("Google user needs username setup");
+                  pendingGoogleUser = u;
+                  authSection.classList.add("hidden");
+                  appSection.classList.add("hidden");
+                  googleModal.classList.remove("hidden");
+                  googleModal.classList.add("flex");
                 } else {
-                  console.log("User record found, entering app");
-                  const userData = snap.val();
-                  if (userData && userData.role === "admin") {
-                    document.querySelectorAll(".admin-only").forEach(el => el.classList.remove("hidden"));
-                  } else {
-                    document.querySelectorAll(".admin-only").forEach(el => el.classList.add("hidden"));
-                  }
-                  
-                  currentUser = u;
+                  // Create profile if missing
+                  console.log("Creating default profile for UID:", u.uid);
+                  const userData = {
+                    uid: u.uid,
+                    email: u.email,
+                    username: u.displayName || u.email.split('@')[0],
+                    wallet_deposit: 0,
+                    wallet_winnings: 0,
+                    wallet_bonus: 0,
+                    appId: 'ACX' + Math.floor(100000 + Math.random() * 900000),
+                    createdAt: Date.now(),
+                    role: 'user'
+                  };
+                  await db.ref(`users/${u.uid}`).set(userData);
                   authSection.classList.add("hidden");
                   appSection.classList.remove("hidden");
                   googleModal.classList.add("hidden");
                   googleModal.classList.remove("flex");
+                  if (!listenersStarted) {
+                    listenersStarted = true;
+                    startListeners();
+                  }
+                }
+              } else {
+                authSection.classList.add("hidden");
+                appSection.classList.remove("hidden");
+                googleModal.classList.add("hidden");
+                googleModal.classList.remove("flex");
+                if (!listenersStarted) {
+                  listenersStarted = true;
                   startListeners();
                 }
-              } catch (dbErr) {
-                console.error("Error reading from DB in onAuthStateChanged:", dbErr);
-                if (dbErr.code === "PERMISSION_DENIED") {
-                  console.warn("Permission denied while reading user record. Showing app anyway.");
-                  currentUser = u;
-                  authSection.classList.add("hidden");
-                  appSection.classList.remove("hidden");
-                  startListeners();
-                } else {
-                  throw dbErr;
-                }
+              }
+            } catch (dbErr) {
+              console.error("Error reading from DB in onAuthStateChanged:", dbErr);
+              authSection.classList.add("hidden");
+              appSection.classList.remove("hidden");
+              if (!listenersStarted) {
+                listenersStarted = true;
+                startListeners();
               }
             }
           } else {
@@ -1581,11 +1570,11 @@
             currentUser = null;
             cachedUserData = null;
             transactionsLoaded = false;
+            listenersStarted = false;
             authSection.classList.remove("hidden");
             appSection.classList.add("hidden");
             googleModal.classList.add("hidden");
             googleModal.classList.remove("flex");
-            document.querySelectorAll(".admin-only").forEach(el => el.classList.add("hidden"));
             
             // Clear inputs on logout
             const emailInput = document.getElementById("email-input");
@@ -1601,13 +1590,10 @@
         } catch (err) {
           console.error("Error in onAuthStateChanged:", err);
           handleFirebaseError(err, "auth", "onAuthStateChanged");
-          // Fallback to show auth if something goes wrong
           authSection.classList.remove("hidden");
           appSection.classList.add("hidden");
         } finally {
-          // Always hide loading screen once state is determined
           if (loadingScreen) {
-            console.log("Hiding loading screen");
             loadingScreen.classList.add("hidden");
           }
         }
@@ -1853,7 +1839,7 @@
             return `
                     <div onclick="openMatchDetails('${id}')" class="bg-white rounded-[2rem] border border-gray-100 overflow-hidden shadow-sm active:scale-95 transition transform cursor-pointer">
                         <div class="relative">
-                            <img src="${t.imageUrl || t.thumbnail || "https://picsum.photos/400/200?game=" + id}" class="w-full aspect-video object-cover">
+                            <img src="${t.imageUrl || t.thumbnail || "https://picsum.photos/400/200?game=" + id}" class="w-full aspect-video object-cover" onerror="this.src='https://via.placeholder.com/400x200?text=Match'">
                             <div class="absolute top-3 left-3 bg-black/60 backdrop-blur-md px-3 py-1 rounded-full border border-white/20">
                                 <p class="text-[8px] font-black text-white uppercase tracking-widest">₹${t.entryFee === 0 ? "FREE" : t.entryFee}</p>
                             </div>
@@ -1926,10 +1912,10 @@
         loadTransactions();
         db.ref("settings").on("value", (s) => {
           const data = s.val() || {};
-          if (data.minWithdraw) appSettings.minWithdraw = data.minWithdraw;
+          appSettings = { ...appSettings, ...data };
           const minWText = document.getElementById("min-withdraw-text");
           if (minWText)
-            minWText.innerText = `Min Withdrawal: ₹${appSettings.minWithdraw}`;
+            minWText.innerText = `Min Withdrawal: ₹${appSettings.minWithdraw || appSettings.minWithdrawal || 0}`;
           if (data.qrUrl)
             document.getElementById("wallet-qr-code").src = data.qrUrl;
         });
@@ -2014,7 +2000,7 @@
           }
         });
 
-        db.ref("settings/categoryImages").on("value", (s) => {
+        db.ref("settings/modes").on("value", (s) => {
           categoryImages = s.val() || {};
           if (tournamentsData) renderCategories(tournamentsData);
         });
@@ -2107,7 +2093,7 @@
       }
 
       function renderCategories(tournaments) {
-        const allCategories = [
+        let allCategories = [
           "ALL",
           "BATTLE ROYALE",
           "FF SURVIVAL",
@@ -2120,13 +2106,19 @@
           "FREE MATCH",
         ];
 
+        // Add any custom modes from settings
+        const customModes = Object.keys(categoryImages);
+        customModes.forEach(m => {
+          if (!allCategories.includes(m)) allCategories.push(m);
+        });
+
         const categoriesHtml = allCategories
           .map((c) => {
             const catTournaments =
               c === "ALL"
                 ? tournaments
                 : tournaments.filter((t) => t.category === c);
-            const customImg = categoryImages[c.replace(/\//g, "_")];
+            const customImg = categoryImages[c];
             const thumb =
               customImg ||
               (catTournaments[0] && catTournaments[0].imageUrl) ||
@@ -2137,7 +2129,7 @@
             ).length;
             return `
                     <div onclick="setHomeCategory('${c}')" class="bg-white rounded-2xl border shadow-sm overflow-hidden cursor-pointer transform transition hover:scale-105">
-                        <img src="${thumb}" class="w-full h-24 object-cover">
+                        <img src="${thumb}" class="w-full h-24 object-cover" onerror="this.src='https://via.placeholder.com/400x200?text=${c}'">
                         <div class="p-2 text-center">
                             <h4 class="font-black text-[10px] text-gray-900 uppercase truncate">${c}</h4>
                             <p class="text-[8px] font-bold text-gray-500 uppercase">${catTournaments.length} Matches</p>
@@ -2918,7 +2910,7 @@
         if (!checkAuth()) return;
         const amount = parseFloat(document.getElementById("dep-amount").value);
         const txn = document.getElementById("dep-txn").value;
-        if (!amount || !txn) return alert("Enter Amount & Transaction ID");
+        if (!amount || !txn) return showToast("Enter Amount & Transaction ID", "error");
 
         try {
           await db.ref("addMoneyRequests").push({
@@ -2931,7 +2923,7 @@
             status: "pending",
             createdAt: Date.now(),
           });
-          alert("Request Submitted!");
+          showToast("Request Submitted!", "success");
           closeWalletModal();
         } catch (e) {
           handleFirebaseError(e, "write", "addMoneyRequests");
@@ -2943,9 +2935,9 @@
         const amount = parseFloat(document.getElementById("with-amount").value);
         const upi = document.getElementById("with-upi").value;
         if (amount < appSettings.minWithdraw)
-          return alert(`Min withdraw is ₹${appSettings.minWithdraw}`);
+          return showToast(`Min withdraw is ₹${appSettings.minWithdraw}`, "error");
         if (amount > (cachedUserData.wallet_winnings || 0))
-          return alert("Insufficient Winnings!");
+          return showToast("Insufficient Winnings!", "error");
 
         try {
           await db.ref("withdrawRequests").push({
@@ -2958,7 +2950,7 @@
             status: "pending",
             createdAt: Date.now(),
           });
-          alert("Request Submitted!");
+          showToast("Withdrawal Requested!", "success");
           closeWalletModal();
         } catch (e) {
           handleFirebaseError(e, "write", "withdrawRequests");

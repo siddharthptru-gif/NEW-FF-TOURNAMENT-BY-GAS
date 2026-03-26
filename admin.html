@@ -879,7 +879,9 @@
                 const utrs = {};
                 
                 if (requests) {
-                    Object.keys(requests).forEach(key => {
+                    const pendingRequests = Object.keys(requests).filter(key => requests[key].status === 'pending');
+                    
+                    pendingRequests.forEach(key => {
                         const req = requests[key];
                         const utr = req.txnId || req.utr;
                         if (utr) {
@@ -887,26 +889,30 @@
                         }
                     });
 
-                    Object.keys(requests).forEach(key => {
-                        const req = requests[key];
-                        const utr = req.txnId || req.utr;
-                        const isSuspicious = utr && utrs[utr] > 1;
-                        
-                        currentWalletList.innerHTML += `
-                            <div class="bg-gray-700 p-4 rounded-xl flex justify-between items-center ${isSuspicious ? 'border-2 border-red-500' : ''} mb-4">
-                                <div>
-                                    <h3 class="font-bold text-lg">${req.username || req.userName || 'Unknown'} - ₹${req.amount}</h3>
-                                    <p class="text-xs text-blue-400 font-bold">${req.appId || 'No ID'}</p>
-                                    <p class="text-sm ${isSuspicious ? 'text-red-400' : 'text-gray-400'}">${type === 'deposits' ? 'UTR: ' + (utr || 'N/A') : 'UPI: ' + (req.upiId || req.upi || 'N/A')} ${isSuspicious ? '(Duplicate)' : ''}</p>
-                                    ${req.screenshot ? `<a href="${req.screenshot}" target="_blank" class="text-blue-400 text-xs underline">View Screenshot</a>` : ''}
+                    if (pendingRequests.length > 0) {
+                        pendingRequests.forEach(key => {
+                            const req = requests[key];
+                            const utr = req.txnId || req.utr;
+                            const isSuspicious = utr && utrs[utr] > 1;
+                            
+                            currentWalletList.innerHTML += `
+                                <div class="bg-gray-700 p-4 rounded-xl flex justify-between items-center ${isSuspicious ? 'border-2 border-red-500' : ''} mb-4">
+                                    <div>
+                                        <h3 class="font-bold text-lg">${req.username || req.userName || 'Unknown'} - ₹${req.amount}</h3>
+                                        <p class="text-xs text-blue-400 font-bold">${req.appId || 'No ID'}</p>
+                                        <p class="text-sm ${isSuspicious ? 'text-red-400' : 'text-gray-400'}">${type === 'deposits' ? 'UTR: ' + (utr || 'N/A') : 'UPI: ' + (req.upiId || req.upi || 'N/A')} ${isSuspicious ? '(Duplicate)' : ''}</p>
+                                        ${req.screenshot ? `<a href="${req.screenshot}" target="_blank" class="text-blue-400 text-xs underline">View Screenshot</a>` : ''}
+                                    </div>
+                                    <div class="space-x-2">
+                                        <button onclick="processWallet('${type}', '${key}', 'approved', ${req.amount}, '${req.uid}')" class="bg-green-600 text-white px-4 py-2 rounded-xl font-bold">Approve</button>
+                                        <button onclick="processWallet('${type}', '${key}', 'rejected', 0, '${req.uid}')" class="bg-red-600 text-white px-4 py-2 rounded-xl font-bold">Reject</button>
+                                    </div>
                                 </div>
-                                <div class="space-x-2">
-                                    <button onclick="processWallet('${type}', '${key}', 'approved', ${req.amount}, '${req.uid}')" class="bg-green-600 text-white px-4 py-2 rounded-xl font-bold">Approve</button>
-                                    <button onclick="processWallet('${type}', '${key}', 'rejected', 0, '${req.uid}')" class="bg-red-600 text-white px-4 py-2 rounded-xl font-bold">Reject</button>
-                                </div>
-                            </div>
-                        `;
-                    });
+                            `;
+                        });
+                    } else {
+                        currentWalletList.innerHTML = `<p class="text-gray-400">No pending ${type} found.</p>`;
+                    }
                 } else {
                     currentWalletList.innerHTML = `<p class="text-gray-400">No ${type} found.</p>`;
                 }
@@ -946,8 +952,11 @@
                     });
                 }
                 
-                // Remove the request instead of updating status
-                db.ref(`${path}/${key}`).remove().then(() => showToast(`Request ${status}!`));
+                // Update the request status instead of removing it
+                db.ref(`${path}/${key}`).update({ 
+                    status: status,
+                    processedAt: Date.now()
+                }).then(() => showToast(`Request ${status}!`));
             });
         }
 
