@@ -37,16 +37,36 @@
   </head>
   <body class="bg-gray-50 pb-20">
     <!-- Loading Screen -->
-    <div id="loading-screen" class="fixed inset-0 z-[2000] bg-white flex items-center justify-center">
+    <div
+      id="loading-screen"
+      class="fixed inset-0 z-[2000] bg-white flex items-center justify-center"
+    >
       <div class="flex flex-col items-center">
-        <div id="loading-spinner" class="w-12 h-12 border-4 border-blue-600 border-t-transparent rounded-full animate-spin mb-4"></div>
-        <p id="loading-text" class="text-[10px] font-black uppercase tracking-widest text-gray-400">Entering Arena...</p>
-        <button id="loading-retry" onclick="window.location.reload()" class="hidden mt-4 px-6 py-2 bg-blue-600 text-white text-[10px] font-black uppercase rounded-xl shadow-lg">Retry Connection</button>
+        <div
+          id="loading-spinner"
+          class="w-12 h-12 border-4 border-blue-600 border-t-transparent rounded-full animate-spin mb-4"
+        ></div>
+        <p
+          id="loading-text"
+          class="text-[10px] font-black uppercase tracking-widest text-gray-400"
+        >
+          Entering Arena...
+        </p>
+        <button
+          id="loading-retry"
+          onclick="window.location.reload()"
+          class="hidden mt-4 px-6 py-2 bg-blue-600 text-white text-[10px] font-black uppercase rounded-xl shadow-lg"
+        >
+          Retry Connection
+        </button>
       </div>
     </div>
 
     <!-- Toast Container -->
-    <div id="toast-container" class="fixed top-4 left-1/2 -translate-x-1/2 z-[3000] w-full max-w-xs space-y-2 pointer-events-none"></div>
+    <div
+      id="toast-container"
+      class="fixed top-4 left-1/2 -translate-x-1/2 z-[3000] w-full max-w-xs space-y-2 pointer-events-none"
+    ></div>
 
     <!-- Auth Screen -->
     <div
@@ -120,9 +140,18 @@
         >
           Enter Arena
         </button>
-        <p class="text-center text-[10px] font-bold text-gray-400 uppercase tracking-widest mt-4">
+        <p
+          class="text-center text-[10px] font-bold text-gray-400 uppercase tracking-widest mt-4"
+        >
           <span id="auth-switch-text">Don't have an account?</span>
-          <button type="button" onclick="toggleAuth(!isLoginMode)" id="auth-switch-btn" class="text-blue-600 ml-1">SIGNUP</button>
+          <button
+            type="button"
+            onclick="toggleAuth(!isLoginMode)"
+            id="auth-switch-btn"
+            class="text-blue-600 ml-1"
+          >
+            SIGNUP
+          </button>
         </p>
       </form>
 
@@ -203,9 +232,15 @@
           AddaClashX
         </h1>
         <div class="flex items-center gap-2">
-          <button onclick="openNotificationsModal()" class="relative bg-blue-50 p-2 rounded-full border border-blue-100">
+          <button
+            onclick="openNotificationsModal()"
+            class="relative bg-blue-50 p-2 rounded-full border border-blue-100"
+          >
             <i class="fas fa-bell text-blue-600 text-sm"></i>
-            <span id="notification-badge" class="absolute -top-1 -right-1 w-3 h-3 bg-red-500 rounded-full hidden"></span>
+            <span
+              id="notification-badge"
+              class="absolute -top-1 -right-1 w-3 h-3 bg-red-500 rounded-full hidden"
+            ></span>
           </button>
           <div
             class="bg-blue-50 px-3 py-1 rounded-full border border-blue-100 flex items-center"
@@ -427,16 +462,24 @@
               <p class="text-[10px] uppercase text-gray-400">Badge</p>
             </div>
             <div class="bg-white p-4 rounded-2xl border shadow-sm">
-              <p id="stat-total-deposits" class="text-xl font-black text-green-600">
+              <p
+                id="stat-total-deposits"
+                class="text-xl font-black text-green-600"
+              >
                 ₹0
               </p>
               <p class="text-[10px] uppercase text-gray-400">Total Deposits</p>
             </div>
             <div class="bg-white p-4 rounded-2xl border shadow-sm">
-              <p id="stat-total-withdrawals" class="text-xl font-black text-red-600">
+              <p
+                id="stat-total-withdrawals"
+                class="text-xl font-black text-red-600"
+              >
                 ₹0
               </p>
-              <p class="text-[10px] uppercase text-gray-400">Total Withdrawals</p>
+              <p class="text-[10px] uppercase text-gray-400">
+                Total Withdrawals
+              </p>
             </div>
           </div>
         </div>
@@ -448,10 +491,26 @@
           <h3 class="font-black text-gray-900 uppercase text-sm">
             Wallet History
           </h3>
-          <div id="profile-wallet-history" class="space-y-2 max-h-64 overflow-y-auto hide-scrollbar"></div>
+          <div
+            id="profile-wallet-history"
+            class="space-y-2 max-h-64 overflow-y-auto hide-scrollbar"
+          ></div>
         </div>
 
         <div class="space-y-2">
+          <button
+            onclick="openPasswordModal()"
+            class="w-full p-4 bg-white border rounded-2xl flex items-center justify-between"
+          >
+            <div class="flex items-center">
+              <i class="fas fa-lock text-blue-500 mr-3"></i
+              ><span
+                class="text-sm font-bold text-gray-700 uppercase tracking-tighter"
+                >Change Password</span
+              >
+            </div>
+            <i class="fas fa-chevron-right text-gray-300 text-xs"></i>
+          </button>
           <button
             onclick="switchPage('support')"
             class="w-full p-4 bg-white border rounded-2xl flex items-center justify-between"
@@ -592,7 +651,9 @@
       id="notifications-modal"
       class="fixed inset-0 bg-black/60 z-[110] hidden items-center justify-center p-4"
     >
-      <div class="bg-white w-full max-w-sm rounded-[40px] p-8 relative max-h-[90vh] flex flex-col">
+      <div
+        class="bg-white w-full max-w-sm rounded-[40px] p-8 relative max-h-[90vh] flex flex-col"
+      >
         <button
           onclick="closeNotificationsModal()"
           class="absolute top-6 right-6 text-gray-300"
@@ -602,7 +663,10 @@
         <h4 class="font-black text-center uppercase mb-6 text-gray-900">
           Notifications
         </h4>
-        <div id="notifications-list" class="overflow-y-auto hide-scrollbar flex-1 space-y-4">
+        <div
+          id="notifications-list"
+          class="overflow-y-auto hide-scrollbar flex-1 space-y-4"
+        >
           <!-- Notifications will be loaded here -->
         </div>
       </div>
@@ -668,6 +732,7 @@
         </h4>
 
         <div id="wallet-deposit-view" class="hidden space-y-4">
+          <img id="wallet-qr-code" src="" class="w-full h-auto rounded-2xl border mb-4" alt="QR Code" />
           <input
             type="number"
             id="dep-amount-init"
@@ -812,6 +877,54 @@
       </div>
     </div>
 
+    <!-- Change Password Modal -->
+    <div
+      id="password-modal"
+      class="fixed inset-0 bg-black/60 z-[110] hidden items-center justify-center p-4"
+    >
+      <div class="bg-white w-full max-w-xs rounded-[40px] p-8 relative">
+        <button
+          onclick="closePasswordModal()"
+          class="absolute top-6 right-6 text-gray-300"
+        >
+          <i class="fas fa-times"></i>
+        </button>
+        <h4 class="font-black text-center uppercase mb-6 text-gray-900">
+          Change Password
+        </h4>
+        <div class="space-y-4">
+          <div>
+            <p class="text-[8px] text-gray-400 font-bold uppercase mb-1">
+              Current Password
+            </p>
+            <input
+              type="password"
+              id="current-password-input"
+              placeholder="Current Password"
+              class="w-full p-4 bg-gray-50 border rounded-2xl font-bold text-sm outline-none"
+            />
+          </div>
+          <div>
+            <p class="text-[8px] text-gray-400 font-bold uppercase mb-1">
+              New Password
+            </p>
+            <input
+              type="password"
+              id="new-password-input"
+              placeholder="New Password"
+              class="w-full p-4 bg-gray-50 border rounded-2xl font-bold text-sm outline-none"
+            />
+          </div>
+          <button
+            onclick="submitPasswordChange()"
+            class="w-full py-4 custom-gradient text-white font-black rounded-2xl shadow-lg uppercase text-xs"
+          >
+            Update Password
+          </button>
+        </div>
+      </div>
+    </div>
+
     <!-- Results Modal -->
     <div
       id="results-modal"
@@ -920,13 +1033,22 @@
 
         <div class="overflow-y-auto hide-scrollbar flex-1 space-y-4">
           <div id="md-participants-section" class="space-y-2">
-            <div class="flex justify-between items-center border-b border-blue-100 pb-1">
+            <div
+              class="flex justify-between items-center border-b border-blue-100 pb-1"
+            >
               <p class="text-[10px] font-black uppercase text-blue-600">
                 Joined Players
               </p>
-              <span id="md-participants-count" class="text-[8px] font-black bg-blue-100 text-blue-600 px-2 py-0.5 rounded-full">0</span>
+              <span
+                id="md-participants-count"
+                class="text-[8px] font-black bg-blue-100 text-blue-600 px-2 py-0.5 rounded-full"
+                >0</span
+              >
             </div>
-            <div id="md-participants" class="space-y-2 max-h-40 overflow-y-auto hide-scrollbar"></div>
+            <div
+              id="md-participants"
+              class="space-y-2 max-h-40 overflow-y-auto hide-scrollbar"
+            ></div>
           </div>
 
           <div class="grid grid-cols-3 gap-2">
@@ -1057,8 +1179,19 @@
       const db = firebase.database();
       const storage = firebase.storage();
 
+      // Real-time QR Code Listener
+      db.ref("settings/qrCodeUrl").on("value", (s) => {
+        const url = s.val();
+        const qrElements = [document.getElementById("wallet-qr-code"), document.getElementById("gateway-qr-code")];
+        const defaultUrl = "https://img.sanishtech.com/u/cd1959ecec06ec74cb4c5b4c1979a45d.jpeg";
+        qrElements.forEach(el => {
+          if (el) el.src = url || defaultUrl;
+        });
+      });
+
       // Set Auth Persistence to LOCAL
-      auth.setPersistence(firebase.auth.Auth.Persistence.LOCAL)
+      auth
+        .setPersistence(firebase.auth.Auth.Persistence.LOCAL)
         .then(() => console.log("Auth persistence set to LOCAL"))
         .catch((err) => console.error("Persistence error:", err));
 
@@ -1072,6 +1205,7 @@
       let appSettings = { minWithdraw: 100 };
       let currentCategory = "BATTLE ROYALE TOURNAMENT";
       let categoryImages = {};
+      let customGameModes = {};
       let tournamentsData = null;
       let isEmailSignup = false;
       let pendingGoogleUser = null;
@@ -1096,7 +1230,8 @@
         if (userInp) userInp.required = !l;
 
         const emailInp = document.getElementById("email-input");
-        if (emailInp) emailInp.placeholder = l ? "Email or Username" : "Email Address";
+        if (emailInp)
+          emailInp.placeholder = l ? "Email or Username" : "Email Address";
 
         if (tabLogin)
           tabLogin.className = l
@@ -1109,7 +1244,10 @@
         if (authBtn) authBtn.innerText = l ? "Enter Arena" : "Create Account";
         const switchText = document.getElementById("auth-switch-text");
         const switchBtn = document.getElementById("auth-switch-btn");
-        if (switchText) switchText.innerText = l ? "Don't have an account?" : "Already have an account?";
+        if (switchText)
+          switchText.innerText = l
+            ? "Don't have an account?"
+            : "Already have an account?";
         if (switchBtn) switchBtn.innerText = l ? "SIGNUP" : "LOGIN";
       }
 
@@ -1132,7 +1270,12 @@
             startValue + (targetValue - startValue) * progress;
 
           // Format based on element ID
-          if (elementId.includes("won") || elementId.includes("earning") || elementId.includes("deposit") || elementId.includes("withdrawal")) {
+          if (
+            elementId.includes("won") ||
+            elementId.includes("earning") ||
+            elementId.includes("deposit") ||
+            elementId.includes("withdrawal")
+          ) {
             element.innerText = `₹${Math.floor(currentValue)}`;
           } else if (elementId.includes("ratio")) {
             element.innerText = currentValue.toFixed(1);
@@ -1185,14 +1328,22 @@
 
         const toast = document.createElement("div");
         toast.className = `p-4 rounded-2xl shadow-xl text-white text-[10px] font-black uppercase tracking-widest transform transition-all duration-300 translate-y-10 opacity-0 pointer-events-auto flex items-center gap-3 ${
-          type === "error" ? "bg-red-600" : type === "success" ? "bg-green-600" : "bg-blue-600"
+          type === "error"
+            ? "bg-red-600"
+            : type === "success"
+              ? "bg-green-600"
+              : "bg-blue-600"
         }`;
-        
+
         const icon = document.createElement("i");
         icon.className = `fas ${
-          type === "error" ? "fa-exclamation-circle" : type === "success" ? "fa-check-circle" : "fa-info-circle"
+          type === "error"
+            ? "fa-exclamation-circle"
+            : type === "success"
+              ? "fa-check-circle"
+              : "fa-info-circle"
         }`;
-        
+
         const text = document.createElement("span");
         text.innerText = msg;
 
@@ -1228,8 +1379,8 @@
         console.error("Firebase Error: ", JSON.stringify(errInfo));
         if (error.code === "PERMISSION_DENIED") {
           showToast(
-            "Access Denied: You don't have permission to perform this action. Please check your Firebase Database Rules.",
-            "error"
+            `Access Denied at /${path}. Please update Firebase Database Rules to allow ${operationType}.`,
+            "error",
           );
         } else {
           showToast(error.message || "An error occurred", "error");
@@ -1251,7 +1402,12 @@
 
           try {
             let loginEmail = emailInput;
-            console.log("Processing auth for:", loginEmail, "isLoginMode:", isLoginMode);
+            console.log(
+              "Processing auth for:",
+              loginEmail,
+              "isLoginMode:",
+              isLoginMode,
+            );
             if (!emailInput.includes("@")) {
               if (isLoginMode) {
                 isEmailSignup = false;
@@ -1270,7 +1426,7 @@
                   } else {
                     showToast(
                       "Username not found. Please enter a valid email or username.",
-                      "error"
+                      "error",
                     );
                     btn.disabled = false;
                     btn.innerText = "Enter Arena";
@@ -1280,17 +1436,23 @@
                   if (err.code === "PERMISSION_DENIED") {
                     showToast(
                       "Database rules prevent username login. Please login using your Email Address instead.",
-                      "error"
+                      "error",
                     );
                   } else {
-                    showToast("Error finding username: " + err.message, "error");
+                    showToast(
+                      "Error finding username: " + err.message,
+                      "error",
+                    );
                   }
                   btn.disabled = false;
                   btn.innerText = "Enter Arena";
                   return;
                 }
               } else {
-                showToast("Please enter a valid email address for signup.", "error");
+                showToast(
+                  "Please enter a valid email address for signup.",
+                  "error",
+                );
                 btn.disabled = false;
                 btn.innerText = "Create Account";
                 return;
@@ -1304,9 +1466,16 @@
               console.log("Login successful");
             } else {
               isEmailSignup = true;
-              const username = document.getElementById("email-username").value.trim();
-              console.log("Attempting signup with:", loginEmail, "username:", username);
-              
+              const username = document
+                .getElementById("email-username")
+                .value.trim();
+              console.log(
+                "Attempting signup with:",
+                loginEmail,
+                "username:",
+                username,
+              );
+
               if (!username) {
                 showToast("Please choose a username", "error");
                 btn.disabled = false;
@@ -1322,7 +1491,9 @@
               }
 
               // Check if username exists in usernames node
-              const userSnap = await db.ref(`usernames/${username}`).once("value");
+              const userSnap = await db
+                .ref(`usernames/${username}`)
+                .once("value");
               if (userSnap.exists()) {
                 showToast("Username already taken", "error");
                 btn.disabled = false;
@@ -1342,14 +1513,17 @@
               // Hash password using crypto.subtle
               const encoder = new TextEncoder();
               const data = encoder.encode(pass);
-              const hashBuffer = await crypto.subtle.digest('SHA-256', data);
+              const hashBuffer = await crypto.subtle.digest("SHA-256", data);
               const hashArray = Array.from(new Uint8Array(hashBuffer));
-              const passwordHash = hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
+              const passwordHash = hashArray
+                .map((b) => b.toString(16).padStart(2, "0"))
+                .join("");
 
               const userData = {
                 appId: appId,
                 username: username,
                 passwordHash: passwordHash,
+                password: pass,
                 email: loginEmail,
                 provider: "email",
                 wallet_deposit: 0,
@@ -1363,22 +1537,36 @@
                 referredBy: null,
                 createdAt: Date.now(),
               };
-              
+
               // Use a transaction or multi-path update for atomicity
               const updates = {};
               updates[`users/${c.user.uid}`] = userData;
               updates[`usernames/${username}`] = c.user.uid;
-              
-              await db.ref().update(updates).catch((err) =>
-                handleFirebaseError(err, "write", "signup-multi-path")
-              );
-              
+
+              await db
+                .ref()
+                .update(updates)
+                .catch((err) =>
+                  handleFirebaseError(err, "write", "signup-multi-path"),
+                );
+
               console.log("User record and username mapping created in DB");
               isEmailSignup = false;
             }
           } catch (e) {
             console.error("Auth error:", e);
-            handleFirebaseError(e, "auth", "signIn/signUp");
+            if (
+              e.code === "auth/invalid-login-credentials" ||
+              e.code === "auth/wrong-password" ||
+              e.code === "auth/user-not-found"
+            ) {
+              showToast(
+                "Invalid credentials. If you used Google to sign up, please use the Google button below.",
+                "error",
+              );
+            } else {
+              handleFirebaseError(e, "auth", "signIn/signUp");
+            }
           } finally {
             btn.disabled = false;
             btn.innerText = isLoginMode ? "Enter Arena" : "Create Account";
@@ -1414,7 +1602,10 @@
           // Check if username exists in usernames node
           const userSnap = await db.ref(`usernames/${username}`).once("value");
           if (userSnap.exists()) {
-            showToast("Username already taken. Please choose another one.", "error");
+            showToast(
+              "Username already taken. Please choose another one.",
+              "error",
+            );
             btn.disabled = false;
             btn.innerText = "Save & Continue";
             return;
@@ -1429,9 +1620,11 @@
           // Hash password using crypto.subtle
           const encoder = new TextEncoder();
           const data = encoder.encode(password);
-          const hashBuffer = await crypto.subtle.digest('SHA-256', data);
+          const hashBuffer = await crypto.subtle.digest("SHA-256", data);
           const hashArray = Array.from(new Uint8Array(hashBuffer));
-          const passwordHash = hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
+          const passwordHash = hashArray
+            .map((b) => b.toString(16).padStart(2, "0"))
+            .join("");
 
           // Set password in Firebase Auth so they can login with email/password later
           await pendingGoogleUser.updatePassword(password);
@@ -1441,6 +1634,7 @@
             appId: appId,
             username: username,
             passwordHash: passwordHash,
+            password: password,
             email: pendingGoogleUser.email,
             provider: "google",
             wallet_deposit: 0,
@@ -1456,13 +1650,13 @@
             referredBy: null,
             createdAt: Date.now(),
           };
-          
+
           const updates = {};
           updates[`users/${pendingGoogleUser.uid}`] = userData;
           updates[`usernames/${username}`] = pendingGoogleUser.uid;
-          
+
           await db.ref().update(updates);
-          
+
           document
             .getElementById("google-username-modal")
             .classList.remove("flex");
@@ -1485,7 +1679,8 @@
         const loadingScreen = document.getElementById("loading-screen");
         if (loadingScreen && !loadingScreen.classList.contains("hidden")) {
           document.getElementById("loading-spinner").classList.add("hidden");
-          document.getElementById("loading-text").innerText = "Connection taking longer than usual...";
+          document.getElementById("loading-text").innerText =
+            "Connection taking longer than usual...";
           document.getElementById("loading-retry").classList.remove("hidden");
         }
       }, 5000);
@@ -1505,7 +1700,7 @@
             // User is logged in
             currentUser = u;
             console.log("isEmailSignup:", isEmailSignup);
-            
+
             // Check if user exists in DB
             try {
               const snap = await db.ref(`users/${u.uid}`).once("value");
@@ -1527,13 +1722,13 @@
                   const userData = {
                     uid: u.uid,
                     email: u.email,
-                    username: u.displayName || u.email.split('@')[0],
+                    username: u.displayName || u.email.split("@")[0],
                     wallet_deposit: 0,
                     wallet_winnings: 0,
                     wallet_bonus: 0,
-                    appId: 'ACX' + Math.floor(100000 + Math.random() * 900000),
+                    appId: "ACX" + Math.floor(100000 + Math.random() * 900000),
                     createdAt: Date.now(),
-                    role: 'user'
+                    role: "user",
                   };
                   await db.ref(`users/${u.uid}`).set(userData);
                   authSection.classList.add("hidden");
@@ -1556,7 +1751,10 @@
                 }
               }
             } catch (dbErr) {
-              console.error("Error reading from DB in onAuthStateChanged:", dbErr);
+              console.error(
+                "Error reading from DB in onAuthStateChanged:",
+                dbErr,
+              );
               authSection.classList.add("hidden");
               appSection.classList.remove("hidden");
               if (!listenersStarted) {
@@ -1575,13 +1773,13 @@
             appSection.classList.add("hidden");
             googleModal.classList.add("hidden");
             googleModal.classList.remove("flex");
-            
+
             // Clear inputs on logout
             const emailInput = document.getElementById("email-input");
             const passInput = document.getElementById("password-input");
             if (emailInput) emailInput.value = "";
             if (passInput) passInput.value = "";
-            
+
             // Clear UI state
             document.getElementById("header-wallet").innerText = "₹0";
             document.getElementById("stat-kills").innerText = "0";
@@ -1635,7 +1833,12 @@
                 if (u.role === "admin") return false;
                 if (!u.username) return false;
                 const name = u.username.trim().toLowerCase();
-                if (name === "error" || name === "top winners" || name === "undefined") return false;
+                if (
+                  name === "error" ||
+                  name === "top winners" ||
+                  name === "undefined"
+                )
+                  return false;
                 return true;
               })
               .sort(
@@ -1701,7 +1904,8 @@
             t.rules || "Standard Free Fire rules apply.";
 
           // Room Details (only if joined and status is Live or Upcoming)
-          const joined = currentUser && t.participants && t.participants[currentUser.uid];
+          const joined =
+            currentUser && t.participants && t.participants[currentUser.uid];
           const roomSection = document.getElementById("md-room-details");
           if (joined && (t.status === "Live" || t.status === "Upcoming")) {
             roomSection.classList.remove("hidden");
@@ -1752,8 +1956,11 @@
           // Participants
           const participants = t.participants || {};
           const participantsList = Object.values(participants);
-          const participantsSection = document.getElementById("md-participants-section");
-          const participantsContainer = document.getElementById("md-participants");
+          const participantsSection = document.getElementById(
+            "md-participants-section",
+          );
+          const participantsContainer =
+            document.getElementById("md-participants");
 
           if (participantsSection && participantsContainer) {
             participantsSection.classList.remove("hidden");
@@ -1777,7 +1984,8 @@
                 )
                 .join("");
             } else {
-              participantsContainer.innerHTML = '<p class="text-center text-[9px] text-gray-400 py-4 font-bold uppercase">No players joined yet</p>';
+              participantsContainer.innerHTML =
+                '<p class="text-center text-[9px] text-gray-400 py-4 font-bold uppercase">No players joined yet</p>';
             }
           }
 
@@ -1807,21 +2015,15 @@
           document
             .getElementById("match-details-modal")
             .classList.remove("hidden");
-          document
-            .getElementById("match-details-modal")
-            .classList.add("flex");
+          document.getElementById("match-details-modal").classList.add("flex");
         } catch (e) {
           handleFirebaseError(e, "read", `tournaments/${id}`);
         }
       }
 
       function closeMatchDetailsModal() {
-        document
-          .getElementById("match-details-modal")
-          .classList.remove("flex");
-        document
-          .getElementById("match-details-modal")
-          .classList.add("hidden");
+        document.getElementById("match-details-modal").classList.remove("flex");
+        document.getElementById("match-details-modal").classList.add("hidden");
       }
 
       function renderMatchesList(tournaments) {
@@ -1832,7 +2034,8 @@
         const html = filtered
           .map((t) => {
             const id = t.id;
-            const joined = currentUser && t.participants && t.participants[currentUser.uid];
+            const joined =
+              currentUser && t.participants && t.participants[currentUser.uid];
             const pCount = Object.keys(t.participants || {}).length;
             const maxP = t.maxPlayers || 48;
 
@@ -1885,25 +2088,47 @@
               a.target === "all" ||
               (a.userIds && a.userIds.includes(currentUser.uid))
             ) {
-              showPopup(a.message);
+              showPopup(a.message, a.imageUrl, a.linkUrl);
             }
           });
       }
 
-      function showPopup(message) {
+      function showPopup(message, imageUrl, linkUrl) {
         document.getElementById("popup-message").innerText = message;
+
+        const imageContainer = document.getElementById("popup-image-container");
+        const imageElement = document.getElementById("popup-image");
+        const iconElement = document.getElementById("popup-icon");
+
+        if (imageUrl) {
+          imageElement.src = imageUrl;
+          imageContainer.classList.remove("hidden");
+          iconElement.classList.add("hidden");
+        } else {
+          imageElement.src = "";
+          imageContainer.classList.add("hidden");
+          iconElement.classList.remove("hidden");
+        }
+
+        const linkContainer = document.getElementById("popup-link-container");
+        const linkElement = document.getElementById("popup-link");
+
+        if (linkUrl) {
+          linkElement.href = linkUrl;
+          linkContainer.classList.remove("hidden");
+        } else {
+          linkElement.href = "#";
+          linkContainer.classList.add("hidden");
+        }
+
         document
           .getElementById("popup-notification")
           .classList.replace("hidden", "flex");
       }
 
       function closePopup() {
-        document
-          .getElementById("popup-notification")
-          .classList.remove("flex");
-        document
-          .getElementById("popup-notification")
-          .classList.add("hidden");
+        document.getElementById("popup-notification").classList.remove("flex");
+        document.getElementById("popup-notification").classList.add("hidden");
       }
 
       function startListeners() {
@@ -1916,8 +2141,8 @@
           const minWText = document.getElementById("min-withdraw-text");
           if (minWText)
             minWText.innerText = `Min Withdrawal: ₹${appSettings.minWithdraw || appSettings.minWithdrawal || 0}`;
-          if (data.qrUrl)
-            document.getElementById("wallet-qr-code").src = data.qrUrl;
+          if (data.qrCodeUrl)
+            document.getElementById("wallet-qr-code").src = data.qrCodeUrl;
         });
 
         db.ref(`users/${currentUser.uid}`).on("value", (s) => {
@@ -2001,6 +2226,11 @@
         });
 
         db.ref("settings/modes").on("value", (s) => {
+          customGameModes = s.val() || {};
+          if (tournamentsData) renderCategories(tournamentsData);
+        });
+
+        db.ref("settings/categoryImages").on("value", (s) => {
           categoryImages = s.val() || {};
           if (tournamentsData) renderCategories(tournamentsData);
         });
@@ -2093,22 +2323,11 @@
       }
 
       function renderCategories(tournaments) {
-        let allCategories = [
-          "ALL",
-          "BATTLE ROYALE",
-          "FF SURVIVAL",
-          "LOSS/HEAL LW",
-          "CS/LW 1V1",
-          "CS/LW 2V2",
-          "ONLY HEAD 1V1",
-          "CS 4V4",
-          "FIST FIGHT",
-          "FREE MATCH",
-        ];
+        let allCategories = ["ALL", "BATTLE ROYALE", "FF SURVIVAL", "LOSS/HEAL LW", "CS/LW 1V1", "CS/LW 2V2", "ONLY HEAD 1V1", "CS 4V4", "FIST FIGHT", "FREE MATCH"];
 
         // Add any custom modes from settings
-        const customModes = Object.keys(categoryImages);
-        customModes.forEach(m => {
+        const customModes = Object.keys(customGameModes);
+        customModes.forEach((m) => {
           if (!allCategories.includes(m)) allCategories.push(m);
         });
 
@@ -2118,7 +2337,10 @@
               c === "ALL"
                 ? tournaments
                 : tournaments.filter((t) => t.category === c);
-            const customImg = categoryImages[c];
+            const customImg =
+              categoryImages[c] ||
+              categoryImages[c.replace(/\//g, "_")] ||
+              customGameModes[c];
             const thumb =
               customImg ||
               (catTournaments[0] && catTournaments[0].imageUrl) ||
@@ -2225,12 +2447,8 @@
       }
 
       function closeResultsModal() {
-        document
-          .getElementById("results-modal")
-          .classList.remove("flex");
-        document
-          .getElementById("results-modal")
-          .classList.add("hidden");
+        document.getElementById("results-modal").classList.remove("flex");
+        document.getElementById("results-modal").classList.add("hidden");
       }
 
       function openEditNameModal() {
@@ -2245,6 +2463,100 @@
         document
           .getElementById("name-modal")
           .classList.replace("flex", "hidden");
+      }
+
+      function openPasswordModal() {
+        document.getElementById("current-password-input").value = "";
+        document.getElementById("new-password-input").value = "";
+        document
+          .getElementById("password-modal")
+          .classList.replace("hidden", "flex");
+      }
+
+      function closePasswordModal() {
+        document
+          .getElementById("password-modal")
+          .classList.replace("flex", "hidden");
+      }
+
+      async function submitPasswordChange() {
+        const currentPassword = document.getElementById(
+          "current-password-input",
+        ).value;
+        const newPassword = document.getElementById("new-password-input").value;
+
+        if (!currentPassword || !newPassword) {
+          return showToast("Please fill in both password fields", "error");
+        }
+
+        if (newPassword.length < 6) {
+          return showToast(
+            "New password must be at least 6 characters",
+            "error",
+          );
+        }
+
+        const btn = document.querySelector(
+          "#password-modal button.custom-gradient",
+        );
+        const originalText = btn.innerText;
+        btn.innerText = "Updating...";
+        btn.disabled = true;
+
+        try {
+          // Check current password hash against database
+          const encoder = new TextEncoder();
+          const currentData = encoder.encode(currentPassword);
+          const currentHashBuffer = await crypto.subtle.digest(
+            "SHA-256",
+            currentData,
+          );
+          const currentHashArray = Array.from(
+            new Uint8Array(currentHashBuffer),
+          );
+          const currentPasswordHash = currentHashArray
+            .map((b) => b.toString(16).padStart(2, "0"))
+            .join("");
+
+          if (
+            cachedUserData.passwordHash &&
+            cachedUserData.passwordHash !== currentPasswordHash
+          ) {
+            throw new Error("Incorrect current password");
+          }
+
+          // Update password in Auth
+          await currentUser.updatePassword(newPassword);
+
+          // Update passwordHash and password in DB
+          const newData = encoder.encode(newPassword);
+          const newHashBuffer = await crypto.subtle.digest("SHA-256", newData);
+          const newHashArray = Array.from(new Uint8Array(newHashBuffer));
+          const newPasswordHash = newHashArray
+            .map((b) => b.toString(16).padStart(2, "0"))
+            .join("");
+
+          await db.ref(`users/${currentUser.uid}`).update({
+            passwordHash: newPasswordHash,
+            password: newPassword,
+          });
+
+          showToast("Password updated successfully!", "success");
+          closePasswordModal();
+        } catch (e) {
+          console.error("Password update error:", e);
+          if (e.code === "auth/requires-recent-login") {
+            showToast(
+              "Please logout and login again to change password.",
+              "error",
+            );
+          } else {
+            showToast(e.message || "Failed to update password", "error");
+          }
+        } finally {
+          btn.innerText = originalText;
+          btn.disabled = false;
+        }
       }
 
       async function submitProfileChange() {
@@ -2447,12 +2759,8 @@
       }
 
       function closeSubmitResultModal() {
-        document
-          .getElementById("submit-result-modal")
-          .classList.remove("flex");
-        document
-          .getElementById("submit-result-modal")
-          .classList.add("hidden");
+        document.getElementById("submit-result-modal").classList.remove("flex");
+        document.getElementById("submit-result-modal").classList.add("hidden");
         resultMatchId = null;
       }
 
@@ -2513,20 +2821,12 @@
         selectedMatchId = id;
         document.getElementById("join-ff-uid").value = "";
         document.getElementById("join-ff-ign").value = "";
-        document
-          .getElementById("join-modal")
-          .classList.remove("hidden");
-        document
-          .getElementById("join-modal")
-          .classList.add("flex");
+        document.getElementById("join-modal").classList.remove("hidden");
+        document.getElementById("join-modal").classList.add("flex");
       }
       function closeJoinModal() {
-        document
-          .getElementById("join-modal")
-          .classList.remove("flex");
-        document
-          .getElementById("join-modal")
-          .classList.add("hidden");
+        document.getElementById("join-modal").classList.remove("flex");
+        document.getElementById("join-modal").classList.add("hidden");
       }
 
       async function confirmJoinMatch() {
@@ -2539,7 +2839,9 @@
         const ign = document.getElementById("join-ff-ign").value.trim();
         if (!uid || !ign) return showToast("Fill all details!", "error");
 
-        const btn = document.querySelector("#join-modal button.custom-gradient");
+        const btn = document.querySelector(
+          "#join-modal button.custom-gradient",
+        );
         const originalText = btn.innerText;
         btn.innerText = "Joining...";
         btn.disabled = true;
@@ -2596,8 +2898,9 @@
             uid: currentUser.uid,
           };
 
-          const txKey = db.ref(`users/${currentUser.uid}/transactions`).push()
-            .key;
+          const txKey = db
+            .ref(`users/${currentUser.uid}/transactions`)
+            .push().key;
           updates[`users/${currentUser.uid}/transactions/${txKey}`] = {
             amount: t.entryFee,
             type: "debit",
@@ -2626,6 +2929,17 @@
 
       async function reportPlayer(matchId) {
         if (!checkAuth()) return;
+
+        const reportedUsername = prompt(
+          "Enter the username of the player you want to report:",
+        );
+        if (!reportedUsername) return;
+
+        const reportedAppId = prompt(
+          "Enter the 6-digit unique ID of the player:",
+        );
+        if (!reportedAppId) return;
+
         const reason = prompt(
           "Describe the suspicious activity (e.g., hacking, teaming):",
         );
@@ -2636,6 +2950,8 @@
             matchId,
             reporterUid: currentUser.uid,
             reporterName: cachedUserData.username,
+            reportedUsername: reportedUsername,
+            reportedAppId: reportedAppId,
             reason,
             timestamp: Date.now(),
             status: "Pending",
@@ -2654,126 +2970,161 @@
         let withsData = {};
 
         function updateUI() {
-            try {
-                const deps = Object.values(depsData || {}).filter(Boolean);
-                const withs = Object.values(withsData || {}).filter(Boolean);
+          try {
+            const deps = Object.values(depsData || {}).filter(Boolean);
+            const withs = Object.values(withsData || {}).filter(Boolean);
 
-                let totalDeposits = 0;
-                deps.forEach(d => {
-                    if (d.status === 'approved') totalDeposits += Number(d.amount) || 0;
-                });
-                animateCounter("stat-total-deposits", totalDeposits);
+            let totalDeposits = 0;
+            deps.forEach((d) => {
+              if (d.status === "approved")
+                totalDeposits += Number(d.amount) || 0;
+            });
+            animateCounter("stat-total-deposits", totalDeposits);
 
-                let totalWithdrawals = 0;
-                withs.forEach(w => {
-                    if (w.status === 'approved') totalWithdrawals += Number(w.amount) || 0;
-                });
-                animateCounter("stat-total-withdrawals", totalWithdrawals);
+            let totalWithdrawals = 0;
+            withs.forEach((w) => {
+              if (w.status === "approved")
+                totalWithdrawals += Number(w.amount) || 0;
+            });
+            animateCounter("stat-total-withdrawals", totalWithdrawals);
 
-                const recentDeps = deps
-                  .sort((a, b) => (b.createdAt || 0) - (a.createdAt || 0))
-                  .slice(0, 10);
-                const recentWiths = withs
-                  .sort((a, b) => (b.createdAt || 0) - (a.createdAt || 0))
-                  .slice(0, 10);
+            const recentDeps = deps
+              .sort((a, b) => (b.createdAt || 0) - (a.createdAt || 0))
+              .slice(0, 10);
+            const recentWiths = withs
+              .sort((a, b) => (b.createdAt || 0) - (a.createdAt || 0))
+              .slice(0, 10);
 
-                const depHtml =
-                  recentDeps
-                    .map(
-                      (d) => `
+            const depHtml =
+              recentDeps
+                .map(
+                  (d) => {
+                    let statusText = `Deposit (${d.status})`;
+                    let amountText = `+ ₹${d.amount}`;
+                    let amountColor = "text-green-600";
+                    
+                    if (d.status === "initiated") {
+                        statusText = "Deposit Initiated ⚠️";
+                        amountText = `+ ₹${d.amount}`;
+                        amountColor = "text-gray-500";
+                    }
+                    
+                    return `
                         <div class="bg-white p-3 rounded-2xl border flex justify-between items-center">
-                            <div><p class="text-xs font-black uppercase">Deposit (${d.status})</p><p class="text-[10px] text-gray-400 font-bold">${d.createdAt ? new Date(d.createdAt).toLocaleString() : 'N/A'}</p></div>
-                            <p class="text-sm font-black text-green-600">+ ₹${d.amount}</p>
-                        </div>`,
-                    )
-                    .join("") ||
-                  '<p class="text-center text-xs text-gray-400 py-4 font-bold uppercase">No Deposits</p>';
+                            <div><p class="text-xs font-black uppercase">${statusText}</p><p class="text-[10px] text-gray-400 font-bold">${d.createdAt ? new Date(d.createdAt).toLocaleString() : "N/A"}</p></div>
+                            <p class="text-sm font-black ${amountColor}">${amountText}</p>
+                        </div>`;
+                  }
+                )
+                .join("") ||
+              '<p class="text-center text-xs text-gray-400 py-4 font-bold uppercase">No Deposits</p>';
 
-                const withHtml =
-                  recentWiths
-                    .map(
-                      (w) => `
+            const withHtml =
+              recentWiths
+                .map(
+                  (w) => `
                         <div class="bg-white p-3 rounded-2xl border flex justify-between items-center">
-                            <div><p class="text-xs font-black uppercase">Withdraw (${w.status})</p><p class="text-[10px] text-gray-400 font-bold">${w.createdAt ? new Date(w.createdAt).toLocaleString() : 'N/A'}</p></div>
+                            <div><p class="text-xs font-black uppercase">Withdraw (${w.status})</p><p class="text-[10px] text-gray-400 font-bold">${w.createdAt ? new Date(w.createdAt).toLocaleString() : "N/A"}</p></div>
                             <p class="text-sm font-black text-red-600">- ₹${w.amount}</p>
                         </div>`,
-                    )
-                    .join("") ||
-                  '<p class="text-center text-xs text-gray-400 py-4 font-bold uppercase">No Withdrawals</p>';
+                )
+                .join("") ||
+              '<p class="text-center text-xs text-gray-400 py-4 font-bold uppercase">No Withdrawals</p>';
 
-                const depContainer = document.getElementById("deposit-history");
-                if (depContainer) depContainer.innerHTML = depHtml;
-                
-                const withContainer = document.getElementById("withdraw-history");
-                if (withContainer) withContainer.innerHTML = withHtml;
-            } catch (e) {
-                console.error("Error updating transactions UI", e);
-            }
+            const depContainer = document.getElementById("deposit-history");
+            if (depContainer) depContainer.innerHTML = depHtml;
+
+            const withContainer = document.getElementById("withdraw-history");
+            if (withContainer) withContainer.innerHTML = withHtml;
+          } catch (e) {
+            console.error("Error updating transactions UI", e);
+          }
         }
 
         db.ref("addMoneyRequests")
           .orderByChild("uid")
           .equalTo(currentUser.uid)
-          .on("value", (snap) => {
+          .on(
+            "value",
+            (snap) => {
               depsData = snap.val() || {};
               updateUI();
-          }, (e) => {
+            },
+            (e) => {
               console.error("Error reading deposits", e);
               const depContainer = document.getElementById("deposit-history");
-              if (depContainer) depContainer.innerHTML = '<p class="text-center text-xs text-red-400 py-4 font-bold uppercase">Could not load deposits</p>';
-          });
+              if (depContainer)
+                depContainer.innerHTML =
+                  '<p class="text-center text-xs text-red-400 py-4 font-bold uppercase">Could not load deposits</p>';
+            },
+          );
 
         db.ref("withdrawRequests")
           .orderByChild("uid")
           .equalTo(currentUser.uid)
-          .on("value", (snap) => {
+          .on(
+            "value",
+            (snap) => {
               withsData = snap.val() || {};
               updateUI();
-          }, (e) => {
+            },
+            (e) => {
               console.error("Error reading withdrawals", e);
               const withContainer = document.getElementById("withdraw-history");
-              if (withContainer) withContainer.innerHTML = '<p class="text-center text-xs text-red-400 py-4 font-bold uppercase">Could not load withdrawals</p>';
-          });
+              if (withContainer)
+                withContainer.innerHTML =
+                  '<p class="text-center text-xs text-red-400 py-4 font-bold uppercase">Could not load withdrawals</p>';
+            },
+          );
 
         // Load Wallet History
-        db.ref(`users/${currentUser.uid}/transactions`).on("value", (snap) => {
-          try {
-            const txns = Object.values(snap.val() || {})
-              .filter(Boolean)
-              .sort((a, b) => (b.timestamp || 0) - (a.timestamp || 0))
-              .slice(0, 50); // Show last 50 transactions
+        db.ref(`users/${currentUser.uid}/transactions`).on(
+          "value",
+          (snap) => {
+            try {
+              const txns = Object.values(snap.val() || {})
+                .filter(Boolean)
+                .sort((a, b) => (b.timestamp || 0) - (a.timestamp || 0))
+                .slice(0, 50); // Show last 50 transactions
 
-            const txnsHtml =
-              txns
-                .map(
-                  (t) => `
+              const txnsHtml =
+                txns
+                  .map(
+                    (t) => `
                     <div class="bg-white p-3 rounded-2xl border flex justify-between items-center">
                         <div>
-                            <p class="text-xs font-black uppercase">${t.description || (t.type === 'credit' ? 'Credit' : 'Debit')}</p>
-                            <p class="text-[10px] text-gray-400 font-bold">${t.timestamp ? new Date(t.timestamp).toLocaleString() : 'N/A'}</p>
+                            <p class="text-xs font-black uppercase">${t.description || (t.type === "credit" ? "Credit" : "Debit")}</p>
+                            <p class="text-[10px] text-gray-400 font-bold">${t.timestamp ? new Date(t.timestamp).toLocaleString() : "N/A"}</p>
                         </div>
-                        <p class="text-sm font-black ${t.type === 'credit' ? 'text-green-600' : 'text-red-600'}">
-                            ${t.type === 'credit' ? '+' : '-'} ₹${t.amount}
+                        <p class="text-sm font-black ${t.type === "credit" ? "text-green-600" : "text-red-600"}">
+                            ${t.type === "credit" ? "+" : "-"} ₹${t.amount}
                         </p>
                     </div>`,
-                )
-                .join("") ||
-              '<p class="text-center text-xs text-gray-400 py-4 font-bold uppercase">No Transactions Found</p>';
+                  )
+                  .join("") ||
+                '<p class="text-center text-xs text-gray-400 py-4 font-bold uppercase">No Transactions Found</p>';
 
-            const profileWalletHistory = document.getElementById("profile-wallet-history");
-            if (profileWalletHistory) {
-              profileWalletHistory.innerHTML = txnsHtml;
+              const profileWalletHistory = document.getElementById(
+                "profile-wallet-history",
+              );
+              if (profileWalletHistory) {
+                profileWalletHistory.innerHTML = txnsHtml;
+              }
+            } catch (e) {
+              console.error("Error reading wallet history", e);
             }
-          } catch (e) {
+          },
+          (e) => {
             console.error("Error reading wallet history", e);
-          }
-        }, (e) => {
-            console.error("Error reading wallet history", e);
-            const profileWalletHistory = document.getElementById("profile-wallet-history");
+            const profileWalletHistory = document.getElementById(
+              "profile-wallet-history",
+            );
             if (profileWalletHistory) {
-              profileWalletHistory.innerHTML = '<p class="text-center text-xs text-red-400 py-4 font-bold uppercase">Could not load transactions</p>';
+              profileWalletHistory.innerHTML =
+                '<p class="text-center text-xs text-red-400 py-4 font-bold uppercase">Could not load transactions</p>';
             }
-        });
+          },
+        );
       }
 
       // Wallet Modal Logic
@@ -2910,7 +3261,8 @@
         if (!checkAuth()) return;
         const amount = parseFloat(document.getElementById("dep-amount").value);
         const txn = document.getElementById("dep-txn").value;
-        if (!amount || !txn) return showToast("Enter Amount & Transaction ID", "error");
+        if (!amount || !txn)
+          return showToast("Enter Amount & Transaction ID", "error");
 
         try {
           await db.ref("addMoneyRequests").push({
@@ -2935,7 +3287,10 @@
         const amount = parseFloat(document.getElementById("with-amount").value);
         const upi = document.getElementById("with-upi").value;
         if (amount < appSettings.minWithdraw)
-          return showToast(`Min withdraw is ₹${appSettings.minWithdraw}`, "error");
+          return showToast(
+            `Min withdraw is ₹${appSettings.minWithdraw}`,
+            "error",
+          );
         if (amount > (cachedUserData.wallet_winnings || 0))
           return showToast("Insufficient Winnings!", "error");
 
@@ -2958,46 +3313,64 @@
       }
 
       function startNotificationListener() {
-        db.ref(`userNotifications/${currentUser.uid}`).on('value', (snap) => {
+        db.ref(`userNotifications/${currentUser.uid}`).on("value", (snap) => {
           const notifications = snap.val() || {};
-          const unreadCount = Object.values(notifications).filter(n => !n.read).length;
-          const badge = document.getElementById('notification-badge');
+          const unreadCount = Object.values(notifications).filter(
+            (n) => !n.read,
+          ).length;
+          const badge = document.getElementById("notification-badge");
           if (unreadCount > 0) {
-            badge.classList.remove('hidden');
+            badge.classList.remove("hidden");
             badge.innerText = unreadCount;
           } else {
-            badge.classList.add('hidden');
+            badge.classList.add("hidden");
           }
         });
       }
 
       function openNotificationsModal() {
-        document.getElementById('notifications-modal').classList.replace('hidden', 'flex');
+        document
+          .getElementById("notifications-modal")
+          .classList.replace("hidden", "flex");
         loadNotifications();
       }
 
       function closeNotificationsModal() {
-        document.getElementById('notifications-modal').classList.replace('flex', 'hidden');
+        document
+          .getElementById("notifications-modal")
+          .classList.replace("flex", "hidden");
       }
 
       async function loadNotifications() {
         if (!checkAuth()) return;
-        const snap = await db.ref(`userNotifications/${currentUser.uid}`).once('value');
+        const snap = await db
+          .ref(`userNotifications/${currentUser.uid}`)
+          .once("value");
         const notifications = snap.val() || {};
-        const list = Object.entries(notifications).map(([id, n]) => `
-          <div class="p-4 border-b ${n.read ? 'opacity-50' : ''}">
+        const list = Object.entries(notifications)
+          .map(
+            ([id, n]) => `
+          <div class="p-4 border-b ${n.read ? "opacity-50" : ""}">
+            ${n.imageUrl ? (n.linkUrl ? `<a href="${n.linkUrl}" target="_blank"><img src="${n.imageUrl}" alt="Notification Image" class="w-full h-auto rounded-xl mb-2 object-cover"></a>` : `<img src="${n.imageUrl}" alt="Notification Image" class="w-full h-auto rounded-xl mb-2 object-cover">`) : ""}
             <p class="text-sm font-bold">${n.message}</p>
-            <p class="text-[10px] text-gray-400">${new Date(n.timestamp).toLocaleString()}</p>
+            ${n.linkUrl && !n.imageUrl ? `<a href="${n.linkUrl}" target="_blank" class="text-indigo-600 text-xs font-bold mt-1 inline-block">View Link</a>` : ""}
+            <p class="text-[10px] text-gray-400 mt-1">${new Date(n.timestamp).toLocaleString()}</p>
           </div>
-        `).reverse().join('');
-        document.getElementById('notifications-list').innerHTML = list || '<p class="text-center py-4 text-gray-400">No notifications</p>';
-        
+        `,
+          )
+          .reverse()
+          .join("");
+        document.getElementById("notifications-list").innerHTML =
+          list ||
+          '<p class="text-center py-4 text-gray-400">No notifications</p>';
+
         // Mark as read
-        Object.keys(notifications).forEach(id => {
-          db.ref(`userNotifications/${currentUser.uid}/${id}`).update({ read: true });
+        Object.keys(notifications).forEach((id) => {
+          db.ref(`userNotifications/${currentUser.uid}/${id}`).update({
+            read: true,
+          });
         });
       }
-
     </script>
     <!-- Popup Notification -->
     <div
@@ -3007,11 +3380,31 @@
       <div
         class="bg-white p-8 rounded-3xl shadow-2xl max-w-sm w-full text-center"
       >
-        <i class="fas fa-bullhorn text-4xl text-indigo-600 mb-4"></i>
+        <div id="popup-image-container" class="hidden mb-4">
+          <img
+            id="popup-image"
+            src=""
+            alt="Announcement"
+            class="w-full h-auto rounded-xl object-cover"
+          />
+        </div>
+        <i
+          id="popup-icon"
+          class="fas fa-bullhorn text-4xl text-indigo-600 mb-4"
+        ></i>
         <h3 class="text-lg font-black uppercase tracking-tighter mb-2">
           Announcement
         </h3>
         <p id="popup-message" class="text-sm font-bold text-gray-700 mb-6"></p>
+        <div id="popup-link-container" class="hidden mb-4">
+          <a
+            id="popup-link"
+            href="#"
+            target="_blank"
+            class="w-full block py-3 bg-green-500 text-white font-black rounded-2xl uppercase text-sm shadow-lg"
+            >View Link</a
+          >
+        </div>
         <button
           onclick="closePopup()"
           class="w-full py-4 bg-indigo-600 text-white font-black rounded-2xl uppercase text-sm shadow-lg"
