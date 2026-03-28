@@ -14,18 +14,41 @@
     <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-database.js"></script>
     <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-storage.js"></script>
     <style>
+      :root {
+        --theme-bg: #0f172a;
+        --theme-surface: #1f2937;
+        --theme-surface-2: #374151;
+        --theme-text: #f8fafc;
+        --theme-text-muted: #9ca3af;
+      }
       body {
         font-family: "Inter", sans-serif;
       }
       .dark-theme {
-        background-color: #0f172a;
-        color: #f8fafc;
+        background-color: var(--theme-bg) !important;
+        color: var(--theme-text) !important;
+      }
+      .bg-gray-800 {
+        background-color: var(--theme-surface) !important;
+      }
+      .bg-gray-700 {
+        background-color: var(--theme-surface-2) !important;
+      }
+      .bg-gray-600 {
+        background-color: var(--theme-surface-2) !important;
+      }
+      .text-gray-400 {
+        color: var(--theme-text-muted) !important;
+      }
+      .text-white:not(button):not(button *):not([class*="bg-blue-"]):not([class*="bg-red-"]):not([class*="bg-green-"]):not([class*="bg-pink-"]):not([class*="bg-purple-"]) {
+        color: var(--theme-text) !important;
       }
       .sidebar-item:hover {
-        background-color: #1e293b;
+        background-color: var(--theme-surface-2) !important;
       }
       .sidebar-item.active {
-        background-color: #3b82f6;
+        background-color: #3b82f6 !important;
+        color: #ffffff !important;
       }
     </style>
   </head>
@@ -169,11 +192,30 @@
           <h2 id="section-title" class="text-3xl font-black uppercase">
             Dashboard
           </h2>
-          <div class="relative">
-            <button
-              onclick="toggleProfileDropdown()"
-              class="flex items-center space-x-3 bg-gray-700 p-2 rounded-full"
-            >
+          <div class="flex items-center gap-4">
+            <div class="relative">
+              <button
+                onclick="document.getElementById('theme-dropdown').classList.toggle('hidden')"
+                class="flex items-center justify-center w-10 h-10 bg-gray-700 rounded-full hover:bg-gray-600 transition-colors"
+                title="Change Theme"
+              >
+                <i class="fas fa-palette text-gray-200"></i>
+              </button>
+              <div
+                id="theme-dropdown"
+                class="hidden absolute right-0 mt-2 w-64 bg-gray-800 rounded-xl border border-gray-700 shadow-xl z-50 p-4"
+              >
+                <h3 class="text-sm font-bold text-gray-400 mb-3 uppercase tracking-wider">Interface Color</h3>
+                <div class="grid grid-cols-5 gap-2" id="color-swatches">
+                  <!-- Swatches injected via JS -->
+                </div>
+              </div>
+            </div>
+            <div class="relative">
+              <button
+                onclick="toggleProfileDropdown()"
+                class="flex items-center space-x-3 bg-gray-700 p-2 rounded-full"
+              >
               <img
                 id="admin-pic"
                 src="https://ui-avatars.com/api/?name=Admin"
@@ -198,6 +240,7 @@
                 Logout
               </button>
             </div>
+          </div>
           </div>
         </header>
         <div
@@ -360,6 +403,57 @@
       const auth = firebase.auth();
       const db = firebase.database();
       const storage = firebase.storage();
+
+      // Theme Logic
+      const themeColors = [
+        "#0f172a", // Default Dark
+        "#005461", "#0C7779", "#249E94", "#3BC1A8",
+        "#09637E", "#088395", "#7AB2B2", "#EBF4F6",
+        "#000000", "#3C467B", "#50589C", "#636CCB", "#6E8CFB"
+      ];
+
+      function applyTheme(color) {
+        document.documentElement.style.setProperty('--theme-bg', color);
+        // Calculate surface colors (slightly lighter than bg for dark themes)
+        // For very light colors like #EBF4F6, we might need a different approach,
+        // but color-mix with black/white works well generally.
+        if (color === '#EBF4F6') {
+          document.documentElement.style.setProperty('--theme-surface', `color-mix(in srgb, ${color} 90%, black)`);
+          document.documentElement.style.setProperty('--theme-surface-2', `color-mix(in srgb, ${color} 80%, black)`);
+          document.documentElement.style.setProperty('--theme-text', '#1f2937');
+          document.documentElement.style.setProperty('--theme-text-muted', '#4b5563');
+        } else {
+          document.documentElement.style.setProperty('--theme-surface', `color-mix(in srgb, ${color} 85%, white)`);
+          document.documentElement.style.setProperty('--theme-surface-2', `color-mix(in srgb, ${color} 70%, white)`);
+          document.documentElement.style.setProperty('--theme-text', '#f8fafc');
+          document.documentElement.style.setProperty('--theme-text-muted', '#9ca3af');
+        }
+        localStorage.setItem('adminThemeColor', color);
+      }
+
+      function initTheme() {
+        const savedColor = localStorage.getItem('adminThemeColor') || '#0f172a';
+        applyTheme(savedColor);
+
+        // Wait for DOM to load before injecting swatches
+        document.addEventListener('DOMContentLoaded', () => {
+          const swatchesContainer = document.getElementById('color-swatches');
+          if (swatchesContainer) {
+            themeColors.forEach(color => {
+              const btn = document.createElement('button');
+              btn.className = 'w-8 h-8 rounded-full border-2 border-transparent hover:border-gray-400 transition-all shadow-sm';
+              btn.style.backgroundColor = color;
+              btn.title = color;
+              btn.onclick = () => {
+                applyTheme(color);
+                document.getElementById('theme-dropdown').classList.add('hidden');
+              };
+              swatchesContainer.appendChild(btn);
+            });
+          }
+        });
+      }
+      initTheme();
 
       // Global State
       let currentUser = null;
@@ -599,6 +693,21 @@
       function toggleProfileDropdown() {
         document.getElementById("profile-dropdown").classList.toggle("hidden");
       }
+
+      // Close dropdowns when clicking outside
+      document.addEventListener('click', (e) => {
+        const themeBtn = document.querySelector('[title="Change Theme"]');
+        const themeDropdown = document.getElementById('theme-dropdown');
+        const profileBtn = document.getElementById('admin-pic').parentElement;
+        const profileDropdown = document.getElementById('profile-dropdown');
+
+        if (themeBtn && themeDropdown && !themeBtn.contains(e.target) && !themeDropdown.contains(e.target)) {
+          themeDropdown.classList.add('hidden');
+        }
+        if (profileBtn && profileDropdown && !profileBtn.contains(e.target) && !profileDropdown.contains(e.target)) {
+          profileDropdown.classList.add('hidden');
+        }
+      });
 
       // Navigation
       function showSection(sectionId) {
@@ -1006,33 +1115,103 @@
 
         const stats = [
           { id: "tournaments", path: "tournaments" },
-          { id: "deposits", path: "addMoneyRequests" },
-          { id: "withdrawals", path: "withdrawRequests" },
+          { id: "deposits", path: "addMoneyRequests", status: "pending" },
+          { id: "withdrawals", path: "withdrawRequests", status: "pending" },
         ];
         stats.forEach((stat) => {
           db.ref(stat.path).on("value", (snap) => {
             const statEl = document.getElementById(`stat-${stat.id}`);
             if (!statEl) return;
-            const count = snap.val() ? Object.keys(snap.val()).length : 0;
+            const data = snap.val();
+            let count = 0;
+            if (data) {
+              if (stat.status) {
+                count = Object.values(data).filter(item => item.status === stat.status).length;
+              } else {
+                count = Object.keys(data).length;
+              }
+            }
             statEl.innerText = count;
           });
         });
 
-        db.ref("auditLogs").on("value", (snap) => {
-          const feed = document.getElementById("activity-feed");
-          if (!feed) return;
-          feed.innerHTML = "";
-          const logs = snap.val();
-          if (logs) {
-            Object.values(logs)
-              .reverse()
-              .forEach((log) => {
-                const message =
-                  typeof log === "object" ? log.message || "Activity" : log;
-                feed.innerHTML += `<div class="p-3 bg-gray-600 rounded-xl text-sm">${message}</div>`;
+        const feed = document.getElementById("activity-feed");
+        if (feed) {
+          let activities = [];
+          
+          const updateFeed = () => {
+            if (!feed) return;
+            feed.innerHTML = "";
+            const sorted = activities.sort((a, b) => b.time - a.time).slice(0, 10);
+            if (sorted.length === 0) {
+              feed.innerHTML = "<p class='text-gray-400'>No recent activity.</p>";
+            } else {
+              sorted.forEach(act => {
+                const date = new Date(act.time).toLocaleString();
+                feed.innerHTML += `
+                  <div class="p-3 bg-gray-600 rounded-xl text-sm flex items-center gap-3">
+                    <i class="fas ${act.icon} ${act.color}"></i>
+                    <div>
+                      <p>${act.text}</p>
+                      <p class="text-xs text-gray-400">${date}</p>
+                    </div>
+                  </div>
+                `;
               });
-          }
-        });
+            }
+          };
+
+          db.ref("addMoneyRequests").limitToLast(10).on("value", snap => {
+            activities = activities.filter(a => a.type !== 'deposit');
+            const data = snap.val();
+            if (data) {
+              Object.values(data).forEach(d => {
+                activities.push({
+                  type: 'deposit',
+                  time: d.timestamp || 0,
+                  text: `Deposit request of ₹${d.amount} by ${d.username || 'User'} (${d.status})`,
+                  icon: "fa-wallet",
+                  color: "text-green-400"
+                });
+              });
+            }
+            updateFeed();
+          });
+
+          db.ref("withdrawRequests").limitToLast(10).on("value", snap => {
+            activities = activities.filter(a => a.type !== 'withdrawal');
+            const data = snap.val();
+            if (data) {
+              Object.values(data).forEach(w => {
+                activities.push({
+                  type: 'withdrawal',
+                  time: w.timestamp || 0,
+                  text: `Withdrawal request of ₹${w.amount} by ${w.username || 'User'} (${w.status})`,
+                  icon: "fa-money-bill-wave",
+                  color: "text-red-400"
+                });
+              });
+            }
+            updateFeed();
+          });
+
+          db.ref("users").limitToLast(10).on("value", snap => {
+            activities = activities.filter(a => a.type !== 'user');
+            const data = snap.val();
+            if (data) {
+              Object.values(data).forEach(u => {
+                activities.push({
+                  type: 'user',
+                  time: u.joinedAt || 0,
+                  text: `New user joined: ${u.username || 'Unknown'}`,
+                  icon: "fa-user-plus",
+                  color: "text-blue-400"
+                });
+              });
+            }
+            updateFeed();
+          });
+        }
 
         db.ref("supportTickets")
           .orderByChild("status")
@@ -1781,53 +1960,86 @@ Screenshots of the final result are mandatory for prize claims.`;
       }
 
       async function createMatch() {
+        showLoading(true);
         const fileInput = document.getElementById("match-image-upload");
         let imageUrl = document.getElementById("match-image").value;
 
-        if (fileInput.files.length > 0) {
-          showLoading(true);
-          const file = fileInput.files[0];
-          const storageRef = storage.ref(
-            `tournaments/${Date.now()}_${file.name}`,
-          );
-          try {
-            await storageRef.put(file);
-            imageUrl = await storageRef.getDownloadURL();
-          } catch (e) {
-            showLoading(false);
-            return showToast("Image upload failed: " + e.message, "error");
+        try {
+          if (fileInput.files.length > 0) {
+            const file = fileInput.files[0];
+            // Compress image and convert to base64 to store directly in database for speed
+            imageUrl = await new Promise((resolve) => {
+              const reader = new FileReader();
+              reader.onload = (e) => {
+                const img = new Image();
+                img.onload = () => {
+                  const canvas = document.createElement('canvas');
+                  const MAX_WIDTH = 800;
+                  const MAX_HEIGHT = 800;
+                  let width = img.width;
+                  let height = img.height;
+                  
+                  if (width > height) {
+                    if (width > MAX_WIDTH) {
+                      height *= MAX_WIDTH / width;
+                      width = MAX_WIDTH;
+                    }
+                  } else {
+                    if (height > MAX_HEIGHT) {
+                      width *= MAX_HEIGHT / height;
+                      height = MAX_HEIGHT;
+                    }
+                  }
+                  
+                  canvas.width = width;
+                  canvas.height = height;
+                  const ctx = canvas.getContext('2d');
+                  ctx.drawImage(img, 0, 0, width, height);
+                  // Compress to JPEG with 0.6 quality to keep it small for the database
+                  resolve(canvas.toDataURL('image/jpeg', 0.6));
+                };
+                img.src = e.target.result;
+              };
+              reader.readAsDataURL(file);
+            });
           }
+
+          const matchData = {
+            title: document.getElementById("match-name").value,
+            category: document.getElementById("match-category").value,
+            entryFee: parseFloat(document.getElementById("match-entry").value) || 0,
+            prizePool: parseFloat(document.getElementById("match-prize").value) || 0,
+            perKillPrize: parseFloat(document.getElementById("match-perkill").value) || 0,
+            maxPlayers: parseInt(document.getElementById("match-maxplayers").value) || 0,
+            matchTime: document.getElementById("match-time").value,
+            rules: document.getElementById("match-rules").value,
+            imageUrl: imageUrl,
+            status: "Upcoming",
+            roomId: "",
+            roomPassword: "",
+            participants: {},
+            adminNotes: "",
+          };
+
+          await db.ref("tournaments").push(matchData);
+          showToast("Match created successfully!");
+          closeModal("create-match-modal");
+          
+          // Clear inputs
+          document.getElementById("match-name").value = "";
+          document.getElementById("match-category").value = "";
+          document.getElementById("match-entry").value = "";
+          document.getElementById("match-prize").value = "";
+          document.getElementById("match-perkill").value = "";
+          document.getElementById("match-maxplayers").value = "";
+          document.getElementById("match-time").value = "";
+          document.getElementById("match-image").value = "";
+          if (fileInput) fileInput.value = "";
+        } catch (e) {
+          showToast(e.message, "error");
+        } finally {
           showLoading(false);
         }
-
-        const matchData = {
-          title: document.getElementById("match-name").value,
-          category: document.getElementById("match-category").value,
-          entryFee: parseFloat(document.getElementById("match-entry").value),
-          prizePool: parseFloat(document.getElementById("match-prize").value),
-          perKillPrize: parseFloat(
-            document.getElementById("match-perkill").value,
-          ),
-          maxPlayers: parseInt(
-            document.getElementById("match-maxplayers").value,
-          ),
-          matchTime: document.getElementById("match-time").value,
-          rules: document.getElementById("match-rules").value,
-          imageUrl: imageUrl,
-          status: "Upcoming",
-          roomId: "",
-          roomPassword: "",
-          participants: {},
-          adminNotes: "",
-        };
-
-        db.ref("tournaments")
-          .push(matchData)
-          .then(() => {
-            showToast("Match created successfully!");
-            closeModal("create-match-modal");
-          })
-          .catch((e) => showToast(e.message, "error"));
       }
 
       function openMatchDetails(key) {
@@ -1971,38 +2183,60 @@ Screenshots of the final result are mandatory for prize claims.`;
       }
 
       async function updateMatchInfo(key) {
-        const rules = document.getElementById("update-rules").value;
-        const adminNotes = document.getElementById("update-notes").value;
-        const announcement = document.getElementById(
-          "update-announcement",
-        ).value;
-        let resultImageUrl = document.getElementById(
-          "update-result-image",
-        ).value;
-        const fileInput = document.getElementById("update-result-image-upload");
+        showLoading(true);
+        try {
+          const rules = document.getElementById("update-rules").value;
+          const adminNotes = document.getElementById("update-notes").value;
+          const announcement = document.getElementById(
+            "update-announcement",
+          ).value;
+          let resultImageUrl = document.getElementById(
+            "update-result-image",
+          ).value;
+          const fileInput = document.getElementById("update-result-image-upload");
 
-        if (fileInput.files.length > 0) {
-          showLoading(true);
-          const file = fileInput.files[0];
-          const storageRef = storage.ref(
-            `results_global/${key}_${Date.now()}_${file.name}`,
-          );
-          try {
-            await storageRef.put(file);
-            resultImageUrl = await storageRef.getDownloadURL();
-          } catch (e) {
-            showLoading(false);
-            return showToast(
-              "Result image upload failed: " + e.message,
-              "error",
-            );
+          if (fileInput.files.length > 0) {
+            const file = fileInput.files[0];
+            resultImageUrl = await new Promise((resolve) => {
+              const reader = new FileReader();
+              reader.onload = (e) => {
+                const img = new Image();
+                img.onload = () => {
+                  const canvas = document.createElement('canvas');
+                  const MAX_WIDTH = 800;
+                  const MAX_HEIGHT = 800;
+                  let width = img.width;
+                  let height = img.height;
+                  if (width > height) {
+                    if (width > MAX_WIDTH) {
+                      height *= MAX_WIDTH / width;
+                      width = MAX_WIDTH;
+                    }
+                  } else {
+                    if (height > MAX_HEIGHT) {
+                      width *= MAX_HEIGHT / height;
+                      height = MAX_HEIGHT;
+                    }
+                  }
+                  canvas.width = width;
+                  canvas.height = height;
+                  const ctx = canvas.getContext('2d');
+                  ctx.drawImage(img, 0, 0, width, height);
+                  resolve(canvas.toDataURL('image/jpeg', 0.6));
+                };
+                img.src = e.target.result;
+              };
+              reader.readAsDataURL(file);
+            });
           }
+
+          await db.ref(`tournaments/${key}`).update({ rules, adminNotes, announcement, resultImageUrl });
+          showToast("Match info updated!");
+        } catch (e) {
+          showToast("Error updating match: " + e.message, "error");
+        } finally {
           showLoading(false);
         }
-
-        db.ref(`tournaments/${key}`)
-          .update({ rules, adminNotes, announcement, resultImageUrl })
-          .then(() => showToast("Match info updated!"));
       }
 
       function deleteMatch(key) {
