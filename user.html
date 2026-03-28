@@ -265,7 +265,7 @@
           </div>
           <div class="bg-indigo-600 p-3 rounded-2xl text-center shadow-md">
             <p
-              id="stat-rank"
+              id="stat-rank-header"
               class="text-xs font-black text-white uppercase tracking-tighter"
             >
               Bronze
@@ -415,7 +415,13 @@
           <div
             class="bg-gradient-to-br from-emerald-500 to-teal-600 p-6 rounded-3xl text-white shadow-lg"
           >
-            <h3 class="text-lg font-black uppercase mb-4">Player Statistics</h3>
+            <div class="flex justify-between items-start mb-4">
+              <h3 class="text-lg font-black uppercase">Player Statistics</h3>
+              <div class="text-right">
+                <p class="text-[10px] font-bold uppercase opacity-80">Rank</p>
+                <p id="stat-rank" class="text-xl font-black text-yellow-300">Bronze</p>
+              </div>
+            </div>
             <div class="grid grid-cols-3 gap-4">
               <div>
                 <p id="stat-matches-played" class="text-2xl font-black">0</p>
@@ -435,16 +441,26 @@
           <!-- Advanced Stats Grid -->
           <div class="grid grid-cols-2 gap-4">
             <div class="bg-white p-4 rounded-2xl border shadow-sm">
-              <p id="stat-win-rate" class="text-xl font-black text-gray-900">
-                0%
+              <p id="stat-prime-level" class="text-xl font-black text-indigo-600">
+                0
               </p>
-              <p class="text-[10px] uppercase text-gray-400">Win Rate</p>
+              <p class="text-[10px] uppercase text-gray-400">Prime Level</p>
             </div>
             <div class="bg-white p-4 rounded-2xl border shadow-sm">
               <p id="stat-kd-ratio" class="text-xl font-black text-gray-900">
                 0.0
               </p>
               <p class="text-[10px] uppercase text-gray-400">K/D Ratio</p>
+            </div>
+            <div class="bg-white p-4 rounded-2xl border shadow-sm">
+              <p id="stat-level" class="text-xl font-black text-gray-900">
+                1
+              </p>
+              <p class="text-[10px] uppercase text-gray-400">Level</p>
+            </div>
+            <div class="bg-white p-4 rounded-2xl border shadow-sm">
+              <p id="stat-xp" class="text-xl font-black text-gray-900">0</p>
+              <p class="text-[10px] uppercase text-gray-400">XP</p>
             </div>
             <div class="bg-white p-4 rounded-2xl border shadow-sm">
               <p id="stat-avg-earning" class="text-xl font-black text-gray-900">
@@ -1320,6 +1336,22 @@
 
         const badgeEl = document.getElementById("stat-badge");
         if (badgeEl) badgeEl.innerText = badge;
+        
+        const rankEl = document.getElementById("stat-rank");
+        const rankValue = userData.rank || userData.autoRank || "Bronze";
+        if (rankEl) rankEl.innerText = rankValue;
+        
+        const rankHeaderEl = document.getElementById("stat-rank-header");
+        if (rankHeaderEl) rankHeaderEl.innerText = rankValue;
+        
+        const primeEl = document.getElementById("stat-prime-level");
+        if (primeEl) primeEl.innerText = userData.primeLevel !== undefined ? userData.primeLevel : (userData.autoPrimeLevel || 0);
+        
+        const levelEl = document.getElementById("stat-level");
+        if (levelEl) levelEl.innerText = userData.level || 1;
+        
+        const xpEl = document.getElementById("stat-xp");
+        if (xpEl) xpEl.innerText = userData.xp || 0;
       }
 
       function showToast(msg, type = "info") {
@@ -2214,14 +2246,6 @@
                   .classList.add("hidden");
               }
             }
-
-            // Rank logic
-            let rank = "Bronze";
-            const kills = cachedUserData.totalKills || 0;
-            if (kills > 50) rank = "Platinum";
-            else if (kills > 20) rank = "Gold";
-            else if (kills > 5) rank = "Silver";
-            document.getElementById("stat-rank").innerText = rank;
           }
         });
 
