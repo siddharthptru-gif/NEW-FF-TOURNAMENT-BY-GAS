@@ -659,7 +659,8 @@
           }
 
           await auth.signInWithEmailAndPassword(email, password);
-          // Success handled by onAuthStateChanged
+          // Success handled by onAuthStateChanged, but we must decrement counter
+          showLoading(false);
         } catch (e) {
           console.error("Login Error:", e);
           
@@ -1027,7 +1028,7 @@
           if (fileInput && fileInput.files.length > 0) {
             showLoading(true, "Compressing and uploading notification image...");
             imageUrl = await withTimeout(
-              compressImage(fileInput.files[0]),
+              uploadImage(fileInput.files[0], 'notifications'),
               60000,
               "Image upload timed out. Please try again or use a smaller image."
             );
@@ -1208,7 +1209,6 @@
             updateFeed();
           });
         }
-      }
 
         db.ref("supportTickets")
           .orderByChild("status")
@@ -1659,6 +1659,7 @@
           loadTickets();
           showToast("Ticket deleted!");
         });
+      }
       function loadReports() {
         const content = document.getElementById("support-content");
         if (!content) return;
@@ -2216,7 +2217,7 @@ Screenshots of the final result are mandatory for prize claims.`;
         try {
           if (fileInput.files.length > 0) {
             imageUrl = await withTimeout(
-              compressImage(fileInput.files[0]),
+              uploadImage(fileInput.files[0], 'matches'),
               60000,
               "Image upload timed out. Please try again or use a smaller image."
             );
@@ -2500,7 +2501,7 @@ Screenshots of the final result are mandatory for prize claims.`;
           if (fileInput.files.length > 0) {
             showLoading(true, "Compressing and uploading result image...");
             resultImageUrl = await withTimeout(
-              compressImage(fileInput.files[0]),
+              uploadImage(fileInput.files[0], 'results'),
               60000,
               "Image upload timed out. Please try again or use a smaller image."
             );
@@ -2571,7 +2572,7 @@ Screenshots of the final result are mandatory for prize claims.`;
           if (fileInput && fileInput.files.length > 0) {
             showLoading(true, "Compressing and uploading banner image...");
             url = await withTimeout(
-              compressImage(fileInput.files[0]),
+              uploadImage(fileInput.files[0], 'banners'),
               60000,
               "Image upload timed out. Please try again or use a smaller image."
             );
@@ -2673,7 +2674,7 @@ Screenshots of the final result are mandatory for prize claims.`;
           if (fileInput && fileInput.files.length > 0) {
             showLoading(true, "Compressing and uploading game mode image...");
             url = await withTimeout(
-              compressImage(fileInput.files[0]),
+              uploadImage(fileInput.files[0], 'modes'),
               60000,
               "Image upload timed out. Please try again or use a smaller image."
             );
@@ -2711,7 +2712,7 @@ Screenshots of the final result are mandatory for prize claims.`;
           if (fileInput && fileInput.files.length > 0) {
             showLoading(true, "Compressing and uploading game mode image...");
             url = await withTimeout(
-              compressImage(fileInput.files[0]),
+              uploadImage(fileInput.files[0], 'modes'),
               60000,
               "Image upload timed out. Please try again or use a smaller image."
             );
@@ -2871,7 +2872,7 @@ Screenshots of the final result are mandatory for prize claims.`;
           if (fileInput && fileInput.files.length > 0) {
             showLoading(true, "Compressing and uploading announcement image...");
             imageUrl = await withTimeout(
-              compressImage(fileInput.files[0]),
+              uploadImage(fileInput.files[0], 'announcements'),
               60000,
               "Image upload timed out. Please try again or use a smaller image."
             );
@@ -2920,6 +2921,22 @@ Screenshots of the final result are mandatory for prize claims.`;
               });
           },
         );
+      }
+
+      function validateImage(file) {
+        const validTypes = ['image/jpeg', 'image/png', 'image/webp'];
+        if (!validTypes.includes(file.type)) {
+          throw new Error("Invalid file type. Please upload a JPG, PNG, or WEBP image.");
+        }
+        if (file.size > 2 * 1024 * 1024) { // 2MB limit for compression
+          throw new Error("File is too large. Please upload an image under 2MB.");
+        }
+        return true;
+      }
+
+      async function uploadImage(file, folder = 'uploads') {
+        validateImage(file);
+        return await compressImage(file, folder);
       }
 
       async function compressImage(file, pathPrefix = 'uploads') {
@@ -2995,6 +3012,7 @@ Screenshots of the final result are mandatory for prize claims.`;
         setTimeout(() => toast.remove(), 3000);
       }
 
+      let loadingCount = 0;
       let currentAbortController = null;
 
       function showLoading(show, text = "Processing...") {
@@ -3003,15 +3021,21 @@ Screenshots of the final result are mandatory for prize claims.`;
         if (!overlay) return;
         
         if (show) {
+          loadingCount++;
           if (textEl) textEl.innerText = text;
           overlay.classList.remove("hidden");
           overlay.classList.add("flex");
-          // Create a new AbortController for this operation
-          currentAbortController = new AbortController();
+          // Create a new AbortController for this operation if not already present
+          if (!currentAbortController) {
+            currentAbortController = new AbortController();
+          }
         } else {
-          overlay.classList.add("hidden");
-          overlay.classList.remove("flex");
-          currentAbortController = null;
+          loadingCount = Math.max(0, loadingCount - 1);
+          if (loadingCount === 0) {
+            overlay.classList.add("hidden");
+            overlay.classList.remove("flex");
+            currentAbortController = null;
+          }
         }
       }
 
