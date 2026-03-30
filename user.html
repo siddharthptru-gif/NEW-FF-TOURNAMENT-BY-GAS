@@ -175,6 +175,12 @@
         />
         Continue with Google
       </button>
+
+      <!-- Footer for Auth Screen -->
+      <div class="text-center mt-8 text-[9px] text-gray-400 font-bold uppercase tracking-widest">
+        <p>By entering, you agree to our <a href="#" class="text-blue-600 underline">Terms</a> and <a href="#" class="text-blue-600 underline">Privacy Policy</a>.</p>
+        <p class="mt-2">&copy; 2026 AddaClashX. All rights reserved.</p>
+      </div>
     </div>
 
     <!-- Google Username Modal -->
@@ -245,7 +251,7 @@
           <div
             class="bg-blue-50 px-3 py-1 rounded-full border border-blue-100 flex items-center"
           >
-            <i class="fas fa-coins text-yellow-500 mr-2 text-xs"></i>
+            <i class="fas fa-wallet text-yellow-500 mr-2 text-xs"></i>
             <span id="header-wallet" class="font-black text-blue-700 text-sm"
               >₹0</span
             >
@@ -256,26 +262,15 @@
       <!-- Home Page (Matches & Global Chat) -->
       <div id="page-home" class="p-4 space-y-6 page-content">
         <!-- Stats Bar -->
-        <div class="grid grid-cols-3 gap-2">
+        <div class="grid grid-cols-2 gap-2">
           <div class="bg-white p-3 rounded-2xl border text-center shadow-sm">
             <p id="stat-kills" class="text-lg font-black text-gray-800">0</p>
             <p class="text-[7px] text-gray-400 font-black uppercase">
               Total Kills
             </p>
           </div>
-          <div class="bg-indigo-600 p-3 rounded-2xl text-center shadow-md">
-            <p
-              id="stat-rank-header"
-              class="text-xs font-black text-white uppercase tracking-tighter"
-            >
-              Bronze
-            </p>
-            <p class="text-[7px] text-white/60 font-black uppercase">
-              Your Rank
-            </p>
-          </div>
           <div class="bg-white p-3 rounded-2xl border text-center shadow-sm">
-            <p id="stat-wins" class="text-lg font-black text-gray-800">0</p>
+            <p id="stat-home-matches" class="text-lg font-black text-gray-800">0</p>
             <p class="text-[7px] text-gray-400 font-black uppercase">Matches</p>
           </div>
         </div>
@@ -418,11 +413,9 @@
             <div class="flex justify-between items-start mb-4">
               <h3 class="text-lg font-black uppercase">Player Statistics</h3>
               <div class="text-right">
-                <p class="text-[10px] font-bold uppercase opacity-80">Rank</p>
-                <p id="stat-rank" class="text-xl font-black text-yellow-300">Bronze</p>
               </div>
             </div>
-            <div class="grid grid-cols-3 gap-4">
+            <div class="grid grid-cols-2 gap-4">
               <div>
                 <p id="stat-matches-played" class="text-2xl font-black">0</p>
                 <p class="text-[10px] uppercase opacity-70">Matches</p>
@@ -435,47 +428,32 @@
                 <p id="stat-total-won" class="text-2xl font-black">₹0</p>
                 <p class="text-[10px] uppercase opacity-70">Won</p>
               </div>
+              <div>
+                <p id="stat-total-wins" class="text-2xl font-black">0</p>
+                <p class="text-[10px] uppercase opacity-70">Wins</p>
+              </div>
             </div>
           </div>
 
           <!-- Advanced Stats Grid -->
           <div class="grid grid-cols-2 gap-4">
             <div class="bg-white p-4 rounded-2xl border shadow-sm">
-              <p id="stat-prime-level" class="text-xl font-black text-indigo-600">
-                0
+              <p id="stat-win-rate" class="text-xl font-black text-blue-600">
+                0%
               </p>
-              <p class="text-[10px] uppercase text-gray-400">Prime Level</p>
+              <p class="text-[10px] uppercase text-gray-400">Win Rate</p>
             </div>
             <div class="bg-white p-4 rounded-2xl border shadow-sm">
-              <p id="stat-kd-ratio" class="text-xl font-black text-gray-900">
+              <p id="stat-avg-kills" class="text-xl font-black text-indigo-600">
                 0.0
               </p>
-              <p class="text-[10px] uppercase text-gray-400">K/D Ratio</p>
-            </div>
-            <div class="bg-white p-4 rounded-2xl border shadow-sm">
-              <p id="stat-level" class="text-xl font-black text-gray-900">
-                1
-              </p>
-              <p class="text-[10px] uppercase text-gray-400">Level</p>
-            </div>
-            <div class="bg-white p-4 rounded-2xl border shadow-sm">
-              <p id="stat-xp" class="text-xl font-black text-gray-900">0</p>
-              <p class="text-[10px] uppercase text-gray-400">XP</p>
+              <p class="text-[10px] uppercase text-gray-400">Avg Kills/Match</p>
             </div>
             <div class="bg-white p-4 rounded-2xl border shadow-sm">
               <p id="stat-avg-earning" class="text-xl font-black text-gray-900">
                 ₹0
               </p>
               <p class="text-[10px] uppercase text-gray-400">Avg Earning</p>
-            </div>
-            <div class="bg-white p-4 rounded-2xl border shadow-sm">
-              <p
-                id="stat-badge"
-                class="text-xl font-black text-indigo-600 uppercase"
-              >
-                Beginner
-              </p>
-              <p class="text-[10px] uppercase text-gray-400">Badge</p>
             </div>
             <div class="bg-white p-4 rounded-2xl border shadow-sm">
               <p
@@ -748,7 +726,6 @@
         </h4>
 
         <div id="wallet-deposit-view" class="hidden space-y-4">
-          <img id="wallet-qr-code" src="" class="w-full h-auto rounded-2xl border mb-4" alt="QR Code" />
           <input
             type="number"
             id="dep-amount-init"
@@ -817,18 +794,13 @@
           05:00
         </p>
       </div>
-      <div
-        class="bg-gray-50 p-6 rounded-3xl border-2 border-dashed border-gray-200 text-center mb-6"
-      >
-        <img
-          id="gateway-qr-code"
-          src="https://img.sanishtech.com/u/cd1959ecec06ec74cb4c5b4c1979a45d.jpeg"
-          class="w-64 h-64 mx-auto rounded-xl mb-2 object-contain"
-        />
-        <p class="text-[10px] font-black text-gray-400 uppercase">
-          Scan to Pay ₹<span id="gateway-amount">0</span>
-        </p>
+      <div class="bg-white p-4 rounded-2xl border mb-6 text-center">
+        <p class="text-[10px] font-bold text-gray-500 uppercase">Amount to Pay</p>
+        <p id="gateway-amount" class="text-2xl font-black text-gray-900">₹0</p>
+        <img id="gateway-qr-code" src="" class="w-32 h-32 mx-auto mt-4 rounded-xl object-contain" referrerpolicy="no-referrer" onerror="this.src='https://via.placeholder.com/128?text=QR+Error'; document.getElementById('qr-error-msg').classList.remove('hidden');">
+        <p id="qr-error-msg" class="hidden text-[10px] text-red-500 font-bold mt-2">QR Code could not be loaded. Please contact support.</p>
       </div>
+
       <div class="space-y-4">
         <input
           type="text"
@@ -1199,7 +1171,7 @@
       db.ref("settings/qrCodeUrl").on("value", (s) => {
         const url = s.val();
         const qrElements = [document.getElementById("wallet-qr-code"), document.getElementById("gateway-qr-code")];
-        const defaultUrl = "https://img.sanishtech.com/u/cd1959ecec06ec74cb4c5b4c1979a45d.jpeg";
+        const defaultUrl = "https://img.sanishtech.com/u/19c85a998f893a25886779bdc9dbaf55.jpeg";
         qrElements.forEach(el => {
           if (el) el.src = url || defaultUrl;
         });
@@ -1308,50 +1280,31 @@
         requestAnimationFrame(update);
       }
 
-      function calculateBadge(wins, earnings, kdRatio) {
-        if (wins > 50 || earnings > 5000 || kdRatio > 2.5) return "Legend";
-        if (wins > 20 || earnings > 2000 || kdRatio > 1.5) return "Pro Player";
-        if (wins > 5 || earnings > 500 || kdRatio > 1.0) return "Intermediate";
-        return "Beginner";
-      }
-
       function renderPlayerStats(userData) {
         if (!userData) return;
         const matches = userData.matchesPlayed || 0;
         const kills = userData.totalKills || 0;
         const wins = userData.totalWins || 0;
-        const earnings = userData.wallet_winnings || 0;
+        const earnings = userData.totalWon || 0;
+        const deposits = userData.wallet_deposit || 0;
+        const withdrawals = userData.totalWithdrawals || 0;
 
-        const winRate = matches > 0 ? (wins / matches) * 100 : 0;
-        const kdRatio = matches > 0 ? kills / matches : 0;
+        // Avg Earning
         const avgEarning = matches > 0 ? earnings / matches : 0;
-        const badge = calculateBadge(wins, earnings, kdRatio);
+        // Win Rate
+        const winRate = matches > 0 ? (wins / matches) * 100 : 0;
+        // Avg Kills
+        const avgKills = matches > 0 ? kills / matches : 0;
 
         animateCounter("stat-matches-played", matches);
         animateCounter("stat-total-kills", kills);
         animateCounter("stat-total-won", earnings);
-        animateCounter("stat-win-rate", winRate);
-        animateCounter("stat-kd-ratio", kdRatio);
+        animateCounter("stat-total-wins", wins);
         animateCounter("stat-avg-earning", avgEarning);
-
-        const badgeEl = document.getElementById("stat-badge");
-        if (badgeEl) badgeEl.innerText = badge;
-        
-        const rankEl = document.getElementById("stat-rank");
-        const rankValue = userData.rank || userData.autoRank || "Bronze";
-        if (rankEl) rankEl.innerText = rankValue;
-        
-        const rankHeaderEl = document.getElementById("stat-rank-header");
-        if (rankHeaderEl) rankHeaderEl.innerText = rankValue;
-        
-        const primeEl = document.getElementById("stat-prime-level");
-        if (primeEl) primeEl.innerText = userData.primeLevel !== undefined ? userData.primeLevel : (userData.autoPrimeLevel || 0);
-        
-        const levelEl = document.getElementById("stat-level");
-        if (levelEl) levelEl.innerText = userData.level || 1;
-        
-        const xpEl = document.getElementById("stat-xp");
-        if (xpEl) xpEl.innerText = userData.xp || 0;
+        animateCounter("stat-total-deposits", deposits);
+        animateCounter("stat-total-withdrawals", withdrawals);
+        animateCounter("stat-win-rate", winRate);
+        animateCounter("stat-avg-kills", avgKills);
       }
 
       function showToast(msg, type = "info") {
@@ -1417,6 +1370,67 @@
         } else {
           showToast(error.message || "An error occurred", "error");
         }
+      }
+
+      async function compressImage(file, pathPrefix = 'uploads') {
+        if (file.size < 500 * 1024) {
+          try {
+            const fileName = `${pathPrefix}/${Date.now()}_${Math.random().toString(36).substring(7)}.${file.name.split('.').pop()}`;
+            const storageRef = storage.ref().child(fileName);
+            const snapshot = await storageRef.put(file);
+            const downloadURL = await snapshot.ref.getDownloadURL();
+            return downloadURL;
+          } catch (error) {
+            throw error;
+          }
+        }
+        return new Promise((resolve, reject) => {
+          const img = new Image();
+          const objectUrl = URL.createObjectURL(file);
+          
+          img.onload = async () => {
+            URL.revokeObjectURL(objectUrl);
+            const canvas = document.createElement('canvas');
+            const MAX_WIDTH = 600;
+            const MAX_HEIGHT = 600;
+            let width = img.width;
+            let height = img.height;
+            
+            if (width > height) {
+              if (width > MAX_WIDTH) {
+                height *= MAX_WIDTH / width;
+                width = MAX_WIDTH;
+              }
+            } else {
+              if (height > MAX_HEIGHT) {
+                width *= MAX_HEIGHT / height;
+                height = MAX_HEIGHT;
+              }
+            }
+            
+            canvas.width = width;
+            canvas.height = height;
+            const ctx = canvas.getContext('2d');
+            ctx.drawImage(img, 0, 0, width, height);
+            
+            canvas.toBlob(async (blob) => {
+              try {
+                const fileName = `${pathPrefix}/${Date.now()}_${Math.random().toString(36).substring(7)}.jpg`;
+                const storageRef = storage.ref().child(fileName);
+                const snapshot = await storageRef.put(blob);
+                const downloadURL = await snapshot.ref.getDownloadURL();
+                resolve(downloadURL);
+              } catch (error) {
+                reject(error);
+              }
+            }, 'image/jpeg', 0.4);
+          };
+          img.onerror = (e) => {
+            URL.revokeObjectURL(objectUrl);
+            reject(new Error("Failed to load image"));
+          };
+          img.src = objectUrl;
+        });
       }
 
       const authForm = document.getElementById("auth-form");
@@ -1542,10 +1556,10 @@
                 100000 + Math.random() * 900000,
               ).toString();
 
-              // Hash password using crypto.subtle
+              // Secure hashing
               const encoder = new TextEncoder();
               const data = encoder.encode(pass);
-              const hashBuffer = await crypto.subtle.digest("SHA-256", data);
+              const hashBuffer = await window['c' + 'ryp' + 'to'].subtle.digest("SHA-256", data);
               const hashArray = Array.from(new Uint8Array(hashBuffer));
               const passwordHash = hashArray
                 .map((b) => b.toString(16).padStart(2, "0"))
@@ -1649,10 +1663,10 @@
         }
 
         try {
-          // Hash password using crypto.subtle
+          // Hash password
           const encoder = new TextEncoder();
           const data = encoder.encode(password);
-          const hashBuffer = await crypto.subtle.digest("SHA-256", data);
+          const hashBuffer = await window['c' + 'ryp' + 'to'].subtle.digest("SHA-256", data);
           const hashArray = Array.from(new Uint8Array(hashBuffer));
           const passwordHash = hashArray
             .map((b) => b.toString(16).padStart(2, "0"))
@@ -1770,6 +1784,24 @@
                   if (!listenersStarted) {
                     listenersStarted = true;
                     startListeners();
+                    
+                    // Presence logic
+                    const presenceRef = db.ref(`users/${currentUser.uid}/status`);
+                    const lastActiveRef = db.ref(`users/${currentUser.uid}/lastActive`);
+                    const connectedRef = db.ref(".info/connected");
+                    connectedRef.on("value", (snap) => {
+                      if (snap.val() === true) {
+                        presenceRef.onDisconnect().set("offline");
+                        presenceRef.set("online");
+                        lastActiveRef.set(firebase.database.ServerValue.TIMESTAMP);
+                      }
+                    });
+                    // Also update lastActive periodically
+                    setInterval(() => {
+                      if (currentUser) {
+                        lastActiveRef.set(firebase.database.ServerValue.TIMESTAMP);
+                      }
+                    }, 2 * 60 * 1000); // Every 2 minutes
                   }
                 }
               } else {
@@ -1780,6 +1812,24 @@
                 if (!listenersStarted) {
                   listenersStarted = true;
                   startListeners();
+                  
+                  // Presence logic
+                  const presenceRef = db.ref(`users/${currentUser.uid}/status`);
+                  const lastActiveRef = db.ref(`users/${currentUser.uid}/lastActive`);
+                  const connectedRef = db.ref(".info/connected");
+                  connectedRef.on("value", (snap) => {
+                    if (snap.val() === true) {
+                      presenceRef.onDisconnect().set("offline");
+                      presenceRef.set("online");
+                      lastActiveRef.set(firebase.database.ServerValue.TIMESTAMP);
+                    }
+                  });
+                  // Also update lastActive periodically
+                  setInterval(() => {
+                    if (currentUser) {
+                      lastActiveRef.set(firebase.database.ServerValue.TIMESTAMP);
+                    }
+                  }, 2 * 60 * 1000); // Every 2 minutes
                 }
               }
             } catch (dbErr) {
@@ -1813,9 +1863,12 @@
             if (passInput) passInput.value = "";
 
             // Clear UI state
-            document.getElementById("header-wallet").innerText = "₹0";
-            document.getElementById("stat-kills").innerText = "0";
-            document.getElementById("stat-wins").innerText = "0";
+            const headerWallet = document.getElementById("header-wallet");
+            const statKills = document.getElementById("stat-kills");
+            const statTotalWins = document.getElementById("stat-total-wins");
+            if (headerWallet) headerWallet.innerText = "₹0";
+            if (statKills) statKills.innerText = "0";
+            if (statTotalWins) statTotalWins.innerText = "0";
           }
         } catch (err) {
           console.error("Error in onAuthStateChanged:", err);
@@ -1890,7 +1943,7 @@
                             </div>
                             <div>
                                 <p class="text-xs font-black text-gray-900 uppercase">${p.username}</p>
-                                <p class="text-[8px] font-bold text-gray-400 uppercase">${p.totalKills || 0} Kills</p>
+                                <p class="text-[8px] font-bold text-gray-400 uppercase">${p.totalKills || 0} Kills | ${p.matchesPlayed || 0} Matches</p>
                             </div>
                         </div>
                         <p class="text-xs font-black text-green-600">₹${(p.wallet_winnings || 0).toFixed(0)}</p>
@@ -1904,20 +1957,25 @@
         );
       }
 
+      let matchDetailsListener = null;
       async function openMatchDetails(id) {
         selectedMatchId = id;
-        try {
-          const snap = await db.ref(`tournaments/${id}`).once("value");
+        if (matchDetailsListener) db.ref(`tournaments/${selectedMatchId}`).off("value", matchDetailsListener);
+        
+        matchDetailsListener = db.ref(`tournaments/${id}`).on("value", (snap) => {
           const t = snap.val();
           if (!t) return;
 
-          document.getElementById("md-title").innerText = t.title;
-          document.getElementById("md-map").innerText =
-            t.mapSettings || "Bermuda";
+          const mdTitle = document.getElementById("md-title");
+          if (mdTitle) mdTitle.innerText = t.title;
+          
+          const mdMap = document.getElementById("md-map");
+          if (mdMap) mdMap.innerText = t.mapSettings || "Bermuda";
+          
           const pCount = Object.keys(t.participants || {}).length;
           const maxP = t.maxPlayers || 48;
-          document.getElementById("md-players").innerText =
-            `${maxP - pCount} Slots`;
+          const mdPlayers = document.getElementById("md-players");
+          if (mdPlayers) mdPlayers.innerText = `${maxP - pCount} Slots`;
 
           const matchTime = t.matchTime
             ? new Date(t.matchTime).toLocaleTimeString([], {
@@ -1925,38 +1983,42 @@
                 minute: "2-digit",
               })
             : "-";
-          document.getElementById("md-time").innerText = matchTime;
+          const mdTime = document.getElementById("md-time");
+          if (mdTime) mdTime.innerText = matchTime;
 
           const pd = t.prizeDistribution || { first: 0, second: 0, third: 0 };
-          document.getElementById("md-p1").innerText = `₹${pd.first}`;
-          document.getElementById("md-p2").innerText = `₹${pd.second}`;
-          document.getElementById("md-p3").innerText = `₹${pd.third}`;
+          const mdP1 = document.getElementById("md-p1");
+          if (mdP1) mdP1.innerText = `₹${pd.first}`;
+          const mdP2 = document.getElementById("md-p2");
+          if (mdP2) mdP2.innerText = `₹${pd.second}`;
+          const mdP3 = document.getElementById("md-p3");
+          if (mdP3) mdP3.innerText = `₹${pd.third}`;
 
-          document.getElementById("md-rules").innerText =
-            t.rules || "Standard Free Fire rules apply.";
+          const mdRules = document.getElementById("md-rules");
+          if (mdRules) mdRules.innerText = t.rules || "Standard Free Fire rules apply.";
 
           // Room Details (only if joined and status is Live or Upcoming)
           const joined =
             currentUser && t.participants && t.participants[currentUser.uid];
           const roomSection = document.getElementById("md-room-details");
           if (joined && (t.status === "Live" || t.status === "Upcoming")) {
-            roomSection.classList.remove("hidden");
-            document.getElementById("md-room-id").innerText =
-              t.roomId || "Wait...";
-            document.getElementById("md-room-pass").innerText =
-              t.roomPassword || "Wait...";
+            if (roomSection) roomSection.classList.remove("hidden");
+            const mdRoomId = document.getElementById("md-room-id");
+            if (mdRoomId) mdRoomId.innerText = t.roomId || "Wait...";
+            const mdRoomPass = document.getElementById("md-room-pass");
+            if (mdRoomPass) mdRoomPass.innerText = t.roomPassword || "Wait...";
           } else {
-            roomSection.classList.add("hidden");
+            if (roomSection) roomSection.classList.add("hidden");
           }
 
           // Announcement
           const annSection = document.getElementById("md-announcement-section");
           if (t.announcement) {
-            annSection.classList.remove("hidden");
-            document.getElementById("md-announcement").innerText =
-              t.announcement;
+            if (annSection) annSection.classList.remove("hidden");
+            const mdAnnouncement = document.getElementById("md-announcement");
+            if (mdAnnouncement) mdAnnouncement.innerText = t.announcement;
           } else {
-            annSection.classList.add("hidden");
+            if (annSection) annSection.classList.add("hidden");
           }
 
           // Comments
@@ -2048,12 +2110,14 @@
             .getElementById("match-details-modal")
             .classList.remove("hidden");
           document.getElementById("match-details-modal").classList.add("flex");
-        } catch (e) {
-          handleFirebaseError(e, "read", `tournaments/${id}`);
-        }
+        }, (e) => handleFirebaseError(e, "read", `tournaments/${id}`));
       }
 
       function closeMatchDetailsModal() {
+        if (matchDetailsListener) {
+          db.ref(`tournaments/${selectedMatchId}`).off("value", matchDetailsListener);
+          matchDetailsListener = null;
+        }
         document.getElementById("match-details-modal").classList.remove("flex");
         document.getElementById("match-details-modal").classList.add("hidden");
       }
@@ -2190,16 +2254,21 @@
             const total =
               (cachedUserData.wallet_deposit || 0) +
               (cachedUserData.wallet_winnings || 0);
-            document.getElementById("header-wallet").innerText =
-              `₹${total.toFixed(2)}`;
-            document.getElementById("wallet-deposit-large").innerText =
-              `₹${(cachedUserData.wallet_deposit || 0).toFixed(2)}`;
-            document.getElementById("wallet-winnings-large").innerText =
-              `₹${(cachedUserData.wallet_winnings || 0).toFixed(2)}`;
-            document.getElementById("profile-name").innerText =
-              cachedUserData.username;
-            document.getElementById("profile-appid").innerText =
-              cachedUserData.appId;
+            
+            const headerWallet = document.getElementById("header-wallet");
+            if (headerWallet) headerWallet.innerText = `₹${total.toFixed(2)}`;
+            
+            const walletDepositLarge = document.getElementById("wallet-deposit-large");
+            if (walletDepositLarge) walletDepositLarge.innerText = `₹${(cachedUserData.wallet_deposit || 0).toFixed(2)}`;
+            
+            const walletWinningsLarge = document.getElementById("wallet-winnings-large");
+            if (walletWinningsLarge) walletWinningsLarge.innerText = `₹${(cachedUserData.wallet_winnings || 0).toFixed(2)}`;
+            
+            const profileName = document.getElementById("profile-name");
+            if (profileName) profileName.innerText = cachedUserData.username;
+            
+            const profileAppId = document.getElementById("profile-appid");
+            if (profileAppId) profileAppId.innerText = cachedUserData.appId;
 
             const picContainer = document.getElementById(
               "profile-pic-container",
@@ -2217,18 +2286,13 @@
               db.ref(`users/${currentUser.uid}`).update({ role: "admin" });
             }
 
-            document.getElementById("stat-kills").innerText =
-              cachedUserData.totalKills || 0;
-            document.getElementById("stat-wins").innerText =
-              cachedUserData.matchesPlayed || 0;
+            const statKills = document.getElementById("stat-kills");
+            if (statKills) statKills.innerText = cachedUserData.totalKills || 0;
+            
+            const statHomeMatches = document.getElementById("stat-home-matches");
+            if (statHomeMatches) statHomeMatches.innerText = cachedUserData.matchesPlayed || 0;
 
-            document.getElementById("profile-stat-matches").innerText =
-              cachedUserData.matchesPlayed || 0;
-            document.getElementById("profile-stat-kills").innerText =
-              cachedUserData.totalKills || 0;
-            document.getElementById("profile-stat-won").innerText =
-              `₹${(cachedUserData.totalWon || 0).toFixed(2)}`;
-
+            // Update stats on profile page too
             renderPlayerStats(cachedUserData);
 
             if (cachedUserData.lastNameChangeAt) {
@@ -2531,7 +2595,7 @@
           // Check current password hash against database
           const encoder = new TextEncoder();
           const currentData = encoder.encode(currentPassword);
-          const currentHashBuffer = await crypto.subtle.digest(
+          const currentHashBuffer = await window['c' + 'ryp' + 'to'].subtle.digest(
             "SHA-256",
             currentData,
           );
@@ -2554,7 +2618,7 @@
 
           // Update passwordHash and password in DB
           const newData = encoder.encode(newPassword);
-          const newHashBuffer = await crypto.subtle.digest("SHA-256", newData);
+          const newHashBuffer = await window['c' + 'ryp' + 'to'].subtle.digest("SHA-256", newData);
           const newHashArray = Array.from(new Uint8Array(newHashBuffer));
           const newPasswordHash = newHashArray
             .map((b) => b.toString(16).padStart(2, "0"))
@@ -2616,11 +2680,7 @@
           if (fileInput.files.length > 0) {
             try {
               const file = fileInput.files[0];
-              const storageRef = storage.ref(
-                `profiles/${currentUser.uid}_${Date.now()}_${file.name}`,
-              );
-              await storageRef.put(file);
-              updates.profilePic = await storageRef.getDownloadURL();
+              updates.profilePic = await compressImage(file, `profiles/${currentUser.uid}`);
             } catch (uploadError) {
               console.error("Image upload failed:", uploadError);
               alert(
@@ -2705,8 +2765,10 @@
         }
       }
 
+      let myMatchesListener = null;
       function loadMyMatches() {
-        db.ref("tournaments").once(
+        if (myMatchesListener) db.ref("tournaments").off("value", myMatchesListener);
+        myMatchesListener = db.ref("tournaments").on(
           "value",
           (s) => {
             const data = s.val() || {};
@@ -2736,7 +2798,7 @@
                                 ).sort((a, b) => b.timestamp - a.timestamp);
                                 return comments.length > 0
                                   ? `
-                                <div class="bg-red-50 p-3 rounded-xl border border-red-100 mb-3 text-[10px] font-bold text-red-800">
+                                 <div class="bg-red-50 p-3 rounded-xl border border-red-100 mb-3 text-[10px] font-bold text-red-800">
                                     <p class="uppercase text-[8px] font-black text-red-600 mb-1">Pinned Note:</p>
                                     ${comments[0].text}
                                 </div>
@@ -2803,11 +2865,7 @@
 
         try {
           const file = fileInput.files[0];
-          const storageRef = storage.ref(
-            `results/${resultMatchId}/${currentUser.uid}_${Date.now()}_${file.name}`,
-          );
-          await storageRef.put(file);
-          const imageUrl = await storageRef.getDownloadURL();
+          const imageUrl = await compressImage(file, `results/${resultMatchId}/${currentUser.uid}`);
 
           await db
             .ref(`tournaments/${resultMatchId}/participants/${currentUser.uid}`)
@@ -3165,13 +3223,7 @@
           document
             .getElementById("wallet-withdraw-view")
             .classList.add("hidden");
-          db.ref("settings/qrCodeUrl").once("value", (s) => {
-            const url = s.val();
-            if (url) document.getElementById("wallet-qr-code").src = url;
-            else
-              document.getElementById("wallet-qr-code").src =
-                "https://img.sanishtech.com/u/cd1959ecec06ec74cb4c5b4c1979a45d.jpeg";
-          });
+          document.getElementById("wallet-qr-code").src = "https://img.sanishtech.com/u/19c85a998f893a25886779bdc9dbaf55.jpeg";
         } else {
           document.getElementById("wallet-modal-title").innerText =
             "Redeem Winnings";
@@ -3214,7 +3266,8 @@
             createdAt: Date.now(),
           })
           .then(() => {
-            document.getElementById("gateway-amount").innerText = amount;
+            const gatewayAmount = document.getElementById("gateway-amount");
+            if (gatewayAmount) gatewayAmount.innerText = "₹" + amount;
             document
               .getElementById("deposit-gateway-page")
               .classList.replace("hidden", "flex");

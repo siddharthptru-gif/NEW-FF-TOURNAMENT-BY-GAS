@@ -126,7 +126,7 @@ const UserHome: React.FC = () => {
       {/* Results Modal */}
       {selectedTournament && (
         <div className="fixed inset-0 bg-black/60 z-[110] flex items-center justify-center p-4">
-          <div className="bg-white w-full max-w-sm rounded-[40px] p-8 relative max-h-[80vh] flex flex-col">
+          <div className="bg-white w-full max-w-2xl rounded-[40px] p-8 relative max-h-[90vh] flex flex-col">
             <button onClick={() => setSelectedTournament(null)} className="absolute top-6 right-6 text-gray-300"><i className="fas fa-times"></i></button>
             <h4 className="font-black text-center uppercase mb-6 text-gray-900">{selectedTournament.title} Results</h4>
             <div className="space-y-2 overflow-y-auto hide-scrollbar flex-1">

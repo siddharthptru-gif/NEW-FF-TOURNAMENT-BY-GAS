@@ -55,7 +55,9 @@ const UserMyMatches: React.FC = () => {
           <div key={t.id} className="bg-white rounded-[2rem] p-5 border shadow-sm">
             <div className="flex justify-between items-center mb-4">
               <h4 className="font-black text-gray-900 uppercase">{t.title}</h4>
-              <span className={`text-[8px] font-black px-2 py-0.5 rounded uppercase ${t.status === 'Live' ? 'bg-red-50 text-red-600' : 'bg-gray-100 text-gray-500'}`}>{t.status}</span>
+              <span className={`text-[8px] font-black px-2 py-0.5 rounded uppercase ${t.status === 'Live' ? 'bg-red-50 text-red-600' : t.status === 'Completed' ? 'bg-green-50 text-green-600' : 'bg-gray-100 text-gray-500'}`}>
+                {t.status === 'Live' ? 'Running' : t.status === 'Completed' ? 'Completed' : t.status}
+              </span>
             </div>
 
             {t.status === 'Live' && (
@@ -72,7 +74,9 @@ const UserMyMatches: React.FC = () => {
 
             <div className="flex justify-between items-center text-[10px] font-black border-t pt-4">
               <span className="text-gray-400 uppercase">{new Date(t.matchTime).toLocaleString()}</span>
-              {t.status !== 'Completed' && (
+              {t.status === 'Completed' ? (
+                <button onClick={() => alert("Admin uploaded screenshot: " + (t.resultScreenshot || 'No screenshot available'))} className="text-green-600 uppercase underline">View Uploaded Screenshot</button>
+              ) : (
                 <button onClick={() => submitResult(t.id)} className="text-blue-600 uppercase underline">Submit Screenshot</button>
               )}
             </div>

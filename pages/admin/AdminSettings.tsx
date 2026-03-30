@@ -105,11 +105,6 @@ const AdminSettings: React.FC = () => {
         <h3 className="text-sm font-black uppercase mb-4 tracking-tighter text-gray-800">App Configuration</h3>
         
         <div className="space-y-4">
-            <div>
-                <label className="text-[9px] font-black uppercase text-gray-400 mb-1 block">UPI QR Code Image URL</label>
-                <input type="text" className="w-full p-4 bg-gray-50 border rounded-2xl text-xs font-bold outline-none focus:ring-2 focus:ring-indigo-500" value={settings.qrCodeUrl} onChange={e => setSettings({...settings, qrCodeUrl: e.target.value})} placeholder="https://..." />
-            </div>
-
             <div className="grid grid-cols-2 gap-4">
                 <div>
                     <label className="text-[9px] font-black uppercase text-gray-400 mb-1 block">Min Withdrawal (₹)</label>

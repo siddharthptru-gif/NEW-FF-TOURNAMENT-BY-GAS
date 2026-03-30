@@ -16,7 +16,7 @@ const UserWallet: React.FC = () => {
   const [loading, setLoading] = useState(false);
   
   // Image handling state
-  const [qrSrc, setQrSrc] = useState<string>("https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=PAY_ARENA_PRO");
+  const [qrSrc] = useState<string>("https://kommodo.ai/i/Fjm8jqq9o6JXeG2SYYCC");
   const [imgError, setImgError] = useState(false);
 
   useEffect(() => {
@@ -35,22 +35,11 @@ const UserWallet: React.FC = () => {
       });
     }
 
-    const settingsRef = db.ref('settings');
-    settingsRef.on('value', (snapshot) => {
-      const val = snapshot.val();
-      setSettings(val);
-      if (val?.qrCodeUrl && val.qrCodeUrl.trim() !== "") {
-        setQrSrc(val.qrCodeUrl);
-        setImgError(false); // Reset error state on new URL
-      }
-    });
-
     return () => {
       if (user) {
         db.ref(`users/${user.uid}`).off();
         db.ref(`users/${user.uid}/transactions`).off();
       }
-      db.ref('settings').off();
     };
   }, []);
 

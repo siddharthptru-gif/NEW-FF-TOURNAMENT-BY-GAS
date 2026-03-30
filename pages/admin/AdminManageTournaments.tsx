@@ -477,18 +477,7 @@ const AdminManageTournaments: React.FC = () => {
                       </button>
                     </div>
                   </div>
-                  <div className="grid grid-cols-4 gap-2">
-                    <select 
-                      value={p.result || ''} 
-                      onChange={e => updateResult(uid, e.target.value)}
-                      className="p-2 text-[9px] font-bold border rounded-lg bg-white outline-none"
-                    >
-                      <option value="">Rank</option>
-                      <option value="1">1st</option>
-                      <option value="2">2nd</option>
-                      <option value="3">3rd</option>
-                      <option value="Out">Out</option>
-                    </select>
+                  <div className="grid grid-cols-3 gap-2">
                     <input 
                       id={`kills-${uid}`}
                       type="number" 

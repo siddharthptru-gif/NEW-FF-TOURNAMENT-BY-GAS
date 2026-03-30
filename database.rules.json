@@ -1,0 +1,65 @@
+{
+  "rules": {
+    "users": {
+      ".indexOn": ["appId", "status", "username", "banned"],
+      ".read": "auth != null && root.child('users').child(auth.uid).child('role').val() === 'admin'",
+      "$uid": {
+        ".read": "auth != null && auth.uid === $uid",
+        ".write": "auth != null && (auth.uid === $uid || root.child('users').child(auth.uid).child('role').val() === 'admin')"
+      }
+    },
+    "usernames": {
+      ".read": "true",
+      "$username": {
+        ".write": "auth != null && (!data.exists() || data.val() === auth.uid)"
+      }
+    },
+    "settings": {
+      ".read": "true",
+      ".write": "auth != null && root.child('users').child(auth.uid).child('role').val() === 'admin'"
+    },
+    "tournaments": {
+      ".read": "true",
+      ".indexOn": ["status"],
+      "$tid": {
+        ".write": "auth != null && root.child('users').child(auth.uid).child('role').val() === 'admin'",
+        "participants": {
+          "$uid": {
+            ".write": "auth != null && (auth.uid === $uid || root.child('users').child(auth.uid).child('role').val() === 'admin')"
+          }
+        }
+      }
+    },
+    "tickets": {
+      ".indexOn": ["uid"],
+      ".read": "auth != null",
+      ".write": "auth != null"
+    },
+    "addMoneyRequests": {
+      ".read": "auth != null && root.child('users').child(auth.uid).child('role').val() === 'admin'",
+      ".write": "auth != null"
+    },
+    "withdrawRequests": {
+      ".read": "auth != null && root.child('users').child(auth.uid).child('role').val() === 'admin'",
+      ".write": "auth != null"
+    },
+    "reports": {
+      ".read": "auth != null && root.child('users').child(auth.uid).child('role').val() === 'admin'",
+      ".write": "auth != null"
+    },
+    "announcements": {
+      ".read": "true",
+      ".write": "auth != null && root.child('users').child(auth.uid).child('role').val() === 'admin'"
+    },
+    "userNotifications": {
+      "$uid": {
+        ".read": "auth != null && (auth.uid === $uid || root.child('users').child(auth.uid).child('role').val() === 'admin')",
+        ".write": "auth != null && (auth.uid === $uid || root.child('users').child(auth.uid).child('role').val() === 'admin')"
+      }
+    },
+    "auditLogs": {
+      ".read": "auth != null && root.child('users').child(auth.uid).child('role').val() === 'admin'",
+      ".write": "auth != null && root.child('users').child(auth.uid).child('role').val() === 'admin'"
+    }
+  }
+}

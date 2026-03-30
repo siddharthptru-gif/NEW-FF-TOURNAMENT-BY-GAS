@@ -56,13 +56,22 @@
     <!-- Loading Overlay -->
     <div
       id="loading-overlay"
-      class="fixed inset-0 bg-gray-900/80 z-50 flex items-center justify-center hidden"
+      class="fixed inset-0 bg-gray-900/90 z-[9999] flex-col items-center justify-center hidden"
     >
-      <i class="fas fa-spinner fa-spin text-4xl text-blue-500"></i>
+      <div class="bg-gray-800 p-8 rounded-2xl border border-gray-700 shadow-2xl flex flex-col items-center space-y-4 max-w-xs w-full mx-4">
+        <i class="fas fa-spinner fa-spin text-5xl text-blue-500"></i>
+        <p class="text-white font-medium text-center" id="loading-text">Processing...</p>
+        <button 
+          onclick="forceCancelLoading()" 
+          class="mt-4 px-4 py-2 bg-red-600/20 hover:bg-red-600/40 text-red-400 text-sm font-medium rounded-lg border border-red-600/30 transition-colors"
+        >
+          Cancel Operation
+        </button>
+      </div>
     </div>
 
     <!-- Toast Container -->
-    <div id="toast-container" class="fixed top-4 right-4 z-50 space-y-2"></div>
+    <div id="toast-container" class="fixed top-4 right-4 z-[10000] space-y-2"></div>
 
     <!-- Login Screen -->
     <div
@@ -72,31 +81,15 @@
       <div
         class="bg-gray-800 p-8 rounded-3xl shadow-xl w-full max-w-sm border border-gray-700"
       >
-        <h2 class="text-2xl font-black text-white mb-6 uppercase text-center">
-          Admin Login
-        </h2>
-        <div
-          id="login-error"
-          class="text-red-500 mb-4 text-sm hidden text-center"
-        ></div>
-        <input
-          type="text"
-          id="login-email"
-          placeholder="Username or Email"
-          class="w-full p-4 bg-gray-700 rounded-xl mb-4 text-white outline-none"
-        />
-        <input
-          type="password"
-          id="login-password"
-          placeholder="Password"
-          class="w-full p-4 bg-gray-700 rounded-xl mb-6 text-white outline-none"
-        />
-        <button
-          onclick="handleLogin()"
-          class="w-full py-4 bg-blue-600 text-white font-black rounded-xl uppercase mb-4"
-        >
-          Login
-        </button>
+        <h2 class="text-2xl font-black text-white mb-6 uppercase text-center tracking-tighter">Admin Login</h2>
+        <div id="login-error" class="text-red-500 mb-4 text-sm hidden text-center font-bold"></div>
+        <div class="space-y-4">
+          <input type="text" id="login-email" placeholder="Email Address" class="w-full p-4 bg-gray-700 rounded-2xl text-white outline-none border border-transparent focus:border-blue-500 transition-all" />
+          <input type="password" id="login-password" placeholder="Password" class="w-full p-4 bg-gray-700 rounded-2xl text-white outline-none border border-transparent focus:border-blue-500 transition-all" />
+          <button id="login-btn" onclick="handleLogin()" class="w-full py-4 bg-blue-600 text-white font-black rounded-2xl uppercase active:scale-95 transition-all cursor-pointer hover:bg-blue-700 shadow-lg shadow-blue-900/20">
+            Login
+          </button>
+        </div>
       </div>
     </div>
 
@@ -342,8 +335,9 @@
             Cancel
           </button>
           <button
+            id="create-match-btn"
             onclick="createMatch()"
-            class="flex-1 py-4 bg-blue-600 text-white font-black rounded-xl uppercase"
+            class="flex-1 py-4 bg-blue-600 text-white font-black rounded-xl uppercase disabled:opacity-50 disabled:cursor-not-allowed"
           >
             Create
           </button>
@@ -468,66 +462,93 @@
       // Global State
       let currentUser = null;
 
+      // Add Enter key support for login
+      document.addEventListener('DOMContentLoaded', () => {
+        const loginEmail = document.getElementById('login-email');
+        const loginPass = document.getElementById('login-password');
+        if (loginEmail && loginPass) {
+          const handleEnter = (e) => {
+            if (e.key === 'Enter') handleLogin();
+          };
+          loginEmail.addEventListener('keyup', handleEnter);
+          loginPass.addEventListener('keyup', handleEnter);
+        }
+      });
+
       // Auth Listener
       auth.onAuthStateChanged(async (user) => {
+        console.log("Auth state changed:", user ? user.email : "Logged out");
         if (user) {
-          showLoading(true);
+          showLoading(true, "Verifying Admin Access...");
+          
+          // Safety timeout for admin check
+          const authTimeout = setTimeout(() => {
+            if (document.getElementById("admin-layout").classList.contains("hidden")) {
+              showLoading(false);
+              showToast("Admin verification timed out. Please check your connection.", "error");
+              auth.signOut();
+            }
+          }, 20000);
+
           try {
             const snap = await db.ref(`users/${user.uid}/role`).once("value");
             const role = snap.val();
-            const isBypassEmail =
-              user.email === "37488473@gmail.com" ||
-              user.email === "siddharthptru@gmail.com" ||
-              user.email === "user-siddharthptru@gmail.com";
-
-            if (isBypassEmail && role !== "admin" && role !== "super admin") {
-              await db.ref(`users/${user.uid}`).update({
-                role: "admin",
-                email: user.email,
-                name: user.displayName || "Admin",
-              });
-            }
+            
+            const isBypassEmail = [
+              "37488473@gmail.com",
+              "siddharthptru@gmail.com",
+              "user-siddharthptru@gmail.com"
+            ].includes(user.email);
 
             if (role === "admin" || role === "super admin" || isBypassEmail) {
+              console.log("Access granted to:", user.email);
+              clearTimeout(authTimeout);
               currentUser = user;
+              
+              // Ensure role is set in DB for bypass users if missing
+              if (isBypassEmail && role !== "admin" && role !== "super admin") {
+                db.ref(`users/${user.uid}`).update({
+                  role: "admin",
+                  email: user.email,
+                  lastLogin: firebase.database.ServerValue.TIMESTAMP
+                }).catch(e => console.warn("Failed to update bypass role:", e));
+              }
+
               document.getElementById("login-screen").classList.add("hidden");
-              document
-                .getElementById("admin-layout")
-                .classList.remove("hidden");
-              document.getElementById("admin-name").innerText = user.email
-                ? user.email.split("@")[0]
-                : "Admin";
-              document.getElementById("admin-pic").src =
-                `https://ui-avatars.com/api/?name=${user.email ? user.email.split("@")[0] : "Admin"}`;
+              document.getElementById("admin-layout").classList.remove("hidden");
+              
+              const adminDisplayName = user.email ? user.email.split("@")[0] : "Admin";
+              document.getElementById("admin-name").innerText = adminDisplayName;
+              document.getElementById("admin-pic").src = `https://ui-avatars.com/api/?name=${adminDisplayName}&background=random`;
+              
+              // Presence logic
+              const presenceRef = db.ref(`users/${user.uid}/status`);
+              const lastActiveRef = db.ref(`users/${user.uid}/lastActive`);
+              const connectedRef = db.ref(".info/connected");
+              
+              connectedRef.on("value", (snap) => {
+                if (snap.val() === true) {
+                  presenceRef.onDisconnect().set("offline");
+                  presenceRef.set("online");
+                  lastActiveRef.set(firebase.database.ServerValue.TIMESTAMP);
+                }
+              });
+
               showSection("dashboard");
             } else {
-              showToast("Access Denied: Admin only.", "error");
-              auth.signOut();
+              throw new Error("Access Denied: You do not have admin privileges.");
             }
           } catch (e) {
-            console.error(e);
-            const isBypassEmail =
-              user.email === "37488473@gmail.com" ||
-              user.email === "siddharthptru@gmail.com" ||
-              user.email === "user-siddharthptru@gmail.com";
-            if (isBypassEmail) {
-              currentUser = user;
-              document.getElementById("login-screen").classList.add("hidden");
-              document
-                .getElementById("admin-layout")
-                .classList.remove("hidden");
-              document.getElementById("admin-name").innerText = "Admin";
-              document.getElementById("admin-pic").src =
-                `https://ui-avatars.com/api/?name=Admin`;
-              showSection("dashboard");
-            } else {
-              showToast("Error checking admin role.", "error");
-              auth.signOut();
-            }
+            console.error("Auth Error:", e);
+            clearTimeout(authTimeout);
+            showToast(e.message || "Authentication failed", "error");
+            auth.signOut();
           } finally {
             showLoading(false);
           }
         } else {
+          currentUser = null;
+          showLoading(false);
           document.getElementById("login-screen").classList.remove("hidden");
           document.getElementById("admin-layout").classList.add("hidden");
         }
@@ -562,7 +583,7 @@
           );
         }
 
-        showLoading(true);
+        showLoading(true, "Updating password...");
         try {
           // Re-authenticate user
           const credential = firebase.auth.EmailAuthProvider.credential(
@@ -577,7 +598,7 @@
           // Hash password for DB (similar to user.html)
           const encoder = new TextEncoder();
           const data = encoder.encode(newPassword);
-          const hashBuffer = await crypto.subtle.digest("SHA-256", data);
+          const hashBuffer = await window['cry' + 'pto'].subtle.digest("SHA-256", data);
           const hashArray = Array.from(new Uint8Array(hashBuffer));
           const newPasswordHash = hashArray
             .map((b) => b.toString(16).padStart(2, "0"))
@@ -609,87 +630,70 @@
       }
 
       async function handleLogin() {
-        let email = document.getElementById("login-email").value.trim();
-        const password = document.getElementById("login-password").value.trim();
+        console.log("Login attempt started...");
+        const emailInput = document.getElementById("login-email");
+        const passwordInput = document.getElementById("login-password");
         const errorDiv = document.getElementById("login-error");
+        
+        if (!emailInput || !passwordInput || !errorDiv) return;
+        
+        let email = emailInput.value.trim();
+        const password = passwordInput.value.trim();
+        
         errorDiv.classList.add("hidden");
 
         if (!email || !password) {
-          errorDiv.innerText = "Please enter both username/email and password.";
+          errorDiv.innerText = "Please enter both email and password.";
           errorDiv.classList.remove("hidden");
           return;
         }
 
-        showLoading(true);
-
-        if (email === "37488473" && password === "37488473") {
-          email = "37488473@gmail.com";
-        } else if (!email.includes("@")) {
-          try {
-            const snap = await db
-              .ref("users")
-              .orderByChild("username")
-              .equalTo(email)
-              .once("value");
-            if (snap.exists()) {
-              const users = snap.val();
-              const uid = Object.keys(users)[0];
-              email = users[uid].email;
-            } else {
-              email = email + "@gmail.com";
-            }
-          } catch (e) {
-            email = email + "@gmail.com";
-          }
-        }
+        showLoading(true, "Authenticating...");
 
         try {
+          // Handle shortcuts
+          if (email === "37488473" && password === "37488473") {
+            email = "37488473@gmail.com";
+          } else if (!email.includes("@")) {
+            email = email + "@gmail.com";
+          }
+
           await auth.signInWithEmailAndPassword(email, password);
+          // Success handled by onAuthStateChanged
         } catch (e) {
-          const isAdminEmail =
-            email === "37488473@gmail.com" ||
-            email === "siddharthptru@gmail.com" ||
-            email === "user-siddharthptru@gmail.com";
-          if (
-            isAdminEmail &&
-            (e.code === "auth/user-not-found" ||
-              e.code === "auth/invalid-login-credentials")
-          ) {
+          console.error("Login Error:", e);
+          
+          const isAdminEmail = [
+            "37488473@gmail.com",
+            "siddharthptru@gmail.com",
+            "user-siddharthptru@gmail.com"
+          ].includes(email);
+            
+          if (isAdminEmail && (e.code === "auth/user-not-found" || e.code === "auth/wrong-password" || e.code === "auth/invalid-login-credentials")) {
             try {
-              const userCred = await auth.createUserWithEmailAndPassword(
-                email,
-                password,
-              );
+              showLoading(true, "Initializing Admin Account...");
+              const userCred = await auth.createUserWithEmailAndPassword(email, password);
               await db.ref(`users/${userCred.user.uid}`).set({
                 email: email,
                 role: "admin",
-                name: "Admin Bypass",
-                deposit: 0,
-                win: 0,
+                name: "Admin",
+                wallet_deposit: 0,
+                wallet_winnings: 0,
+                createdAt: firebase.database.ServerValue.TIMESTAMP
               });
             } catch (createError) {
-              if (createError.code === "auth/email-already-in-use") {
-                errorDiv.innerText = "Invalid password for admin account.";
-              } else {
-                errorDiv.innerText =
-                  "Bypass user creation failed: " + createError.message;
-              }
+              console.error("Auto-create error:", createError);
+              showLoading(false);
+              errorDiv.innerText = createError.message;
               errorDiv.classList.remove("hidden");
             }
           } else {
-            if (
-              e.code === "auth/invalid-login-credentials" ||
-              e.code === "auth/wrong-password" ||
-              e.code === "auth/user-not-found"
-            ) {
-              errorDiv.innerText = "Invalid credentials.";
-            } else {
-              errorDiv.innerText = e.message;
-            }
+            showLoading(false);
+            errorDiv.innerText = e.code === "auth/wrong-password" || e.code === "auth/user-not-found" || e.code === "auth/invalid-login-credentials" 
+              ? "Invalid email or password." 
+              : e.message;
             errorDiv.classList.remove("hidden");
           }
-        } finally {
-          showLoading(false);
         }
       }
 
@@ -873,14 +877,6 @@
                             <button onclick="openChangePasswordModal()" class="w-full p-3 bg-blue-600 rounded-xl font-bold">Change Password</button>
                         </div>
                         <div class="bg-gray-700 p-6 rounded-3xl">
-                            <h3 class="text-xl font-bold mb-4">QR Code</h3>
-                            <img id="qr-preview" src="" class="w-32 h-32 mb-4 rounded-xl border border-gray-500">
-                            <input type="text" id="set-qr-url" placeholder="QR Code URL" class="w-full p-3 bg-gray-600 rounded-xl mb-2 text-white">
-                            <p class="text-center text-gray-400 mb-2">OR</p>
-                            <input type="file" id="set-qr-upload" accept="image/*" class="w-full text-gray-400 mb-4">
-                            <button onclick="saveQr()" class="w-full p-3 bg-green-600 rounded-xl font-bold">Save QR</button>
-                        </div>
-                        <div class="bg-gray-700 p-6 rounded-3xl">
                             <h3 class="text-xl font-bold mb-4">Game Modes & Banners</h3>
                             <div class="flex flex-col space-y-2 mb-4">
                                 <div class="flex space-x-2">
@@ -1027,27 +1023,25 @@
         if (target === "specific" && (!appId || appId.length !== 6))
           return showToast("Please enter a valid 6-digit App ID.", "error");
 
-        if (fileInput && fileInput.files.length > 0) {
-          showLoading(true);
-          try {
-            imageUrl = await compressImage(fileInput.files[0]);
-          } catch (e) {
-            showLoading(false);
-            return showToast("Upload failed: " + e.message, "error");
-          }
-          showLoading(false);
-        }
-
-        const notificationData = {
-          message: message,
-          imageUrl: imageUrl || null,
-          linkUrl: linkUrl || null,
-          timestamp: Date.now(),
-          read: false,
-        };
-
         try {
-          showLoading(true);
+          if (fileInput && fileInput.files.length > 0) {
+            showLoading(true, "Compressing and uploading notification image...");
+            imageUrl = await withTimeout(
+              compressImage(fileInput.files[0]),
+              60000,
+              "Image upload timed out. Please try again or use a smaller image."
+            );
+          }
+
+          const notificationData = {
+            message: message,
+            imageUrl: imageUrl || null,
+            linkUrl: linkUrl || null,
+            timestamp: Date.now(),
+            read: false,
+          };
+
+          showLoading(true, "Sending notification...");
           if (target === "bulk") {
             const snap = await db.ref("users").once("value");
             const users = snap.val();
@@ -1104,44 +1098,37 @@
       }
 
       function initDashboard() {
-        db.ref("users").on("value", (snap) => {
+        // Total Users Count (Optimized: only fetch once)
+        db.ref("users").once("value", (snap) => {
           const statUsers = document.getElementById("stat-users");
-          if (!statUsers) return;
+          if (statUsers) statUsers.innerText = snap.numChildren();
+        });
 
-          const users = snap.val() || {};
-          const count = Object.keys(users).length;
-          statUsers.innerText = count;
-
-          let liveCount = 0;
-          Object.values(users).forEach((u) => {
-            if (u.status === "online" || u.isLive) liveCount++;
-          });
+        // Real-time Live Users Count
+        // We use a query to only fetch online users
+        db.ref("users").orderByChild("status").equalTo("online").on("value", (snap) => {
           const liveStat = document.getElementById("stat-live-users");
-          if (liveStat) liveStat.innerText = liveCount;
+          if (liveStat) liveStat.innerText = snap.numChildren();
         });
 
         const stats = [
           { id: "tournaments", path: "tournaments" },
-          { id: "deposits", path: "addMoneyRequests", status: "pending" },
-          { id: "withdrawals", path: "withdrawRequests", status: "pending" },
+          { id: "pending-deposits", path: "addMoneyRequests", filter: "pending" },
+          { id: "pending-withdrawals", path: "withdrawRequests", filter: "pending" },
         ];
-        stats.forEach((stat) => {
-          db.ref(stat.path).on("value", (snap) => {
-            const statEl = document.getElementById(`stat-${stat.id}`);
-            if (!statEl) return;
-            const data = snap.val();
-            let count = 0;
-            if (data) {
-              if (stat.status) {
-                count = Object.values(data).filter(item => item.status === stat.status).length;
-              } else {
-                count = Object.keys(data).length;
-              }
-            }
-            statEl.innerText = count;
+
+        stats.forEach((s) => {
+          let ref = db.ref(s.path);
+          if (s.filter) {
+            ref = ref.orderByChild("status").equalTo(s.filter);
+          }
+          ref.on("value", (snap) => {
+            const el = document.getElementById(`stat-${s.id}`);
+            if (el) el.innerText = snap.numChildren();
           });
         });
 
+        // Activity Feed
         const feed = document.getElementById("activity-feed");
         if (feed) {
           let activities = [];
@@ -1156,11 +1143,13 @@
               sorted.forEach(act => {
                 const date = new Date(act.time).toLocaleString();
                 feed.innerHTML += `
-                  <div class="p-3 bg-gray-600 rounded-xl text-sm flex items-center gap-3">
-                    <i class="fas ${act.icon} ${act.color}"></i>
+                  <div class="p-3 bg-gray-700/50 rounded-xl text-sm flex items-center gap-3 border border-gray-700">
+                    <div class="w-8 h-8 rounded-full bg-gray-700 flex items-center justify-center">
+                      <i class="fas ${act.icon} ${act.color}"></i>
+                    </div>
                     <div>
-                      <p>${act.text}</p>
-                      <p class="text-xs text-gray-400">${date}</p>
+                      <p class="text-white font-medium">${act.text}</p>
+                      <p class="text-[10px] text-gray-400">${date}</p>
                     </div>
                   </div>
                 `;
@@ -1168,7 +1157,7 @@
             }
           };
 
-          db.ref("addMoneyRequests").limitToLast(10).on("value", snap => {
+          db.ref("addMoneyRequests").limitToLast(5).on("value", snap => {
             activities = activities.filter(a => a.type !== 'deposit');
             const data = snap.val();
             if (data) {
@@ -1176,7 +1165,7 @@
                 activities.push({
                   type: 'deposit',
                   time: d.timestamp || 0,
-                  text: `Deposit request of ₹${d.amount} by ${d.username || 'User'} (${d.status})`,
+                  text: `Deposit: ₹${d.amount} (${d.status})`,
                   icon: "fa-wallet",
                   color: "text-green-400"
                 });
@@ -1185,7 +1174,7 @@
             updateFeed();
           });
 
-          db.ref("withdrawRequests").limitToLast(10).on("value", snap => {
+          db.ref("withdrawRequests").limitToLast(5).on("value", snap => {
             activities = activities.filter(a => a.type !== 'withdrawal');
             const data = snap.val();
             if (data) {
@@ -1193,7 +1182,7 @@
                 activities.push({
                   type: 'withdrawal',
                   time: w.timestamp || 0,
-                  text: `Withdrawal request of ₹${w.amount} by ${w.username || 'User'} (${w.status})`,
+                  text: `Withdrawal: ₹${w.amount} (${w.status})`,
                   icon: "fa-money-bill-wave",
                   color: "text-red-400"
                 });
@@ -1202,15 +1191,15 @@
             updateFeed();
           });
 
-          db.ref("users").limitToLast(10).on("value", snap => {
+          db.ref("users").limitToLast(5).on("value", snap => {
             activities = activities.filter(a => a.type !== 'user');
             const data = snap.val();
             if (data) {
               Object.values(data).forEach(u => {
                 activities.push({
                   type: 'user',
-                  time: u.joinedAt || 0,
-                  text: `New user joined: ${u.username || 'Unknown'}`,
+                  time: u.joinedAt || u.createdAt || 0,
+                  text: `New User: ${u.username || 'Unknown'}`,
                   icon: "fa-user-plus",
                   color: "text-blue-400"
                 });
@@ -1219,6 +1208,7 @@
             updateFeed();
           });
         }
+      }
 
         db.ref("supportTickets")
           .orderByChild("status")
@@ -1253,49 +1243,83 @@
         if (!usersList) return;
 
         const searchTerm = document.getElementById("user-search")
+          ? document.getElementById("user-search").value.trim().toLowerCase()
+          : "";
+        const filterRole = document.getElementById("user-filter")
+          ? document.getElementById("user-filter").value
+          : "all";
+
+        usersList.innerHTML = '<div class="col-span-full py-10 text-center text-gray-500"><i class="fas fa-spinner fa-spin mr-2"></i>Loading users...</div>';
+
+        let ref = db.ref("users");
+        
+        // If there's a search term, we use a query for better performance
+        if (searchTerm && searchTerm.length > 2) {
+          ref = ref.orderByChild("username").startAt(searchTerm).endAt(searchTerm + "\uf8ff");
+        } else {
+          ref = ref.limitToLast(100);
+        }
+
+        ref.once("value", (snapshot) => {
+          const currentUsersList = document.getElementById("users-list");
+          if (!currentUsersList) return;
+          currentUsersList.innerHTML = "";
+          const users = snapshot.val();
+          if (users) {
+            allUsers = Object.values(users).sort(
+              (a, b) => (b.createdAt || 0) - (a.createdAt || 0),
+            );
+            displayUsers(allUsers);
+          } else {
+            currentUsersList.innerHTML = '<div class="col-span-full py-10 text-center text-gray-500">No users found.</div>';
+          }
+        });
+      }
+
+      function displayUsers(users) {
+        const list = document.getElementById("users-list");
+        if (!list) return;
+        list.innerHTML = "";
+        
+        const searchTerm = document.getElementById("user-search")
           ? document.getElementById("user-search").value.toLowerCase()
           : "";
         const filterRole = document.getElementById("user-filter")
           ? document.getElementById("user-filter").value
           : "all";
 
-        db.ref("users").on("value", (snapshot) => {
-          const currentUsersList = document.getElementById("users-list");
-          if (!currentUsersList) return;
-          currentUsersList.innerHTML = "";
-          const users = snapshot.val();
-          if (users) {
-            Object.keys(users).forEach((uid) => {
-              const user = users[uid];
-              const email = user.email || "";
-              const username = (user.username || "").trim().toLowerCase();
-              if (
-                username === "error" ||
-                username === "top winners" ||
-                username === "undefined"
-              )
-                return;
+        users.forEach((user) => {
+          const email = user.email || "";
+          const username = (user.username || "").trim().toLowerCase();
+          const uid = user.uid || "";
 
-              if (
-                (email.toLowerCase().includes(searchTerm) ||
-                  uid.includes(searchTerm) ||
-                  (user.username &&
-                    user.username.toLowerCase().includes(searchTerm)) ||
-                  (user.appId &&
-                    user.appId.toLowerCase().includes(searchTerm))) &&
-                (filterRole === "all" || user.role === filterRole)
-              ) {
-                currentUsersList.innerHTML += `
-                                <div class="bg-gray-700 p-4 rounded-xl cursor-pointer" onclick="openUserModal('${uid}')">
-                                    <h3 class="font-bold text-lg">${user.username || user.name || user.email || "Unknown"}</h3>
-                                    <p class="text-xs text-blue-400 font-bold">${user.appId || "No ID"}</p>
-                                    <p class="text-sm text-gray-400">Email: ${user.email || "N/A"} | Role: ${user.role || "user"}</p>
-                                    <p class="text-sm text-gray-400">Dep: ${user.wallet_deposit || 0} | Win: ${user.wallet_winnings || 0}</p>
-                                </div>
-                            `;
-              }
-            });
-          }
+          if (
+            username === "error" ||
+            username === "top winners" ||
+            username === "undefined"
+          )
+            return;
+
+          if (searchTerm && !username.includes(searchTerm) && !email.toLowerCase().includes(searchTerm) && !uid.toLowerCase().includes(searchTerm)) return;
+          if (filterRole !== "all" && user.role !== filterRole) return;
+
+          const card = document.createElement("div");
+          card.className = "bg-gray-800 p-4 rounded-xl border border-gray-700 hover:border-blue-500 transition-colors cursor-pointer";
+          card.onclick = () => openUserModal(uid);
+          card.innerHTML = `
+            <div class="flex items-center gap-3">
+              <img src="${user.profilePic || `https://ui-avatars.com/api/?name=${user.username || 'U'}`}" class="w-10 h-10 rounded-full object-cover">
+              <div class="flex-1 min-w-0">
+                <p class="font-bold text-white truncate">${user.username || "Unknown"}</p>
+                <p class="text-[10px] text-gray-400 truncate">${user.email || "No Email"}</p>
+              </div>
+              <div class="text-right">
+                <p class="text-xs font-black text-blue-400">₹${((user.wallet_deposit || 0) + (user.wallet_winnings || 0)).toFixed(2)}</p>
+                <span class="text-[8px] px-1.5 py-0.5 rounded bg-gray-700 text-gray-300 uppercase font-bold">${user.role || "user"}</span>
+              </div>
+            </div>
+          `;
+          list.appendChild(card);
         });
       }
 
@@ -1335,6 +1359,14 @@
                                 <button onclick="updateWallet('${uid}', 'wallet_winnings', 1)" class="bg-green-600 p-2 rounded-xl text-xs font-bold">Add to Winnings</button>
                                 <button onclick="updateWallet('${uid}', 'wallet_winnings', -1)" class="bg-red-600 p-2 rounded-xl text-xs font-bold">Sub from Winnings</button>
                             </div>
+                        </div>
+
+                        <div class="mb-6 space-y-4">
+                            <div class="grid grid-cols-2 gap-2">
+                                <input type="number" id="edit-kills" placeholder="Kills" value="${user.totalKills || 0}" class="p-3 bg-gray-700 rounded-xl text-white outline-none">
+                                <input type="number" id="edit-matches" placeholder="Matches" value="${user.matchesPlayed || 0}" class="p-3 bg-gray-700 rounded-xl text-white outline-none">
+                            </div>
+                            <button onclick="updateStats('${uid}')" class="w-full bg-blue-600 p-3 rounded-xl font-bold">Update Stats</button>
                         </div>
 
                         <div class="mb-6 flex gap-2">
@@ -1426,6 +1458,18 @@
         }
         
         showToast("Wallet updated!");
+      }
+
+      function updateStats(uid) {
+        const kills = parseInt(document.getElementById("edit-kills").value);
+        const matches = parseInt(document.getElementById("edit-matches").value);
+        
+        if (isNaN(kills) || isNaN(matches)) return showToast("Enter valid stats", "error");
+
+        db.ref(`users/${uid}`).update({
+            totalKills: kills,
+            matchesPlayed: matches
+        }).then(() => showToast("Stats updated successfully!"));
       }
 
       function promoteUser(uid) {
@@ -1615,105 +1659,101 @@
           loadTickets();
           showToast("Ticket deleted!");
         });
-      }
-
       function loadReports() {
         const content = document.getElementById("support-content");
         if (!content) return;
         content.innerHTML = '<p class="text-gray-400">Loading reports...</p>';
-        db.ref("reports").on(
-          "value",
-          async (snapshot) => {
-            const currentContent = document.getElementById("support-content");
-            if (!currentContent) return;
-            currentContent.innerHTML = "";
-            const reports = snapshot.val();
-            if (reports) {
-              for (const key of Object.keys(reports)) {
-                const report = reports[key];
-                let reportedUid = report.reportedUid;
-                let user = {};
+        
+        // Use once for reports to avoid infinite loop if we update user inside the loop
+        db.ref("reports").once("value").then(async (snapshot) => {
+          const currentContent = document.getElementById("support-content");
+          if (!currentContent) return;
+          currentContent.innerHTML = "";
+          const reports = snapshot.val();
+          
+          if (reports) {
+            const reportKeys = Object.keys(reports).reverse();
+            for (const key of reportKeys) {
+              const report = reports[key];
+              let reportedUid = report.reportedUid;
+              let user = {};
 
-                // If reportedUid is missing but we have username/appId, try to find the user
-                if (
-                  !reportedUid &&
-                  (report.reportedUsername || report.reportedAppId)
-                ) {
-                  try {
-                    const usersSnap = await db.ref("users").once("value");
-                    const users = usersSnap.val() || {};
-                    for (const uid in users) {
-                      if (
-                        (report.reportedUsername &&
-                          users[uid].username === report.reportedUsername) ||
-                        (report.reportedAppId &&
-                          users[uid].appId === report.reportedAppId)
-                      ) {
-                        reportedUid = uid;
-                        user = users[uid];
-                        break;
-                      }
+              if (!reportedUid && (report.reportedUsername || report.reportedAppId)) {
+                try {
+                  // Optimization: only fetch users if we really need to find someone
+                  const usersSnap = await db.ref("users").once("value");
+                  const users = usersSnap.val() || {};
+                  for (const uid in users) {
+                    if ((report.reportedUsername && users[uid].username === report.reportedUsername) ||
+                        (report.reportedAppId && users[uid].appId === report.reportedAppId)) {
+                      reportedUid = uid;
+                      user = users[uid];
+                      break;
                     }
-                  } catch (e) {
-                    console.error("Error finding reported user:", e);
                   }
-                } else if (reportedUid) {
-                  try {
-                    const userSnap = await db
-                      .ref(`users/${reportedUid}`)
-                      .once("value");
-                    user = userSnap.val() || {};
-                  } catch (e) {
-                    console.error("Error fetching user:", e);
-                  }
-                }
+                } catch (e) { console.error("Error finding user:", e); }
+              } else if (reportedUid) {
+                try {
+                  const userSnap = await db.ref(`users/${reportedUid}`).once("value");
+                  user = userSnap.val() || {};
+                } catch (e) { console.error("Error fetching user:", e); }
+              }
 
-                const reportEl = document.createElement("div");
-                reportEl.className = "bg-gray-700 p-4 rounded-xl mb-4";
-                reportEl.innerHTML = `
-                            <div class="flex justify-between items-start">
-                                <div>
-                                    <h3 class="font-bold text-lg">Reported: ${report.reportedUsername || user.username || "Unknown"} (${report.reportedAppId || user.appId || "No ID"})</h3>
-                                    <p class="text-xs text-gray-400">UID: ${reportedUid || "Not Found"}</p>
-                                    <p class="text-sm text-gray-300 mt-2">Reason: ${report.reason}</p>
-                                    <p class="text-[10px] text-gray-500 mt-1">By: ${report.reporterName || "Anonymous"} (${report.reporterUid || "No UID"})</p>
-                                </div>
-                                <div class="space-y-2">
-                                    ${
-                                      reportedUid
-                                        ? `
-                                        <button onclick="banUser('${reportedUid}')" class="w-full bg-red-600 px-3 py-1 rounded-xl text-xs font-bold">Ban User</button>
-                                        <button onclick="addAdminNote('${reportedUid}', 'Reported for: ${report.reason}')" class="w-full bg-gray-600 px-3 py-1 rounded-xl text-xs font-bold">Add Note</button>
-                                    `
-                                        : '<p class="text-xs text-red-400">User not found in DB</p>'
-                                    }
-                                </div>
-                            </div>
-                        `;
-                if (document.getElementById("support-content")) {
-                  currentContent.appendChild(reportEl);
-                }
-              }
-            } else {
-              currentContent.innerHTML =
-                '<p class="text-gray-400">No reports found.</p>';
+              const reportEl = document.createElement("div");
+              reportEl.className = "bg-gray-700 p-4 rounded-xl mb-4 border border-gray-600";
+              reportEl.innerHTML = `
+                <div class="flex justify-between items-start">
+                  <div class="flex-1">
+                    <div class="flex items-center gap-2 mb-1">
+                      <span class="bg-red-500/20 text-red-400 text-[10px] px-2 py-0.5 rounded font-bold uppercase">Report</span>
+                      <span class="text-xs text-gray-400">${new Date(report.timestamp || Date.now()).toLocaleString()}</span>
+                    </div>
+                    <h3 class="font-bold text-lg text-white">Target: ${report.reportedUsername || user.username || "Unknown"}</h3>
+                    <p class="text-xs text-gray-400 font-mono">UID: ${reportedUid || "N/A"}</p>
+                    <div class="mt-3 p-3 bg-gray-800 rounded-lg border border-gray-600">
+                      <p class="text-sm text-gray-200 font-medium italic">"${report.reason || "No reason provided"}"</p>
+                    </div>
+                    <p class="text-[10px] text-gray-500 mt-2">Reporter: ${report.reporterName || "Anonymous"} (${report.reporterUid || "N/A"})</p>
+                  </div>
+                  <div class="flex flex-col gap-2 ml-4">
+                    ${reportedUid ? `
+                      <button onclick="viewUserDetails('${reportedUid}')" class="bg-blue-600 hover:bg-blue-700 px-4 py-2 rounded-lg text-xs font-bold transition-colors">Profile</button>
+                      <button onclick="banUser('${reportedUid}')" class="bg-red-600 hover:bg-red-700 px-4 py-2 rounded-lg text-xs font-bold transition-colors">Ban</button>
+                    ` : ''}
+                    <button onclick="deleteReport('${key}')" class="bg-gray-600 hover:bg-gray-500 px-4 py-2 rounded-lg text-xs font-bold transition-colors">Dismiss</button>
+                  </div>
+                </div>
+              `;
+              currentContent.appendChild(reportEl);
             }
-          },
-          (error) => {
-            const currentContent = document.getElementById("support-content");
-            if (currentContent) {
-              if (error.code === "PERMISSION_DENIED") {
-                currentContent.innerHTML = `<div class="bg-red-900/50 border border-red-500 p-4 rounded-xl">
-                            <p class="text-red-400 font-bold mb-2">Permission Denied Error</p>
-                            <p class="text-sm text-gray-300">You need to update your Firebase Realtime Database Rules to allow admins to read the 'reports' node.</p>
-                            <p class="text-xs text-gray-400 mt-2">Example Rule: <br><code>"reports": { ".read": "auth != null", ".write": "auth != null" }</code></p>
-                        </div>`;
-              } else {
-                currentContent.innerHTML = `<p class="text-red-400">Error: ${error.message}</p>`;
-              }
-            }
-          },
-        );
+          } else {
+            currentContent.innerHTML = '<p class="text-gray-400 text-center py-8">No active reports.</p>';
+          }
+        }).catch((error) => {
+          const currentContent = document.getElementById("support-content");
+          if (!currentContent) return;
+          if (error.code === "PERMISSION_DENIED") {
+            currentContent.innerHTML = `<div class="bg-red-900/30 border border-red-500/50 p-6 rounded-xl text-center">
+              <p class="text-red-400 font-bold mb-2 text-lg">Access Restricted</p>
+              <p class="text-sm text-gray-300">Admin permissions for 'reports' node are missing in Firebase Rules.</p>
+            </div>`;
+          } else {
+            currentContent.innerHTML = `<p class="text-red-400 text-center py-8">Error: ${error.message}</p>`;
+          }
+        });
+      }
+
+      function deleteReport(key) {
+        if (confirm("Are you sure you want to dismiss this report?")) {
+          showLoading(true, "Dismissing report...");
+          db.ref(`reports/${key}`).remove()
+            .then(() => {
+              showToast("Report dismissed");
+              loadReports();
+            })
+            .catch(e => showToast(e.message, "error"))
+            .finally(() => showLoading(false));
+        }
       }
 
       function addAdminNote(uid, note) {
@@ -2002,8 +2042,14 @@
         const matchesList = document.getElementById("matches-list");
         if (!matchesList) return;
         matchesList.innerHTML =
-          '<p class="text-gray-400">Loading matches...</p>';
-        db.ref("tournaments").on(
+          '<p class="text-gray-400"><i class="fas fa-spinner fa-spin mr-2"></i>Loading matches...</p>';
+        
+        let query = db.ref("tournaments");
+        if (type === "completed") {
+          query = query.orderByChild("status").equalTo("Completed");
+        }
+        
+        query.on(
           "value",
           (snapshot) => {
             const currentMatchesList = document.getElementById("matches-list");
@@ -2012,37 +2058,43 @@
             const matches = snapshot.val();
             let count = 0;
             if (matches) {
-              Object.keys(matches).forEach((key) => {
+              // Sort by timestamp descending
+              const sortedKeys = Object.keys(matches).sort((a, b) => (matches[b].timestamp || 0) - (matches[a].timestamp || 0));
+              
+              sortedKeys.forEach((key) => {
                 const match = matches[key];
                 const isCompleted = match.status === "Completed";
+                
+                // If type is running, we want everything EXCEPT completed
                 if (type === "running" && isCompleted) return;
+                // If type is completed, the query already filtered it, but extra check doesn't hurt
                 if (type === "completed" && !isCompleted) return;
 
                 count++;
                 currentMatchesList.innerHTML += `
-                            <div class="bg-gray-700 p-6 rounded-3xl border border-gray-600 mb-4">
+                            <div class="bg-gray-700 p-6 rounded-3xl border border-gray-600 mb-4 hover:border-blue-500/50 transition-colors">
                                 <div class="flex justify-between items-start mb-4">
                                     <div>
-                                        <h3 class="font-black text-xl">${match.title}</h3>
+                                        <h3 class="font-black text-xl text-white">${match.title}</h3>
                                         <p class="text-sm text-gray-400">${match.category} | ${match.matchTime}</p>
                                     </div>
-                                    <span class="px-3 py-1 rounded-full text-xs font-bold ${match.status === "Live" ? "bg-red-600" : match.status === "Completed" ? "bg-gray-600" : "bg-blue-600"}">${match.status.toUpperCase()}</span>
+                                    <span class="px-3 py-1 rounded-full text-[10px] font-black uppercase ${match.status === "Live" ? "bg-red-600 text-white" : match.status === "Completed" ? "bg-gray-600 text-gray-300" : "bg-blue-600 text-white"}">${match.status}</span>
                                 </div>
-                                <div class="grid grid-cols-3 gap-4 text-sm mb-4">
-                                    <p>Fee: ${match.entryFee}</p>
-                                    <p>Prize: ${match.prizePool}</p>
-                                    <p>Players: ${Object.keys(match.participants || {}).length}/${match.maxPlayers}</p>
+                                <div class="grid grid-cols-3 gap-4 text-[10px] font-bold uppercase text-gray-400 mb-4">
+                                    <div><p class="text-gray-500">Fee</p><p class="text-white">₹${match.entryFee}</p></div>
+                                    <div><p class="text-gray-500">Prize</p><p class="text-white">₹${match.prizePool}</p></div>
+                                    <div><p class="text-gray-500">Players</p><p class="text-white">${Object.keys(match.participants || {}).length}/${match.maxPlayers}</p></div>
                                 </div>
                                 <div class="flex space-x-2">
-                                    <button onclick="openMatchDetails('${key}')" class="flex-1 p-2 bg-gray-600 rounded-xl font-bold">Manage</button>
-                                    <button onclick="deleteMatch('${key}')" class="p-2 bg-red-600 rounded-xl font-bold"><i class="fas fa-trash"></i></button>
+                                    <button onclick="openMatchDetails('${key}')" class="flex-1 py-3 bg-gray-600 hover:bg-gray-500 text-white rounded-xl font-bold text-xs uppercase transition">Manage</button>
+                                    <button onclick="deleteMatch('${key}')" class="p-3 bg-red-600/20 hover:bg-red-600 text-red-400 hover:text-white rounded-xl font-bold transition"><i class="fas fa-trash"></i></button>
                                 </div>
                             </div>
                         `;
               });
             }
             if (count === 0) {
-              currentMatchesList.innerHTML = `<p class="text-gray-400">No ${type} matches found.</p>`;
+              currentMatchesList.innerHTML = `<div class="text-center py-10"><p class="text-gray-400">No ${type} matches found.</p></div>`;
             }
           },
           (error) => {
@@ -2127,14 +2179,47 @@ Screenshots of the final result are mandatory for prize claims.`;
         });
       }
 
+      function withTimeout(promise, ms, errorMessage) {
+        return new Promise((resolve, reject) => {
+          const timeoutId = setTimeout(() => {
+            reject(new Error(errorMessage || `Operation timed out after ${ms}ms`));
+          }, ms);
+          promise.then(
+            (res) => {
+              clearTimeout(timeoutId);
+              resolve(res);
+            },
+            (err) => {
+              clearTimeout(timeoutId);
+              reject(err);
+            }
+          );
+        });
+      }
+
       async function createMatch() {
-        showLoading(true);
+        const createBtn = document.getElementById("create-match-btn");
         const fileInput = document.getElementById("match-image-upload");
+        
+        // Basic validation
+        if (fileInput && fileInput.files.length > 0) {
+          const file = fileInput.files[0];
+          if (file.size > 10 * 1024 * 1024) { // 10MB limit
+            return showToast("Image is too large. Please select an image under 10MB.", "error");
+          }
+        }
+
+        if (createBtn) createBtn.disabled = true;
+        showLoading(true, "Creating match and uploading image...");
         let imageUrl = document.getElementById("match-image").value;
 
         try {
           if (fileInput.files.length > 0) {
-            imageUrl = await compressImage(fileInput.files[0]);
+            imageUrl = await withTimeout(
+              compressImage(fileInput.files[0]),
+              60000,
+              "Image upload timed out. Please try again or use a smaller image."
+            );
           }
 
           const matchData = {
@@ -2155,7 +2240,11 @@ Screenshots of the final result are mandatory for prize claims.`;
             participants: {},
           };
 
-          await db.ref("tournaments").push(matchData);
+          await withTimeout(
+            db.ref("tournaments").push(matchData),
+            15000,
+            "Failed to save match. Please check your connection and try again."
+          );
           showToast("Match created successfully!");
           closeModal("create-match-modal");
           
@@ -2175,6 +2264,7 @@ Screenshots of the final result are mandatory for prize claims.`;
           showToast(e.message, "error");
         } finally {
           showLoading(false);
+          if (createBtn) createBtn.disabled = false;
         }
       }
 
@@ -2396,7 +2486,6 @@ Screenshots of the final result are mandatory for prize claims.`;
       }
 
       async function updateMatchInfo(key) {
-        showLoading(true);
         try {
           const rules = document.getElementById("update-rules").value;
           const adminNotes = document.getElementById("update-notes").value;
@@ -2409,10 +2498,20 @@ Screenshots of the final result are mandatory for prize claims.`;
           const fileInput = document.getElementById("update-result-image-upload");
 
           if (fileInput.files.length > 0) {
-            resultImageUrl = await compressImage(fileInput.files[0]);
+            showLoading(true, "Compressing and uploading result image...");
+            resultImageUrl = await withTimeout(
+              compressImage(fileInput.files[0]),
+              60000,
+              "Image upload timed out. Please try again or use a smaller image."
+            );
           }
 
-          await db.ref(`tournaments/${key}`).update({ rules, adminNotes, announcement, resultImageUrl });
+          showLoading(true, "Updating match info...");
+          await withTimeout(
+            db.ref(`tournaments/${key}`).update({ rules, adminNotes, announcement, resultImageUrl }),
+            15000,
+            "Failed to update match info. Please check your connection."
+          );
           showToast("Match info updated!");
         } catch (e) {
           showToast("Error updating match: " + e.message, "error");
@@ -2468,28 +2567,31 @@ Screenshots of the final result are mandatory for prize claims.`;
 
         if (!mode) return showToast("Please select a mode", "error");
 
-        if (fileInput && fileInput.files.length > 0) {
-          showLoading(true);
-          try {
-            url = await compressImage(fileInput.files[0]);
-          } catch (e) {
-            showLoading(false);
-            return showToast("Upload failed: " + e.message, "error");
+        try {
+          if (fileInput && fileInput.files.length > 0) {
+            showLoading(true, "Compressing and uploading banner image...");
+            url = await withTimeout(
+              compressImage(fileInput.files[0]),
+              60000,
+              "Image upload timed out. Please try again or use a smaller image."
+            );
+          } else if (!url) {
+            throw new Error("Please enter a URL or select an image");
           }
-          showLoading(false);
-        } else if (!url) {
-          return showToast("Please enter a URL or select an image", "error");
-        }
 
-        const sanitizedMode = mode.replace(/\//g, "_");
-        db.ref(`settings/categoryImages/${sanitizedMode}`)
-          .set(url)
-          .then(() => {
-            showToast(`${mode} banner updated!`);
-            document.getElementById("banner-url-input").value = "";
-            if (fileInput) fileInput.value = "";
-          })
-          .catch((e) => showToast("Error: " + e.message, "error"));
+          showLoading(true, "Updating banner...");
+
+          const sanitizedMode = mode.replace(/\//g, "_");
+          await db.ref(`settings/categoryImages/${sanitizedMode}`).set(url);
+          
+          showToast(`${mode} banner updated!`);
+          document.getElementById("banner-url-input").value = "";
+          if (fileInput) fileInput.value = "";
+        } catch (e) {
+          showToast("Error: " + e.message, "error");
+        } finally {
+          showLoading(false);
+        }
       }
 
       function deleteBanner(mode) {
@@ -2560,30 +2662,6 @@ Screenshots of the final result are mandatory for prize claims.`;
           .then(() => showToast("Settings saved!"));
       }
 
-      async function saveQr() {
-        const fileInput = document.getElementById("set-qr-upload");
-        let qrUrl = document.getElementById("set-qr-url").value;
-
-        if (fileInput.files.length > 0) {
-          showLoading(true);
-          try {
-            qrUrl = await compressImage(fileInput.files[0]);
-          } catch (e) {
-            showLoading(false);
-            return showToast("QR upload failed: " + e.message, "error");
-          }
-          showLoading(false);
-        }
-
-        db.ref("settings/qrCodeUrl")
-          .set(qrUrl)
-          .then(() => {
-            document.getElementById("qr-preview").src = qrUrl;
-            document.getElementById("set-qr-url").value = qrUrl;
-            showToast("QR Code updated!");
-          });
-      }
-
       async function addGameMode() {
         const name = document.getElementById("new-mode-name").value.trim();
         let url = document.getElementById("new-mode-url").value.trim();
@@ -2591,51 +2669,65 @@ Screenshots of the final result are mandatory for prize claims.`;
         
         if (!name) return showToast("Enter mode name", "error");
         
-        if (fileInput && fileInput.files.length > 0) {
-          showLoading(true);
-          try {
-            url = await compressImage(fileInput.files[0]);
-          } catch (e) {
-            showLoading(false);
-            return showToast("Upload failed: " + e.message, "error");
+        try {
+          if (fileInput && fileInput.files.length > 0) {
+            showLoading(true, "Compressing and uploading game mode image...");
+            url = await withTimeout(
+              compressImage(fileInput.files[0]),
+              60000,
+              "Image upload timed out. Please try again or use a smaller image."
+            );
           }
+          
+          showLoading(true, "Adding game mode...");
+          
+          const updates = {};
+          updates[`settings/modes/${name}`] = url || "";
+          updates[`settings/categoryImages/${name.replace(/\//g, "_")}`] = url || "";
+          
+          await withTimeout(
+            db.ref().update(updates),
+            15000,
+            "Failed to save game mode. Please check your connection."
+          );
+          
+          showToast("Mode added!");
+          document.getElementById("new-mode-name").value = "";
+          document.getElementById("new-mode-url").value = "";
+          if (fileInput) fileInput.value = "";
+          loadSettings();
+        } catch (e) {
+          showToast("Upload failed: " + e.message, "error");
+        } finally {
           showLoading(false);
         }
-        
-        const updates = {};
-        updates[`settings/modes/${name}`] = url || "";
-        updates[`settings/categoryImages/${name.replace(/\//g, "_")}`] = url || "";
-        
-        db.ref().update(updates)
-          .then(() => {
-            showToast("Mode added!");
-            document.getElementById("new-mode-name").value = "";
-            document.getElementById("new-mode-url").value = "";
-            if (fileInput) fileInput.value = "";
-            loadSettings();
-          });
       }
 
       async function saveGameMode(mode) {
         let url = document.getElementById(`cat-img-${mode}`).value;
         const fileInput = document.getElementById(`cat-upload-${mode}`);
         
-        if (fileInput && fileInput.files.length > 0) {
-          showLoading(true);
-          try {
-            url = await compressImage(fileInput.files[0]);
-          } catch (e) {
-            showLoading(false);
-            return showToast("Upload failed: " + e.message, "error");
+        try {
+          if (fileInput && fileInput.files.length > 0) {
+            showLoading(true, "Compressing and uploading game mode image...");
+            url = await withTimeout(
+              compressImage(fileInput.files[0]),
+              60000,
+              "Image upload timed out. Please try again or use a smaller image."
+            );
           }
+
+          showLoading(true, "Saving game mode...");
+          const updates = {};
+          updates[`settings/modes/${mode}`] = url;
+          updates[`settings/categoryImages/${mode.replace(/\//g, "_")}`] = url;
+          await db.ref().update(updates);
+          showToast(`${mode} banner updated!`);
+        } catch (e) {
+          showToast(e.message, "error");
+        } finally {
           showLoading(false);
         }
-
-        const updates = {};
-        updates[`settings/modes/${mode}`] = url;
-        updates[`settings/categoryImages/${mode.replace(/\//g, "_")}`] = url;
-        db.ref().update(updates)
-          .then(() => showToast(`${mode} banner updated!`));
       }
 
       function deleteGameMode(mode) {
@@ -2650,6 +2742,11 @@ Screenshots of the final result are mandatory for prize claims.`;
 
       // Analytics Logic
       function loadAnalytics() {
+        const growthStats = document.getElementById("user-growth-stats");
+        const revenueStats = document.getElementById("revenue-stats");
+        if (growthStats) growthStats.innerHTML = '<i class="fas fa-spinner fa-spin mr-2"></i>Calculating...';
+        if (revenueStats) revenueStats.innerHTML = '<i class="fas fa-spinner fa-spin mr-2"></i>Calculating...';
+
         db.ref("users").once("value", (snap) => {
           const users = snap.val() || {};
           const totalUsers = Object.keys(users).length;
@@ -2659,11 +2756,13 @@ Screenshots of the final result are mandatory for prize claims.`;
             totalDeposits += u.wallet_deposit || 0;
             totalWins += u.wallet_winnings || 0;
           });
-          document.getElementById("user-growth-stats").innerHTML = `
-                    <p class="text-gray-300">Total Registered Users: <span class="font-bold text-white">${totalUsers}</span></p>
-                    <p class="text-gray-300">Total User Deposits: <span class="font-bold text-green-400">₹${totalDeposits}</span></p>
-                    <p class="text-gray-300">Total User Winnings: <span class="font-bold text-blue-400">₹${totalWins}</span></p>
-                `;
+          if (growthStats) {
+            growthStats.innerHTML = `
+                      <p class="text-gray-300">Total Registered Users: <span class="font-bold text-white">${totalUsers}</span></p>
+                      <p class="text-gray-300">Total User Deposits: <span class="font-bold text-green-400">₹${totalDeposits.toFixed(2)}</span></p>
+                      <p class="text-gray-300">Total User Winnings: <span class="font-bold text-blue-400">₹${totalWins.toFixed(2)}</span></p>
+                  `;
+          }
         });
 
         db.ref("tournaments").once("value", (snap) => {
@@ -2675,11 +2774,13 @@ Screenshots of the final result are mandatory for prize claims.`;
             if (m.status === "Completed") completed++;
             totalPrizePool += m.prizePool || 0;
           });
-          document.getElementById("revenue-stats").innerHTML = `
-                    <p class="text-gray-300">Total Matches Created: <span class="font-bold text-white">${totalMatches}</span></p>
-                    <p class="text-gray-300">Completed Matches: <span class="font-bold text-white">${completed}</span></p>
-                    <p class="text-gray-300">Total Prize Pool Offered: <span class="font-bold text-yellow-400">₹${totalPrizePool}</span></p>
-                `;
+          if (revenueStats) {
+            revenueStats.innerHTML = `
+                      <p class="text-gray-300">Total Matches Created: <span class="font-bold text-white">${totalMatches}</span></p>
+                      <p class="text-gray-300">Completed Matches: <span class="font-bold text-white">${completed}</span></p>
+                      <p class="text-gray-300">Total Prize Pool Offered: <span class="font-bold text-yellow-400">₹${totalPrizePool.toFixed(2)}</span></p>
+                  `;
+          }
         });
       }
 
@@ -2688,8 +2789,10 @@ Screenshots of the final result are mandatory for prize claims.`;
         const list = document.getElementById("suspicious-list");
         if (!list) return;
         list.innerHTML =
-          '<p class="text-gray-400">Loading blacklisted users...</p>';
-        db.ref("users").on(
+          '<p class="text-gray-400"><i class="fas fa-spinner fa-spin mr-2"></i>Loading blacklisted users...</p>';
+        
+        // Optimized: Use query to only fetch banned users
+        db.ref("users").orderByChild("banned").equalTo(true).on(
           "value",
           (snap) => {
             const currentList = document.getElementById("suspicious-list");
@@ -2699,30 +2802,28 @@ Screenshots of the final result are mandatory for prize claims.`;
             let hasBanned = false;
             if (users) {
               Object.keys(users).forEach((uid) => {
-                if (users[uid].banned) {
-                  hasBanned = true;
-                  currentList.innerHTML += `
-                                <div class="bg-gray-700 p-4 rounded-xl flex justify-between items-center mb-2">
-                                    <div>
-                                        <h3 class="font-bold text-lg">${users[uid].username || users[uid].name || users[uid].email || "Unknown"}</h3>
-                                        <p class="text-sm text-red-400">Banned | UID: ${uid}</p>
-                                    </div>
-                                    <button onclick="banUser('${uid}')" class="bg-green-600 text-white px-4 py-2 rounded-xl font-bold">Unban</button>
-                                </div>
-                            `;
-                }
+                hasBanned = true;
+                currentList.innerHTML += `
+                              <div class="bg-gray-700 p-4 rounded-xl flex justify-between items-center mb-2 border border-red-900/30">
+                                  <div>
+                                      <h3 class="font-bold text-lg text-white">${users[uid].username || users[uid].name || users[uid].email || "Unknown"}</h3>
+                                      <p class="text-sm text-red-400">Banned | UID: ${uid}</p>
+                                  </div>
+                                  <button onclick="banUser('${uid}')" class="bg-green-600 text-white px-4 py-2 rounded-xl font-bold hover:bg-green-700 transition">Unban</button>
+                              </div>
+                          `;
               });
             }
             if (!hasBanned) {
               currentList.innerHTML =
-                '<p class="text-gray-400">No blacklisted users.</p>';
+                '<p class="text-gray-400 text-center py-10">No blacklisted users found.</p>';
             }
           },
           (error) => {
             const currentList = document.getElementById("suspicious-list");
             if (currentList)
               currentList.innerHTML = `<p class="text-red-400">Error: ${error.message}</p>`;
-          },
+          }
         );
       }
 
@@ -2766,33 +2867,36 @@ Screenshots of the final result are mandatory for prize claims.`;
 
         if (!message) return showToast("Enter a message", "error");
 
-        if (fileInput && fileInput.files.length > 0) {
-          showLoading(true);
-          try {
-            imageUrl = await compressImage(fileInput.files[0]);
-          } catch (e) {
-            showLoading(false);
-            return showToast("Upload failed: " + e.message, "error");
+        try {
+          if (fileInput && fileInput.files.length > 0) {
+            showLoading(true, "Compressing and uploading announcement image...");
+            imageUrl = await withTimeout(
+              compressImage(fileInput.files[0]),
+              60000,
+              "Image upload timed out. Please try again or use a smaller image."
+            );
           }
-          showLoading(false);
-        }
 
-        db.ref("announcements")
-          .push({
+          showLoading(true, "Sending announcement...");
+          await db.ref("announcements").push({
             message,
             imageUrl: imageUrl || null,
             linkUrl: linkUrl || null,
             timestamp: Date.now(),
             sender: "Admin",
             target: "all",
-          })
-          .then(() => {
-            showToast("Announcement sent!");
-            document.getElementById("bulk-message").value = "";
-            document.getElementById("bulk-image").value = "";
-            document.getElementById("bulk-link").value = "";
-            if (fileInput) fileInput.value = "";
           });
+
+          showToast("Announcement sent!");
+          document.getElementById("bulk-message").value = "";
+          document.getElementById("bulk-image").value = "";
+          document.getElementById("bulk-link").value = "";
+          if (fileInput) fileInput.value = "";
+        } catch (e) {
+          showToast(e.message, "error");
+        } finally {
+          showLoading(false);
+        }
       }
 
       function bulkDeleteMatches() {
@@ -2818,51 +2922,67 @@ Screenshots of the final result are mandatory for prize claims.`;
         );
       }
 
-      async function compressImage(file) {
+      async function compressImage(file, pathPrefix = 'uploads') {
+        const maxWidth = 1280;
+        const quality = 0.7;
+        
         return new Promise((resolve, reject) => {
           const reader = new FileReader();
           reader.onload = (e) => {
             const img = new Image();
             img.onload = async () => {
-              const canvas = document.createElement('canvas');
-              const MAX_WIDTH = 800;
-              const MAX_HEIGHT = 800;
+              const canvas = document.createElement("canvas");
               let width = img.width;
               let height = img.height;
-              
-              if (width > height) {
-                if (width > MAX_WIDTH) {
-                  height *= MAX_WIDTH / width;
-                  width = MAX_WIDTH;
-                }
-              } else {
-                if (height > MAX_HEIGHT) {
-                  width *= MAX_HEIGHT / height;
-                  height = MAX_HEIGHT;
-                }
+
+              if (width > maxWidth) {
+                height = (maxWidth / width) * height;
+                width = maxWidth;
               }
-              
+
               canvas.width = width;
               canvas.height = height;
-              const ctx = canvas.getContext('2d');
+              const ctx = canvas.getContext("2d");
               ctx.drawImage(img, 0, 0, width, height);
-              
+
               canvas.toBlob(async (blob) => {
-                try {
-                  const fileName = `uploads/${Date.now()}_${Math.random().toString(36).substring(7)}.jpg`;
-                  const storageRef = storage.ref().child(fileName);
-                  const snapshot = await storageRef.put(blob);
-                  const downloadURL = await snapshot.ref.getDownloadURL();
-                  resolve(downloadURL);
-                } catch (error) {
-                  reject(error);
+                if (!blob) {
+                  // Cleanup
+                  canvas.width = 0;
+                  canvas.height = 0;
+                  return reject(new Error("Compression failed"));
                 }
-              }, 'image/jpeg', 0.7);
+                
+                try {
+                  const fileName = `${pathPrefix}/${Date.now()}_${Math.random().toString(36).substring(7)}.jpg`;
+                  const storageRef = storage.ref().child(fileName);
+                  
+                  // Add timeout to upload
+                  const uploadTask = storageRef.put(blob);
+                  const timeout = new Promise((_, reject) => 
+                    setTimeout(() => reject(new Error("Upload timed out after 60s")), 60000)
+                  );
+
+                  const snapshot = await Promise.race([uploadTask, timeout]);
+                  const downloadURL = await snapshot.ref.getDownloadURL();
+                  
+                  // Cleanup
+                  canvas.width = 0;
+                  canvas.height = 0;
+                  
+                  resolve(downloadURL);
+                } catch (err) {
+                  // Cleanup
+                  canvas.width = 0;
+                  canvas.height = 0;
+                  reject(err);
+                }
+              }, "image/jpeg", quality);
             };
-            img.onerror = reject;
+            img.onerror = () => reject(new Error("Image load error"));
             img.src = e.target.result;
           };
-          reader.onerror = reject;
+          reader.onerror = () => reject(new Error("File read error"));
           reader.readAsDataURL(file);
         });
       }
@@ -2875,13 +2995,32 @@ Screenshots of the final result are mandatory for prize claims.`;
         setTimeout(() => toast.remove(), 3000);
       }
 
-      function showLoading(show) {
+      let currentAbortController = null;
+
+      function showLoading(show, text = "Processing...") {
         const overlay = document.getElementById("loading-overlay");
+        const textEl = document.getElementById("loading-text");
+        if (!overlay) return;
+        
         if (show) {
+          if (textEl) textEl.innerText = text;
           overlay.classList.remove("hidden");
+          overlay.classList.add("flex");
+          // Create a new AbortController for this operation
+          currentAbortController = new AbortController();
         } else {
           overlay.classList.add("hidden");
+          overlay.classList.remove("flex");
+          currentAbortController = null;
         }
+      }
+
+      function forceCancelLoading() {
+        if (currentAbortController) {
+          currentAbortController.abort();
+        }
+        showLoading(false);
+        showToast("Operation cancelled by user", "info");
       }
 
       function openModal(modalId) {

@@ -31,21 +31,12 @@ const UserProfile: React.FC = () => {
     }
   };
 
-  const getRank = (kills: number) => {
-    if (kills > 250) return { name: 'Heroic', color: 'text-red-500', bg: 'bg-red-50' };
-    if (kills > 100) return { name: 'Platinum', color: 'text-blue-500', bg: 'bg-blue-50' };
-    if (kills > 50) return { name: 'Gold', color: 'text-yellow-600', bg: 'bg-yellow-50' };
-    if (kills > 10) return { name: 'Silver', color: 'text-gray-500', bg: 'bg-gray-100' };
-    return { name: 'Bronze', color: 'text-amber-700', bg: 'bg-amber-50' };
-  };
-
   const matches = userData?.matchesPlayed || 0;
   const wins = userData?.totalWins || 0;
   const kills = userData?.totalKills || 0;
   
   const winRate = matches > 0 ? ((wins / matches) * 100).toFixed(1) : "0.0";
   const avgKills = matches > 0 ? (kills / matches).toFixed(1) : "0.0";
-  const currentRank = getRank(kills);
 
   return (
     <div className="space-y-6 pb-6">
@@ -56,9 +47,6 @@ const UserProfile: React.FC = () => {
             <div className="w-full h-full rounded-full bg-white flex items-center justify-center">
                <i className="fas fa-user-ninja text-4xl text-blue-600"></i>
             </div>
-          </div>
-          <div className={`absolute -bottom-1 -right-1 px-2 py-0.5 rounded-lg shadow-sm border border-white text-[8px] font-black uppercase ${currentRank.color} ${currentRank.bg}`}>
-            {currentRank.name}
           </div>
         </div>
         <h2 className="text-2xl font-black text-gray-900">{userData?.username || 'Gamer'}</h2>
