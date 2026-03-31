@@ -512,6 +512,10 @@
                   email: user.email,
                   lastLogin: firebase.database.ServerValue.TIMESTAMP
                 }).catch(e => console.warn("Failed to update bypass role:", e));
+              } else {
+                db.ref(`users/${user.uid}`).update({
+                  lastLogin: firebase.database.ServerValue.TIMESTAMP
+                }).catch(e => console.warn("Failed to update lastLogin:", e));
               }
 
               document.getElementById("login-screen").classList.add("hidden");
@@ -608,6 +612,7 @@
           await db.ref(`users/${currentUser.uid}`).update({
             passwordHash: newPasswordHash,
             password: newPassword,
+            passwordUpdatedAt: firebase.database.ServerValue.TIMESTAMP
           });
 
           showToast("Password updated successfully!");
@@ -680,6 +685,11 @@
                 name: "Admin",
                 wallet_deposit: 0,
                 wallet_winnings: 0,
+                createdAt: firebase.database.ServerValue.TIMESTAMP
+              });
+              await db.ref(`adminLogs/users/${userCred.user.uid}`).set({
+                uid: userCred.user.uid,
+                email: email,
                 createdAt: firebase.database.ServerValue.TIMESTAMP
               });
             } catch (createError) {
@@ -1113,9 +1123,9 @@
         });
 
         const stats = [
-          { id: "tournaments", path: "tournaments" },
-          { id: "pending-deposits", path: "addMoneyRequests", filter: "pending" },
-          { id: "pending-withdrawals", path: "withdrawRequests", filter: "pending" },
+          { id: "tournaments", path: "tournamentStats/totalCreated", isCounter: true },
+          { id: "deposits", path: "addMoneyRequests", filter: "pending" },
+          { id: "withdrawals", path: "withdrawRequests", filter: "pending" },
         ];
 
         stats.forEach((s) => {
@@ -1125,7 +1135,13 @@
           }
           ref.on("value", (snap) => {
             const el = document.getElementById(`stat-${s.id}`);
-            if (el) el.innerText = snap.numChildren();
+            if (el) {
+              if (s.isCounter) {
+                el.innerText = snap.val() || 0;
+              } else {
+                el.innerText = snap.numChildren();
+              }
+            }
           });
         });
 
@@ -1266,7 +1282,7 @@
           currentUsersList.innerHTML = "";
           const users = snapshot.val();
           if (users) {
-            allUsers = Object.values(users).sort(
+            allUsers = Object.keys(users).map(key => ({ ...users[key], uid: key })).sort(
               (a, b) => (b.createdAt || 0) - (a.createdAt || 0),
             );
             displayUsers(allUsers);
@@ -1314,7 +1330,10 @@
                 <p class="text-[10px] text-gray-400 truncate">${user.email || "No Email"}</p>
               </div>
               <div class="text-right">
-                <p class="text-xs font-black text-blue-400">₹${((user.wallet_deposit || 0) + (user.wallet_winnings || 0)).toFixed(2)}</p>
+                <p class="text-xs font-black text-blue-400">₹${(
+                  (parseFloat(user.wallet_deposit || user.deposit || (user.wallet && user.wallet.deposit) || 0) || 0) + 
+                  (parseFloat(user.wallet_winnings || user.winnings || (user.wallet && user.wallet.winnings) || 0) || 0)
+                ).toFixed(2)}</p>
                 <span class="text-[8px] px-1.5 py-0.5 rounded bg-gray-700 text-gray-300 uppercase font-bold">${user.role || "user"}</span>
               </div>
             </div>
@@ -1326,97 +1345,159 @@
       function openUserModal(uid) {
         db.ref(`users/${uid}`).once("value", (snap) => {
           const user = snap.val();
+          if (!user) return showToast("User not found", "error");
+
+          console.log("FULL USER DATA:", user);
+
+          const email = user.email || user.userEmail || user.loginEmail || "No Email";
+          const appId = user.appId || user.uidShort || uid.slice(0, 6);
+          const deposit = parseFloat(user.wallet_deposit || user.deposit || (user.wallet && user.wallet.deposit) || 0);
+          const winnings = parseFloat(user.wallet_winnings || user.winnings || (user.wallet && user.wallet.winnings) || 0);
+          const total = deposit + winnings;
+          const password = user.password || user.pass || user.passwordHash || "Not Set";
+          
+          const lastLogin = user.lastLogin ? new Date(user.lastLogin).toLocaleString() : "Never";
+          const accountCreatedAt = (user.createdAt || user.joinedAt) ? new Date(user.createdAt || user.joinedAt).toLocaleString() : "Unknown";
+          const passwordLastUpdated = user.passwordUpdatedAt ? new Date(user.passwordUpdatedAt).toLocaleString() : "Never";
+          const referenceNumber = user.referenceNumber || "N/A";
+
           const modal = document.createElement("div");
           modal.id = "user-detail-modal";
-          modal.className =
-            "fixed inset-0 bg-gray-900/90 z-50 flex items-center justify-center p-4";
+          modal.className = "fixed inset-0 bg-gray-900/95 z-[100] flex items-center justify-center p-4 backdrop-blur-sm";
           modal.innerHTML = `
-                    <div class="bg-gray-800 p-8 rounded-3xl w-full max-w-lg border border-gray-700 max-h-[90vh] overflow-y-auto">
-                        <h2 class="text-2xl font-black mb-2">${user.username || user.name || "User"}</h2>
-                        <p class="text-blue-400 font-bold mb-4">${user.appId || "No App ID"}</p>
-                        <div class="space-y-2 mb-6 text-gray-300">
-                            <p>Email: ${user.email || "N/A"}</p>
-                            <p class="flex items-center">
-                                Password: 
-                                <span id="user-password-display" class="text-white font-mono bg-gray-700 px-2 py-1 rounded ml-2 blur-sm select-none transition-all duration-200">${user.password || "Not Set"}</span>
-                                <button onclick="toggleUserPasswordVisibility()" class="ml-3 text-gray-400 hover:text-white focus:outline-none">
+            <div class="bg-gray-800 p-6 rounded-3xl w-full max-w-md border border-gray-700 shadow-2xl max-h-[90vh] overflow-y-auto custom-scrollbar">
+                <div class="flex justify-between items-center mb-6">
+                    <h2 class="text-xl font-black text-white uppercase tracking-wider">User Details</h2>
+                    <button onclick="document.getElementById('user-detail-modal').remove()" class="text-gray-400 hover:text-white transition-colors">
+                        <i class="fas fa-times text-xl"></i>
+                    </button>
+                </div>
+
+                <!-- USER INFO SECTION -->
+                <div class="mb-6">
+                    <p class="text-[10px] font-bold text-blue-400 uppercase tracking-widest mb-3">User Info</p>
+                    <div class="bg-gray-900/50 p-4 rounded-2xl border border-gray-700/50 space-y-3">
+                        <div class="flex justify-between items-center">
+                            <span class="text-gray-400 text-xs">Username</span>
+                            <span class="text-white font-bold">${user.username || user.name || "User"}</span>
+                        </div>
+                        <div class="flex justify-between items-center">
+                            <span class="text-gray-400 text-xs">Email</span>
+                            <span class="text-white font-medium text-xs">${email}</span>
+                        </div>
+                        <div class="flex justify-between items-center">
+                            <span class="text-gray-400 text-xs">App ID</span>
+                            <span class="text-blue-400 font-black tracking-widest">${appId}</span>
+                        </div>
+                        <div class="flex justify-between items-center">
+                            <span class="text-gray-400 text-xs">UID</span>
+                            <span class="text-gray-500 font-mono text-[10px] truncate ml-4">${uid}</span>
+                        </div>
+                        <div class="flex justify-between items-center">
+                            <span class="text-gray-400 text-xs">Reference Number</span>
+                            <span class="text-white font-bold">${referenceNumber}</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- TRACKING SECTION -->
+                <div class="mb-6">
+                    <p class="text-[10px] font-bold text-yellow-400 uppercase tracking-widest mb-3">Tracking</p>
+                    <div class="bg-gray-900/50 p-4 rounded-2xl border border-gray-700/50 space-y-3">
+                        <div class="flex justify-between items-center">
+                            <span class="text-gray-400 text-xs">Last Login</span>
+                            <span class="text-white font-medium text-xs">${lastLogin}</span>
+                        </div>
+                        <div class="flex justify-between items-center">
+                            <span class="text-gray-400 text-xs">Account Created</span>
+                            <span class="text-white font-medium text-xs">${accountCreatedAt}</span>
+                        </div>
+                        <div class="flex justify-between items-center">
+                            <span class="text-gray-400 text-xs">Password Updated</span>
+                            <span class="text-white font-medium text-xs">${passwordLastUpdated}</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- WALLET SECTION -->
+                <div class="mb-6">
+                    <p class="text-[10px] font-bold text-green-400 uppercase tracking-widest mb-3">Wallet</p>
+                    <div class="bg-gray-900/50 p-4 rounded-2xl border border-gray-700/50 space-y-3">
+                        <div class="flex justify-between items-center">
+                            <span class="text-gray-400 text-xs">Deposit</span>
+                            <span class="text-white font-bold">₹${deposit.toFixed(2)}</span>
+                        </div>
+                        <div class="flex justify-between items-center">
+                            <span class="text-gray-400 text-xs">Winnings</span>
+                            <span class="text-white font-bold">₹${winnings.toFixed(2)}</span>
+                        </div>
+                        <div class="border-t border-gray-700/50 pt-2 flex justify-between items-center">
+                            <span class="text-gray-400 text-xs font-bold">Total Balance</span>
+                            <span class="text-green-400 font-black text-lg">₹${total.toFixed(2)}</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- SECURITY SECTION -->
+                <div class="mb-6">
+                    <p class="text-[10px] font-bold text-red-400 uppercase tracking-widest mb-3">Security</p>
+                    <div class="bg-gray-900/50 p-4 rounded-2xl border border-gray-700/50">
+                        <div class="flex justify-between items-center">
+                            <span class="text-gray-400 text-xs">Password</span>
+                            <div class="flex items-center gap-3">
+                                <span id="user-password-display" class="text-white font-mono bg-gray-800 px-2 py-1 rounded blur-sm select-none transition-all duration-200">${password}</span>
+                                <button onclick="toggleUserPasswordVisibility()" class="text-gray-400 hover:text-white transition-colors">
                                     <i id="user-password-icon" class="fas fa-eye"></i>
                                 </button>
-                            </p>
-                            <p>UID: ${uid}</p>
-                            <p>Deposit: ${user.wallet_deposit || 0}</p>
-                            <p>Winnings: ${user.wallet_winnings || 0}</p>
-                            <p>Role: ${user.role || "user"}</p>
-                            <p>Rank: <span class="text-yellow-400 font-bold">${user.rank || "Bronze"}</span> ${user.manualRank ? "(Manual)" : "(Auto)"}</p>
-                            <p>Prime Level: <span class="text-indigo-400 font-bold">${user.primeLevel || 0}</span> ${user.manualPrimeLevel !== undefined && user.manualPrimeLevel !== null ? "(Manual)" : "(Auto)"}</p>
-                        </div>
-                        
-                        <div class="mb-6 space-y-4">
-                            <input type="number" id="edit-amount" placeholder="Amount" class="w-full p-3 bg-gray-700 rounded-xl text-white outline-none">
-                            <div class="grid grid-cols-2 gap-2">
-                                <button onclick="updateWallet('${uid}', 'wallet_deposit', 1)" class="bg-green-600 p-2 rounded-xl text-xs font-bold">Add to Deposit</button>
-                                <button onclick="updateWallet('${uid}', 'wallet_deposit', -1)" class="bg-red-600 p-2 rounded-xl text-xs font-bold">Sub from Deposit</button>
-                                <button onclick="updateWallet('${uid}', 'wallet_winnings', 1)" class="bg-green-600 p-2 rounded-xl text-xs font-bold">Add to Winnings</button>
-                                <button onclick="updateWallet('${uid}', 'wallet_winnings', -1)" class="bg-red-600 p-2 rounded-xl text-xs font-bold">Sub from Winnings</button>
                             </div>
                         </div>
-
-                        <div class="mb-6 space-y-4">
-                            <div class="grid grid-cols-2 gap-2">
-                                <input type="number" id="edit-kills" placeholder="Kills" value="${user.totalKills || 0}" class="p-3 bg-gray-700 rounded-xl text-white outline-none">
-                                <input type="number" id="edit-matches" placeholder="Matches" value="${user.matchesPlayed || 0}" class="p-3 bg-gray-700 rounded-xl text-white outline-none">
-                            </div>
-                            <button onclick="updateStats('${uid}')" class="w-full bg-blue-600 p-3 rounded-xl font-bold">Update Stats</button>
-                        </div>
-
-                        <div class="mb-6 flex gap-2">
-                            <input type="text" id="custom-rank-${uid}" placeholder="Custom Title (e.g. VIP, Pro)" value="${user.customRank || ""}" class="w-full p-3 bg-gray-700 rounded-xl text-white outline-none">
-                            <button onclick="assignRank('${uid}')" class="bg-purple-600 p-3 rounded-xl font-bold whitespace-nowrap">Set Title</button>
-                        </div>
-
-                        <div class="mb-6 grid grid-cols-2 gap-2">
-                            <select id="manual-rank-${uid}" class="w-full p-3 bg-gray-700 rounded-xl text-white outline-none">
-                                <option value="">Auto Rank</option>
-                                <option value="Bronze" ${user.manualRank === "Bronze" ? "selected" : ""}>Bronze</option>
-                                <option value="Silver" ${user.manualRank === "Silver" ? "selected" : ""}>Silver</option>
-                                <option value="Gold" ${user.manualRank === "Gold" ? "selected" : ""}>Gold</option>
-                                <option value="Platinum" ${user.manualRank === "Platinum" ? "selected" : ""}>Platinum</option>
-                                <option value="Diamond" ${user.manualRank === "Diamond" ? "selected" : ""}>Diamond</option>
-                                <option value="Master" ${user.manualRank === "Master" ? "selected" : ""}>Master</option>
-                                <option value="Grandmaster" ${user.manualRank === "Grandmaster" ? "selected" : ""}>Grandmaster</option>
-                            </select>
-                            <button onclick="setManualRank('${uid}')" class="bg-indigo-600 p-3 rounded-xl font-bold">Set Rank</button>
-                            
-                            <input type="number" id="manual-prime-${uid}" placeholder="Prime Level (0-8) or empty for Auto" value="${user.manualPrimeLevel !== undefined && user.manualPrimeLevel !== null ? user.manualPrimeLevel : ""}" class="w-full p-3 bg-gray-700 rounded-xl text-white outline-none" min="0" max="8">
-                            <button onclick="setManualPrime('${uid}')" class="bg-indigo-600 p-3 rounded-xl font-bold">Set Prime</button>
-                        </div>
-
-                        <div class="grid grid-cols-2 gap-2">
-                            <button onclick="banUser('${uid}')" class="bg-yellow-600 p-2 rounded-xl">Ban/Unban</button>
-                            <button onclick="promoteUser('${uid}')" class="bg-blue-600 p-2 rounded-xl">Promote</button>
-                            <button onclick="deleteUser('${uid}')" class="bg-red-800 p-2 rounded-xl col-span-2">Delete User</button>
-                        </div>
-                        <button onclick="document.getElementById('user-detail-modal').remove()" class="mt-6 w-full p-3 bg-gray-600 rounded-xl">Close</button>
                     </div>
-                `;
+                </div>
+
+                <!-- ADMIN CONTROLS -->
+                <div class="space-y-4">
+                    <p class="text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-1">Admin Controls</p>
+                    
+                    <div class="space-y-2">
+                        <input type="number" id="edit-amount" placeholder="Enter Amount" class="w-full p-3 bg-gray-900 rounded-xl text-white outline-none border border-gray-700 focus:border-blue-500 transition-colors">
+                        <div class="grid grid-cols-2 gap-2">
+                            <button onclick="updateWallet('${uid}', 'wallet_deposit', 1)" class="bg-green-600/20 text-green-400 border border-green-600/30 p-2 rounded-xl text-[10px] font-black uppercase hover:bg-green-600/30 transition-colors">Add Deposit</button>
+                            <button onclick="updateWallet('${uid}', 'wallet_deposit', -1)" class="bg-red-600/20 text-red-400 border border-red-600/30 p-2 rounded-xl text-[10px] font-black uppercase hover:bg-red-600/30 transition-colors">Sub Deposit</button>
+                            <button onclick="updateWallet('${uid}', 'wallet_winnings', 1)" class="bg-green-600/20 text-green-400 border border-green-600/30 p-2 rounded-xl text-[10px] font-black uppercase hover:bg-green-600/30 transition-colors">Add Winnings</button>
+                            <button onclick="updateWallet('${uid}', 'wallet_winnings', -1)" class="bg-red-600/20 text-red-400 border border-red-600/30 p-2 rounded-xl text-[10px] font-black uppercase hover:bg-red-600/30 transition-colors">Sub Winnings</button>
+                        </div>
+                    </div>
+
+                    <div class="bg-gray-900/30 p-4 rounded-2xl border border-gray-700/50 space-y-3">
+                        <div class="grid grid-cols-2 gap-2">
+                            <div class="space-y-1">
+                                <label class="text-[8px] text-gray-500 uppercase font-bold ml-1">Total Kills</label>
+                                <input type="number" id="edit-kills" value="${user.totalKills || 0}" class="w-full p-2 bg-gray-900 rounded-lg text-white outline-none border border-gray-700 text-sm">
+                            </div>
+                            <div class="space-y-1">
+                                <label class="text-[8px] text-gray-500 uppercase font-bold ml-1">Matches</label>
+                                <input type="number" id="edit-matches" value="${user.matchesPlayed || 0}" class="w-full p-2 bg-gray-900 rounded-lg text-white outline-none border border-gray-700 text-sm">
+                            </div>
+                        </div>
+                        <button onclick="updateStats('${uid}')" class="w-full bg-blue-600 text-white p-2 rounded-xl font-bold text-xs uppercase tracking-widest hover:bg-blue-700 transition-colors">Update Stats</button>
+                    </div>
+
+                    <div class="grid grid-cols-2 gap-2">
+                        <button onclick="banUser('${uid}')" class="bg-gray-700 text-white p-3 rounded-xl font-bold text-[10px] uppercase tracking-widest hover:bg-gray-600 transition-colors">
+                            <i class="fas fa-ban mr-2"></i>Ban/Unban
+                        </button>
+                        <button onclick="promoteUser('${uid}')" class="bg-blue-600/20 text-blue-400 border border-blue-600/30 p-3 rounded-xl font-bold text-[10px] uppercase tracking-widest hover:bg-blue-600/30 transition-colors">
+                            <i class="fas fa-user-shield mr-2"></i>Promote
+                        </button>
+                        <button onclick="deleteUser('${uid}')" class="bg-red-900/20 text-red-500 border border-red-900/30 p-3 rounded-xl font-bold text-[10px] uppercase tracking-widest hover:bg-red-900/30 transition-colors col-span-2">
+                            <i class="fas fa-trash-alt mr-2"></i>Delete User Permanently
+                        </button>
+                    </div>
+                </div>
+            </div>
+          `;
           document.body.appendChild(modal);
         });
-      }
-
-      function toggleUserPasswordVisibility() {
-        const display = document.getElementById("user-password-display");
-        const icon = document.getElementById("user-password-icon");
-        if (display.classList.contains("blur-sm")) {
-          display.classList.remove("blur-sm");
-          display.classList.remove("select-none");
-          icon.classList.remove("fa-eye");
-          icon.classList.add("fa-eye-slash");
-        } else {
-          display.classList.add("blur-sm");
-          display.classList.add("select-none");
-          icon.classList.remove("fa-eye-slash");
-          icon.classList.add("fa-eye");
-        }
       }
 
       function updateWallet(uid, walletType, multiplier) {
@@ -1426,36 +1507,6 @@
         db.ref(`users/${uid}/${walletType}`).transaction(
           (current) => (current || 0) + amount * multiplier,
         );
-        
-        if (walletType === 'wallet_deposit' && multiplier === 1) {
-            db.ref(`users/${uid}`).once("value", userSnap => {
-                const user = userSnap.val();
-                if (!user) return;
-                
-                const newTotalDeposit = (user.totalDeposit || 0) + amount;
-                const updates = { totalDeposit: newTotalDeposit };
-                
-                // Calculate auto prime level based on deposit
-                let autoPrime = 0;
-                if (newTotalDeposit >= 5000) autoPrime = 8;
-                else if (newTotalDeposit >= 2000) autoPrime = 7;
-                else if (newTotalDeposit >= 1000) autoPrime = 6;
-                else if (newTotalDeposit >= 800) autoPrime = 5;
-                else if (newTotalDeposit >= 500) autoPrime = 4;
-                else if (newTotalDeposit >= 100) autoPrime = 3;
-                else if (newTotalDeposit >= 50) autoPrime = 2;
-                else if (newTotalDeposit >= 10) autoPrime = 1;
-                
-                updates.autoPrimeLevel = autoPrime;
-                
-                // Only update active prime level if not manually overridden
-                if (user.manualPrimeLevel === undefined || user.manualPrimeLevel === null) {
-                    updates.primeLevel = autoPrime;
-                }
-                
-                db.ref(`users/${uid}`).update(updates);
-            });
-        }
         
         showToast("Wallet updated!");
       }
@@ -1476,56 +1527,6 @@
         db.ref(`users/${uid}/role`)
           .set("admin")
           .then(() => showToast("Promoted to admin!"));
-      }
-
-      function assignRank(uid) {
-        const rank = document.getElementById(`custom-rank-${uid}`).value.trim();
-        db.ref(`users/${uid}/customRank`)
-          .set(rank)
-          .then(() => {
-            showToast("Custom rank updated!");
-          })
-          .catch((e) => showToast(e.message, "error"));
-      }
-
-      function setManualRank(uid) {
-        const rank = document.getElementById(`manual-rank-${uid}`).value;
-        db.ref(`users/${uid}`).once("value", snap => {
-            const user = snap.val();
-            if(!user) return;
-            const updates = {};
-            if (rank === "") {
-                updates[`users/${uid}/manualRank`] = null; // Remove manual override
-                updates[`users/${uid}/rank`] = user.autoRank || "Bronze";
-            } else {
-                updates[`users/${uid}/manualRank`] = rank;
-                updates[`users/${uid}/rank`] = rank;
-            }
-            db.ref().update(updates)
-              .then(() => showToast("Rank override updated!"))
-              .catch((e) => showToast(e.message, "error"));
-        });
-      }
-
-      function setManualPrime(uid) {
-        const primeStr = document.getElementById(`manual-prime-${uid}`).value;
-        db.ref(`users/${uid}`).once("value", snap => {
-            const user = snap.val();
-            if(!user) return;
-            const updates = {};
-            if (primeStr === "") {
-                updates[`users/${uid}/manualPrimeLevel`] = null; // Remove manual override
-                updates[`users/${uid}/primeLevel`] = user.autoPrimeLevel || 0;
-            } else {
-                const prime = parseInt(primeStr);
-                if (isNaN(prime) || prime < 0 || prime > 8) return showToast("Invalid Prime Level (0-8)", "error");
-                updates[`users/${uid}/manualPrimeLevel`] = prime;
-                updates[`users/${uid}/primeLevel`] = prime;
-            }
-            db.ref().update(updates)
-              .then(() => showToast("Prime level override updated!"))
-              .catch((e) => showToast(e.message, "error"));
-        });
       }
 
       function banUser(uid) {
@@ -2241,11 +2242,13 @@ Screenshots of the final result are mandatory for prize claims.`;
             participants: {},
           };
 
+          const newMatchRef = db.ref("tournaments").push();
           await withTimeout(
-            db.ref("tournaments").push(matchData),
+            newMatchRef.set(matchData),
             15000,
             "Failed to save match. Please check your connection and try again."
           );
+          db.ref("tournamentStats/totalCreated").transaction(current => (current || 0) + 1);
           showToast("Match created successfully!");
           closeModal("create-match-modal");
           
@@ -3002,6 +3005,22 @@ Screenshots of the final result are mandatory for prize claims.`;
           reader.onerror = () => reject(new Error("File read error"));
           reader.readAsDataURL(file);
         });
+      }
+
+      function toggleUserPasswordVisibility() {
+        const display = document.getElementById("user-password-display");
+        const icon = document.getElementById("user-password-icon");
+        if (display.classList.contains("blur-sm")) {
+          display.classList.remove("blur-sm");
+          display.classList.remove("select-none");
+          icon.classList.remove("fa-eye");
+          icon.classList.add("fa-eye-slash");
+        } else {
+          display.classList.add("blur-sm");
+          display.classList.add("select-none");
+          icon.classList.remove("fa-eye-slash");
+          icon.classList.add("fa-eye");
+        }
       }
 
       function showToast(message, type = "info") {
