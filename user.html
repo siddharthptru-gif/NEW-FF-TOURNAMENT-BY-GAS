@@ -1001,153 +1001,153 @@
     <!-- Match Details Modal -->
     <div
       id="match-details-modal"
-      class="fixed inset-0 bg-black/60 z-[100] hidden items-center justify-center p-4"
+      class="fixed inset-0 bg-black/60 z-[100] hidden items-center justify-center sm:p-4"
     >
       <div
-        class="bg-white w-full max-w-sm rounded-[40px] p-8 relative max-h-[90vh] flex flex-col"
+        class="bg-white w-full h-full sm:w-[95%] sm:h-auto sm:max-h-[90vh] sm:max-w-[600px] rounded-none sm:rounded-[32px] p-5 sm:p-8 relative flex flex-col overflow-hidden"
       >
         <button
           onclick="closeMatchDetailsModal()"
-          class="absolute top-6 right-6 text-gray-300"
+          class="absolute top-4 right-4 sm:top-6 sm:right-6 text-gray-400 hover:text-gray-600 z-10 p-2"
         >
-          <i class="fas fa-times"></i>
+          <i class="fas fa-times text-xl"></i>
         </button>
         <h4
           id="md-title"
-          class="font-black text-center uppercase mb-4 text-gray-900"
+          class="font-black text-center uppercase mb-6 text-xl text-gray-900"
         >
           Match Details
         </h4>
 
-        <div class="overflow-y-auto hide-scrollbar flex-1 space-y-4">
-          <div id="md-participants-section" class="space-y-2">
+        <div class="overflow-y-auto hide-scrollbar flex-1 space-y-6 pb-6">
+          <div id="md-participants-section" class="bg-blue-50/50 p-4 rounded-2xl border border-blue-100">
             <div
-              class="flex justify-between items-center border-b border-blue-100 pb-1"
+              class="flex justify-between items-center border-b border-blue-200 pb-2 mb-3"
             >
-              <p class="text-[10px] font-black uppercase text-blue-600">
+              <p class="text-xs font-black uppercase text-blue-700">
                 Joined Players
               </p>
               <span
                 id="md-participants-count"
-                class="text-[8px] font-black bg-blue-100 text-blue-600 px-2 py-0.5 rounded-full"
+                class="text-[10px] font-black bg-blue-200 text-blue-700 px-3 py-1 rounded-full"
                 >0</span
               >
             </div>
             <div
               id="md-participants"
-              class="space-y-2 max-h-40 overflow-y-auto hide-scrollbar"
+              class="space-y-2 max-h-48 overflow-y-auto hide-scrollbar"
             ></div>
           </div>
 
-          <div class="grid grid-cols-3 gap-2">
-            <div class="bg-gray-50 p-3 rounded-2xl border text-center">
-              <p id="md-map" class="text-xs font-black uppercase text-gray-900">
+          <div class="grid grid-cols-3 gap-3">
+            <div class="bg-gray-50 p-4 rounded-2xl border border-gray-100 text-center flex flex-col justify-center">
+              <p id="md-map" class="text-sm font-black uppercase text-gray-900 mb-1">
                 -
               </p>
-              <p class="text-[7px] text-gray-400 font-black uppercase">
+              <p class="text-[9px] text-gray-500 font-black uppercase">
                 Map / Mode
               </p>
             </div>
-            <div class="bg-gray-50 p-3 rounded-2xl border text-center">
+            <div class="bg-gray-50 p-4 rounded-2xl border border-gray-100 text-center flex flex-col justify-center">
               <p
                 id="md-players"
-                class="text-xs font-black uppercase text-gray-900"
+                class="text-sm font-black uppercase text-gray-900 mb-1"
               >
                 -
               </p>
-              <p class="text-[7px] text-gray-400 font-black uppercase">
+              <p class="text-[9px] text-gray-500 font-black uppercase">
                 Slots Left
               </p>
             </div>
-            <div class="bg-gray-50 p-3 rounded-2xl border text-center">
+            <div class="bg-gray-50 p-4 rounded-2xl border border-gray-100 text-center flex flex-col justify-center">
               <p
                 id="md-time"
-                class="text-xs font-black uppercase text-gray-900"
+                class="text-sm font-black uppercase text-gray-900 mb-1"
               >
                 -
               </p>
-              <p class="text-[7px] text-gray-400 font-black uppercase">
+              <p class="text-[9px] text-gray-500 font-black uppercase">
                 Start Time
               </p>
             </div>
           </div>
 
-          <div class="bg-indigo-50 p-4 rounded-2xl border border-indigo-100">
-            <p class="text-[8px] font-black uppercase text-indigo-600 mb-2">
+          <div class="bg-indigo-50 p-5 rounded-2xl border border-indigo-100">
+            <p class="text-[10px] font-black uppercase text-indigo-700 mb-3 text-center">
               Prize Distribution
             </p>
-            <div class="grid grid-cols-3 gap-2 text-center">
-              <div>
-                <p class="text-[7px] text-gray-400 font-bold uppercase">1st</p>
-                <p id="md-p1" class="text-[10px] font-black">₹0</p>
+            <div class="grid grid-cols-3 gap-3 text-center">
+              <div class="bg-white p-2 rounded-xl shadow-sm">
+                <p class="text-[9px] text-gray-500 font-bold uppercase mb-1">1st</p>
+                <p id="md-p1" class="text-sm font-black text-indigo-900">₹0</p>
               </div>
-              <div>
-                <p class="text-[7px] text-gray-400 font-bold uppercase">2nd</p>
-                <p id="md-p2" class="text-[10px] font-black">₹0</p>
+              <div class="bg-white p-2 rounded-xl shadow-sm">
+                <p class="text-[9px] text-gray-500 font-bold uppercase mb-1">2nd</p>
+                <p id="md-p2" class="text-sm font-black text-indigo-900">₹0</p>
               </div>
-              <div>
-                <p class="text-[7px] text-gray-400 font-bold uppercase">3rd</p>
-                <p id="md-p3" class="text-[10px] font-black">₹0</p>
+              <div class="bg-white p-2 rounded-xl shadow-sm">
+                <p class="text-[9px] text-gray-500 font-bold uppercase mb-1">3rd</p>
+                <p id="md-p3" class="text-sm font-black text-indigo-900">₹0</p>
               </div>
             </div>
           </div>
 
           <div
             id="md-room-details"
-            class="bg-red-50 p-4 rounded-2xl border border-red-100 hidden"
+            class="bg-red-50 p-5 rounded-2xl border border-red-100 hidden"
           >
-            <p class="text-[8px] font-black uppercase text-red-600 mb-2">
+            <p class="text-[10px] font-black uppercase text-red-700 mb-3 text-center">
               Room Details
             </p>
-            <div class="space-y-1">
-              <p class="flex justify-between text-[10px] font-black">
-                Room ID:
-                <span id="md-room-id" class="text-red-600 select-all">-</span>
-              </p>
-              <p class="flex justify-between text-[10px] font-black mt-1">
-                Pass:
-                <span id="md-room-pass" class="text-red-600 select-all">-</span>
-              </p>
+            <div class="space-y-2 bg-white p-3 rounded-xl shadow-sm">
+              <div class="flex justify-between items-center border-b border-gray-100 pb-2">
+                <span class="text-[11px] font-black text-gray-600">Room ID:</span>
+                <span id="md-room-id" class="text-red-600 font-black text-sm select-all">-</span>
+              </div>
+              <div class="flex justify-between items-center pt-1">
+                <span class="text-[11px] font-black text-gray-600">Pass:</span>
+                <span id="md-room-pass" class="text-red-600 font-black text-sm select-all">-</span>
+              </div>
             </div>
           </div>
 
           <div
             id="md-announcement-section"
-            class="bg-blue-50 p-4 rounded-2xl border border-blue-100 hidden"
+            class="bg-blue-50 p-5 rounded-2xl border border-blue-100 hidden"
           >
-            <p class="text-[8px] font-black uppercase text-blue-600 mb-2">
+            <p class="text-[10px] font-black uppercase text-blue-700 mb-2">
               Announcement
             </p>
             <p
               id="md-announcement"
-              class="text-[10px] font-bold text-gray-700"
+              class="text-xs font-bold text-gray-800 bg-white p-3 rounded-xl shadow-sm"
             ></p>
           </div>
 
-          <div class="space-y-2">
-            <p class="text-[8px] font-black uppercase text-gray-400">
+          <div class="bg-gray-50 p-5 rounded-2xl border border-gray-100">
+            <p class="text-[10px] font-black uppercase text-gray-500 mb-3 text-center">
               Match Rules
             </p>
             <div
               id="md-rules"
-              class="bg-gray-50 p-4 rounded-2xl border text-[9px] font-bold text-gray-600 whitespace-pre-wrap"
+              class="text-[11px] font-bold text-gray-600 whitespace-pre-wrap leading-relaxed"
             ></div>
           </div>
 
-          <div id="md-comments-section" class="space-y-2">
+          <div id="md-comments-section" class="bg-red-50 p-5 rounded-2xl border border-red-200 hidden">
             <p
-              class="text-[14px] font-black uppercase text-red-600 animate-pulse border-b border-red-200 pb-1"
+              class="text-[11px] font-black uppercase text-red-600 animate-pulse border-b border-red-200 pb-2 mb-3 text-center"
             >
               ⚠️ IMPORTANT ADMIN NOTE
             </p>
             <div
               id="md-comments"
-              class="space-y-2 text-[12px] font-bold text-gray-800 bg-red-50 p-4 rounded-xl border border-red-200"
+              class="space-y-3 text-xs font-bold text-gray-800 bg-white p-3 rounded-xl shadow-sm"
             ></div>
           </div>
         </div>
 
-        <div id="md-action-container" class="mt-6"></div>
+        <div id="md-action-container" class="mt-4 shrink-0"></div>
       </div>
     </div>
 
@@ -2127,16 +2127,42 @@
           currentCategory === "ALL"
             ? tournaments
             : tournaments.filter((t) => t.category === currentCategory);
-        const html = filtered
-          .map((t) => {
+            
+        if (filtered.length === 0) {
+          document.getElementById("tournament-list").innerHTML = '<p class="text-center py-10 text-gray-300 font-black text-[10px] uppercase">No Matches Found</p>';
+          return;
+        }
+
+        const grouped = {};
+        filtered.forEach(t => {
+          const mode = t.category || "OTHER";
+          if (!grouped[mode]) grouped[mode] = [];
+          grouped[mode].push(t);
+        });
+
+        let html = "";
+        for (const mode in grouped) {
+          html += `
+            <div class="mb-8">
+              <div class="flex items-center mb-4">
+                <h2 class="text-sm font-black text-gray-800 uppercase tracking-wider">${mode} <span class="text-gray-400 text-[10px] ml-2">(${grouped[mode].length} MATCHES)</span></h2>
+                <div class="flex-1 h-px bg-gray-200 ml-4"></div>
+              </div>
+              <div class="space-y-4">
+          `;
+          
+          grouped[mode].forEach(t => {
             const id = t.id;
             const joined =
               currentUser && t.participants && t.participants[currentUser.uid];
             const pCount = Object.keys(t.participants || {}).length;
             const maxP = t.maxPlayers || 48;
 
-            return `
-                    <div onclick="openMatchDetails('${id}')" class="bg-white rounded-[2rem] border border-gray-100 overflow-hidden shadow-sm active:scale-95 transition transform cursor-pointer">
+            html += `
+                    <div onclick="openMatchDetails('${id}')" class="bg-white rounded-[2rem] border border-gray-100 overflow-hidden shadow-sm active:scale-95 transition transform cursor-pointer relative">
+                        <div class="absolute top-0 right-0 bg-white/90 backdrop-blur-md px-3 py-1 rounded-bl-xl z-10 border-b border-l border-gray-100">
+                            <p class="text-[8px] font-black text-gray-500 uppercase tracking-widest">Mode: ${mode}</p>
+                        </div>
                         <div class="relative">
                             <img src="${t.imageUrl || t.thumbnail || "https://picsum.photos/400/200?game=" + id}" class="w-full aspect-video object-cover" onerror="this.src='https://via.placeholder.com/400x200?text=Match'">
                             <div class="absolute top-3 left-3 bg-black/60 backdrop-blur-md px-3 py-1 rounded-full border border-white/20">
@@ -2163,11 +2189,14 @@
                             </div>
                         </div>
                     </div>`;
-          })
-          .join("");
-        document.getElementById("tournament-list").innerHTML =
-          html ||
-          '<p class="text-center py-10 text-gray-300 font-black text-[10px] uppercase">No Matches Found</p>';
+          });
+          
+          html += `
+              </div>
+            </div>
+          `;
+        }
+        document.getElementById("tournament-list").innerHTML = html;
       }
 
       let lastAnnouncementTimestamp = Date.now();

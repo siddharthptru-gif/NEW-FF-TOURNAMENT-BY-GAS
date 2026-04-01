@@ -12,7 +12,6 @@
     <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
     <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-auth.js"></script>
     <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-database.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-storage.js"></script>
     <style>
       :root {
         --theme-bg: #0f172a;
@@ -399,14 +398,13 @@
         databaseURL:
           "https://freefire-tournament-e9506-default-rtdb.asia-southeast1.firebasedatabase.app",
         projectId: "freefire-tournament-e9506",
-        storageBucket: "freefire-tournament-e9506.firebasestorage.app",
+        storageBucket: "freefire-tournament-e9506.appspot.com",
         messagingSenderId: "999640805909",
         appId: "1:999640805909:web:87f6956b47d13c4134541c",
       };
       firebase.initializeApp(firebaseConfig);
       const auth = firebase.auth();
       const db = firebase.database();
-      const storage = firebase.storage();
 
       // Theme Logic
       const themeColors = [
@@ -996,10 +994,16 @@
           contentArea.innerHTML = `
                     <div class="bg-gray-700 p-6 rounded-3xl">
                         <h3 class="text-xl font-bold mb-4">Add New Game Mode</h3>
-                        <div class="flex space-x-2 mb-4">
-                            <input type="text" id="new-mode-name" placeholder="Mode Name (e.g., TDM, Classic)" class="flex-1 p-3 bg-gray-600 rounded-xl text-white">
-                            <input type="text" id="new-mode-url" placeholder="Banner Image URL" class="flex-1 p-3 bg-gray-600 rounded-xl text-white">
-                            <button onclick="addGameMode()" class="bg-green-600 px-4 py-2 rounded-xl font-bold">Add Mode</button>
+                        <div class="flex flex-col space-y-2 mb-4">
+                            <div class="flex space-x-2">
+                                <input type="text" id="new-mode-name" placeholder="Mode Name (e.g., TDM, Classic)" class="flex-1 p-3 bg-gray-600 rounded-xl text-white">
+                                <input type="text" id="new-mode-url" placeholder="Banner Image URL" class="flex-1 p-3 bg-gray-600 rounded-xl text-white">
+                            </div>
+                            <div class="flex items-center space-x-2">
+                                <span class="text-gray-400 text-sm">OR Upload:</span>
+                                <input type="file" id="new-mode-upload" accept="image/*" class="flex-1 text-gray-400 text-sm">
+                                <button onclick="addGameMode()" class="bg-green-600 px-4 py-2 rounded-xl font-bold">Add Mode</button>
+                            </div>
                         </div>
                         <div class="space-y-4" id="category-images-list">
                             <!-- Loaded dynamically -->
@@ -1037,11 +1041,7 @@
         try {
           if (fileInput && fileInput.files.length > 0) {
             showLoading(true, "Compressing and uploading notification image...");
-            imageUrl = await withTimeout(
-              uploadImage(fileInput.files[0], 'notifications'),
-              60000,
-              "Image upload timed out. Please try again or use a smaller image."
-            );
+            imageUrl = await uploadImageToImgBB(fileInput.files[0]);
           }
 
           const notificationData = {
@@ -1122,18 +1122,13 @@
           if (liveStat) liveStat.innerText = snap.numChildren();
         });
 
-        // Backfill tournament count if it's missing
-        db.ref("tournamentStats/totalCreated").once("value", (snap) => {
-          if (!snap.exists()) {
-            db.ref("tournaments").once("value", (tournamentsSnap) => {
-              const count = tournamentsSnap.numChildren();
-              db.ref("tournamentStats/totalCreated").set(count);
-            });
-          }
+        // Real-time Tournaments Count
+        db.ref("tournaments").on("value", (snap) => {
+          const statTournaments = document.getElementById("stat-tournaments");
+          if (statTournaments) statTournaments.innerText = snap.numChildren();
         });
 
         const stats = [
-          { id: "tournaments", path: "tournamentStats/totalCreated", isCounter: true },
           { id: "deposits", path: "addMoneyRequests", filter: "pending" },
           { id: "withdrawals", path: "withdrawRequests", filter: "pending" },
         ];
@@ -2070,6 +2065,8 @@
             const matches = snapshot.val();
             let count = 0;
             if (matches) {
+              const grouped = {};
+              
               // Sort by timestamp descending
               const sortedKeys = Object.keys(matches).sort((a, b) => (matches[b].timestamp || 0) - (matches[a].timestamp || 0));
               
@@ -2083,12 +2080,32 @@
                 if (type === "completed" && !isCompleted) return;
 
                 count++;
-                currentMatchesList.innerHTML += `
-                            <div class="bg-gray-700 p-6 rounded-3xl border border-gray-600 mb-4 hover:border-blue-500/50 transition-colors">
-                                <div class="flex justify-between items-start mb-4">
+                const mode = match.category || "OTHER";
+                if (!grouped[mode]) grouped[mode] = [];
+                grouped[mode].push({ key, match });
+              });
+
+              let html = "";
+              for (const mode in grouped) {
+                html += `
+                  <div class="mb-8">
+                    <div class="flex items-center mb-4">
+                      <h2 class="text-lg font-black text-white uppercase tracking-wider">${mode} <span class="text-gray-500 text-sm ml-2">(${grouped[mode].length} MATCHES)</span></h2>
+                      <div class="flex-1 h-px bg-gray-700 ml-4"></div>
+                    </div>
+                    <div class="space-y-4">
+                `;
+                
+                grouped[mode].forEach(({ key, match }) => {
+                  html += `
+                            <div class="bg-gray-700 p-6 rounded-3xl border border-gray-600 hover:border-blue-500/50 transition-colors relative">
+                                <div class="absolute top-0 right-0 bg-gray-800 px-3 py-1 rounded-bl-xl rounded-tr-3xl border-b border-l border-gray-600">
+                                    <p class="text-[8px] font-black text-gray-400 uppercase tracking-widest">Mode: ${mode}</p>
+                                </div>
+                                <div class="flex justify-between items-start mb-4 mt-2">
                                     <div>
                                         <h3 class="font-black text-xl text-white">${match.title}</h3>
-                                        <p class="text-sm text-gray-400">${match.category} | ${match.matchTime}</p>
+                                        <p class="text-sm text-gray-400">${match.matchTime}</p>
                                     </div>
                                     <span class="px-3 py-1 rounded-full text-[10px] font-black uppercase ${match.status === "Live" ? "bg-red-600 text-white" : match.status === "Completed" ? "bg-gray-600 text-gray-300" : "bg-blue-600 text-white"}">${match.status}</span>
                                 </div>
@@ -2102,8 +2119,15 @@
                                     <button onclick="deleteMatch('${key}')" class="p-3 bg-red-600/20 hover:bg-red-600 text-red-400 hover:text-white rounded-xl font-bold transition"><i class="fas fa-trash"></i></button>
                                 </div>
                             </div>
-                        `;
-              });
+                  `;
+                });
+                
+                html += `
+                    </div>
+                  </div>
+                `;
+              }
+              currentMatchesList.innerHTML = html;
             }
             if (count === 0) {
               currentMatchesList.innerHTML = `<div class="text-center py-10"><p class="text-gray-400">No ${type} matches found.</p></div>`;
@@ -2219,11 +2243,7 @@ Screenshots of the final result are mandatory for prize claims.`;
 
         try {
           if (fileInput && fileInput.files.length > 0) {
-            imageUrl = await withTimeout(
-              uploadImage(fileInput.files[0], 'matches'),
-              60000,
-              "Image upload timed out. Please try again or use a smaller image."
-            );
+            imageUrl = await uploadImageToImgBB(fileInput.files[0]);
           }
 
           const matchData = {
@@ -2505,11 +2525,7 @@ Screenshots of the final result are mandatory for prize claims.`;
 
           if (fileInput.files.length > 0) {
             showLoading(true, "Compressing and uploading result image...");
-            resultImageUrl = await withTimeout(
-              uploadImage(fileInput.files[0], 'results'),
-              60000,
-              "Image upload timed out. Please try again or use a smaller image."
-            );
+            resultImageUrl = await uploadImageToImgBB(fileInput.files[0]);
           }
 
           showLoading(true, "Updating match info...");
@@ -2576,11 +2592,7 @@ Screenshots of the final result are mandatory for prize claims.`;
         try {
           if (fileInput && fileInput.files.length > 0) {
             showLoading(true, "Compressing and uploading banner image...");
-            url = await withTimeout(
-              uploadImage(fileInput.files[0], 'banners'),
-              60000,
-              "Image upload timed out. Please try again or use a smaller image."
-            );
+            url = await uploadImageToImgBB(fileInput.files[0]);
           } else if (!url) {
             throw new Error("Please enter a URL or select an image");
           }
@@ -2678,11 +2690,7 @@ Screenshots of the final result are mandatory for prize claims.`;
         try {
           if (fileInput && fileInput.files.length > 0) {
             showLoading(true, "Compressing and uploading game mode image...");
-            url = await withTimeout(
-              uploadImage(fileInput.files[0], 'modes'),
-              60000,
-              "Image upload timed out. Please try again or use a smaller image."
-            );
+            url = await uploadImageToImgBB(fileInput.files[0]);
           }
           
           showLoading(true, "Adding game mode...");
@@ -2716,11 +2724,7 @@ Screenshots of the final result are mandatory for prize claims.`;
         try {
           if (fileInput && fileInput.files.length > 0) {
             showLoading(true, "Compressing and uploading game mode image...");
-            url = await withTimeout(
-              uploadImage(fileInput.files[0], 'modes'),
-              60000,
-              "Image upload timed out. Please try again or use a smaller image."
-            );
+            url = await uploadImageToImgBB(fileInput.files[0]);
           }
 
           showLoading(true, "Saving game mode...");
@@ -2876,11 +2880,7 @@ Screenshots of the final result are mandatory for prize claims.`;
         try {
           if (fileInput && fileInput.files.length > 0) {
             showLoading(true, "Compressing and uploading announcement image...");
-            imageUrl = await withTimeout(
-              uploadImage(fileInput.files[0], 'announcements'),
-              60000,
-              "Image upload timed out. Please try again or use a smaller image."
-            );
+            imageUrl = await uploadImageToImgBB(fileInput.files[0]);
           }
 
           showLoading(true, "Sending announcement...");
@@ -2929,81 +2929,101 @@ Screenshots of the final result are mandatory for prize claims.`;
       }
 
       function validateImage(file) {
-        if (!file.type.startsWith('image/')) {
-          throw new Error("Invalid file type. Please upload an image.");
+        const allowedTypes = ['image/jpeg', 'image/png', 'image/webp'];
+        if (!allowedTypes.includes(file.type)) {
+          throw new Error("Invalid file type. Only JPG, PNG, and WEBP are allowed.");
         }
         if (file.size > 15 * 1024 * 1024) { // 15MB limit
-          throw new Error("File is too large. Please upload an image under 15MB.");
+          throw new Error("File is too large. Max size is 15MB.");
         }
         return true;
       }
 
-      async function uploadImage(file, folder = 'uploads') {
-        validateImage(file);
-        return await compressImage(file, folder);
-      }
-
-      async function compressImage(file, pathPrefix = 'uploads') {
-        const maxWidth = 1024; // Reduced max width for better compression
-        const quality = 0.6; // Reduced quality for faster uploads
-        
+      async function compressImage(file) {
         return new Promise((resolve, reject) => {
           const reader = new FileReader();
-          reader.onload = (e) => {
+          reader.readAsDataURL(file);
+          reader.onload = (event) => {
             const img = new Image();
-            img.onload = async () => {
-              try {
-                const canvas = document.createElement("canvas");
-                let width = img.width;
-                let height = img.height;
+            img.src = event.target.result;
+            img.onload = () => {
+              const canvas = document.createElement('canvas');
+              const MAX_WIDTH = 1200;
+              const MAX_HEIGHT = 1200;
+              let width = img.width;
+              let height = img.height;
 
-                if (width > maxWidth) {
-                  height = Math.round((maxWidth / width) * height);
-                  width = maxWidth;
+              if (width > height) {
+                if (width > MAX_WIDTH) {
+                  height = Math.round((height * MAX_WIDTH) / width);
+                  width = MAX_WIDTH;
                 }
-
-                canvas.width = width;
-                canvas.height = height;
-                const ctx = canvas.getContext("2d");
-                ctx.drawImage(img, 0, 0, width, height);
-
-                canvas.toBlob(async (blob) => {
-                  if (!blob) {
-                    // Cleanup
-                    canvas.width = 0;
-                    canvas.height = 0;
-                    return reject(new Error("Compression failed"));
-                  }
-                  
-                  try {
-                    const fileName = `${pathPrefix}/${Date.now()}_${Math.random().toString(36).substring(7)}.jpg`;
-                    const storageRef = storage.ref().child(fileName);
-                    
-                    // Upload the compressed blob
-                    const snapshot = await storageRef.put(blob);
-                    const downloadURL = await snapshot.ref.getDownloadURL();
-                    
-                    // Cleanup
-                    canvas.width = 0;
-                    canvas.height = 0;
-                    
-                    resolve(downloadURL);
-                  } catch (err) {
-                    // Cleanup
-                    canvas.width = 0;
-                    canvas.height = 0;
-                    reject(err);
-                  }
-                }, "image/jpeg", quality);
-              } catch (err) {
-                reject(err);
+              } else {
+                if (height > MAX_HEIGHT) {
+                  width = Math.round((width * MAX_HEIGHT) / height);
+                  height = MAX_HEIGHT;
+                }
               }
+
+              canvas.width = width;
+              canvas.height = height;
+              const ctx = canvas.getContext('2d');
+              ctx.drawImage(img, 0, 0, width, height);
+              
+              const dataUrl = canvas.toDataURL('image/jpeg', 0.7);
+              const base64 = dataUrl.split(',')[1];
+              resolve(base64);
             };
-            img.onerror = () => reject(new Error("Image load error. The file might be corrupted."));
-            img.src = e.target.result;
+            img.onerror = () => reject(new Error("Failed to load image for compression"));
           };
           reader.onerror = () => reject(new Error("File read error"));
-          reader.readAsDataURL(file);
+        });
+      }
+
+      async function uploadImageToImgBB(file) {
+        return new Promise(async (resolve, reject) => {
+          let timeoutId;
+          try {
+            validateImage(file);
+            console.log("Uploading started for:", file.name);
+            
+            const textEl = document.getElementById("loading-text");
+            if (textEl) {
+              textEl.innerText = `Compressing image...`;
+            }
+
+            const base64 = await compressImage(file);
+
+            if (textEl) {
+              textEl.innerText = `Uploading...`;
+            }
+
+            const formData = new FormData();
+            formData.append("image", base64);
+
+            timeoutId = setTimeout(() => {
+              reject(new Error("Upload timed out after 20 seconds"));
+            }, 20000);
+
+            const res = await fetch("https://api.imgbb.com/1/upload?key=a482dd7b880c7b2f57547c9fdf164d21", {
+              method: "POST",
+              body: formData
+            });
+
+            clearTimeout(timeoutId);
+            const data = await res.json();
+
+            if (data.success) {
+              console.log("Upload done:", data.data.url);
+              resolve(data.data.url);
+            } else {
+              reject(new Error("Upload failed"));
+            }
+
+          } catch (err) {
+            if (timeoutId) clearTimeout(timeoutId);
+            reject(err);
+          }
         });
       }
 
@@ -3031,37 +3051,22 @@ Screenshots of the final result are mandatory for prize claims.`;
         setTimeout(() => toast.remove(), 3000);
       }
 
-      let loadingCount = 0;
-      let currentAbortController = null;
-
       function showLoading(show, text = "Processing...") {
         const overlay = document.getElementById("loading-overlay");
         const textEl = document.getElementById("loading-text");
         if (!overlay) return;
         
         if (show) {
-          loadingCount++;
           if (textEl) textEl.innerText = text;
           overlay.classList.remove("hidden");
           overlay.classList.add("flex");
-          // Create a new AbortController for this operation if not already present
-          if (!currentAbortController) {
-            currentAbortController = new AbortController();
-          }
         } else {
-          loadingCount = Math.max(0, loadingCount - 1);
-          if (loadingCount === 0) {
-            overlay.classList.add("hidden");
-            overlay.classList.remove("flex");
-            currentAbortController = null;
-          }
+          overlay.classList.add("hidden");
+          overlay.classList.remove("flex");
         }
       }
 
       function forceCancelLoading() {
-        if (currentAbortController) {
-          currentAbortController.abort();
-        }
         showLoading(false);
         showToast("Operation cancelled by user", "info");
       }
@@ -3075,6 +3080,41 @@ Screenshots of the final result are mandatory for prize claims.`;
       function confirmAction(message, callback) {
         if (confirm(message)) callback();
       }
+
+      document.addEventListener('change', function(e) {
+        const input = e.target;
+        if (input && input.type === 'file' && input.accept && input.accept.includes('image')) {
+          const file = input.files[0];
+          if (file) {
+            try {
+              validateImage(file);
+              const reader = new FileReader();
+              reader.onload = function(evt) {
+                let previewContainer = input.nextElementSibling;
+                if (!previewContainer || !previewContainer.classList.contains('image-preview-container')) {
+                   previewContainer = document.createElement('div');
+                   previewContainer.className = 'image-preview-container mt-2 flex justify-center';
+                   input.parentNode.insertBefore(previewContainer, input.nextSibling);
+                }
+                previewContainer.innerHTML = `<img src="${evt.target.result}" class="max-h-32 rounded-lg object-cover border border-gray-600 shadow-md">`;
+              }
+              reader.readAsDataURL(file);
+            } catch (err) {
+              showToast(err.message, "error");
+              input.value = ''; // clear invalid file
+              let previewContainer = input.nextElementSibling;
+              if (previewContainer && previewContainer.classList.contains('image-preview-container')) {
+                 previewContainer.remove();
+              }
+            }
+          } else {
+            let previewContainer = input.nextElementSibling;
+            if (previewContainer && previewContainer.classList.contains('image-preview-container')) {
+               previewContainer.remove();
+            }
+          }
+        }
+      });
     </script>
   </body>
 </html>
