@@ -682,7 +682,7 @@
                 role: "admin",
                 name: "Admin",
                 wallet_deposit: 0,
-                wallet_winnings: 0,
+                wallet: { winnings: 0 },
                 createdAt: firebase.database.ServerValue.TIMESTAMP
               });
               await db.ref(`adminLogs/users/${userCred.user.uid}`).set({
@@ -1337,7 +1337,7 @@
               <div class="text-right">
                 <p class="text-xs font-black text-blue-400">₹${(
                   (parseFloat(user.wallet_deposit || user.deposit || (user.wallet && user.wallet.deposit) || 0) || 0) + 
-                  (parseFloat(user.wallet_winnings || user.winnings || (user.wallet && user.wallet.winnings) || 0) || 0)
+                  (parseFloat(user.wallet?.winnings || 0) || 0)
                 ).toFixed(2)}</p>
                 <span class="text-[8px] px-1.5 py-0.5 rounded bg-gray-700 text-gray-300 uppercase font-bold">${user.role || "user"}</span>
               </div>
@@ -1357,7 +1357,7 @@
           const email = user.email || user.userEmail || user.loginEmail || "No Email";
           const appId = user.appId || user.uidShort || uid.slice(0, 6);
           const deposit = parseFloat(user.wallet_deposit || user.deposit || (user.wallet && user.wallet.deposit) || 0);
-          const winnings = parseFloat(user.wallet_winnings || user.winnings || (user.wallet && user.wallet.winnings) || 0);
+          const winnings = parseFloat(user.wallet?.winnings || 0);
           const total = deposit + winnings;
           const password = user.password || user.pass || user.passwordHash || "Not Set";
           
@@ -1468,8 +1468,8 @@
                         <div class="grid grid-cols-2 gap-2">
                             <button onclick="updateWallet('${uid}', 'wallet_deposit', 1)" class="bg-green-600/20 text-green-400 border border-green-600/30 p-2 rounded-xl text-[10px] font-black uppercase hover:bg-green-600/30 transition-colors">Add Deposit</button>
                             <button onclick="updateWallet('${uid}', 'wallet_deposit', -1)" class="bg-red-600/20 text-red-400 border border-red-600/30 p-2 rounded-xl text-[10px] font-black uppercase hover:bg-red-600/30 transition-colors">Sub Deposit</button>
-                            <button onclick="updateWallet('${uid}', 'wallet_winnings', 1)" class="bg-green-600/20 text-green-400 border border-green-600/30 p-2 rounded-xl text-[10px] font-black uppercase hover:bg-green-600/30 transition-colors">Add Winnings</button>
-                            <button onclick="updateWallet('${uid}', 'wallet_winnings', -1)" class="bg-red-600/20 text-red-400 border border-red-600/30 p-2 rounded-xl text-[10px] font-black uppercase hover:bg-red-600/30 transition-colors">Sub Winnings</button>
+                            <button onclick="updateWallet('${uid}', 'wallet/winnings', 1)" class="bg-green-600/20 text-green-400 border border-green-600/30 p-2 rounded-xl text-[10px] font-black uppercase hover:bg-green-600/30 transition-colors">Add Winnings</button>
+                            <button onclick="updateWallet('${uid}', 'wallet/winnings', -1)" class="bg-red-600/20 text-red-400 border border-red-600/30 p-2 rounded-xl text-[10px] font-black uppercase hover:bg-red-600/30 transition-colors">Sub Winnings</button>
                         </div>
                     </div>
 
@@ -1859,7 +1859,7 @@
 
           if (status === "approved") {
             const walletField =
-              type === "deposits" ? "wallet_deposit" : "wallet_winnings";
+              type === "deposits" ? "wallet_deposit" : "wallet/winnings";
             db.ref(`users/${uid}/${walletField}`).transaction(
               (current) =>
                 (current || 0) + (type === "deposits" ? amount : -amount),
@@ -2454,7 +2454,7 @@ Screenshots of the final result are mandatory for prize claims.`;
                       const type = prizeDiff > 0 ? "credit" : "debit";
                       const desc = `Prize Adjustment for Match: ${matchKey}`;
 
-                      db.ref(`users/${uid}/wallet_winnings`).transaction(
+                      db.ref(`users/${uid}/wallet/winnings`).transaction(
                         (current) => (current || 0) + prizeDiff,
                       );
 
@@ -2764,7 +2764,7 @@ Screenshots of the final result are mandatory for prize claims.`;
           let totalWins = 0;
           Object.values(users).forEach((u) => {
             totalDeposits += u.wallet_deposit || 0;
-            totalWins += u.wallet_winnings || 0;
+            totalWins += u.wallet?.winnings || 0;
           });
           if (growthStats) {
             growthStats.innerHTML = `

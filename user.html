@@ -586,10 +586,14 @@
       </div>
 
       <!-- Leaderboard Page -->
-      <div id="page-leaderboard" class="p-4 hidden space-y-4 page-content">
+      <div id="page-leaderboard" class="p-4 hidden space-y-4 page-content pb-24">
         <div class="bg-white p-6 rounded-[2rem] border shadow-sm">
-          <h3 class="font-black uppercase text-gray-900 mb-4">Top Winners</h3>
+          <h3 class="font-black uppercase text-gray-900 mb-4">Total Earnings</h3>
           <div id="user-leaderboard-list" class="space-y-3"></div>
+        </div>
+        <div class="bg-white p-6 rounded-[2rem] border shadow-sm">
+          <h3 class="font-black uppercase text-gray-900 mb-4">Weekly Top Winners</h3>
+          <div id="weekly-leaderboard-list" class="space-y-3"></div>
         </div>
       </div>
 
@@ -1573,7 +1577,7 @@
                 email: loginEmail,
                 provider: "email",
                 wallet_deposit: 0,
-                wallet_winnings: 0,
+                wallet: { winnings: 0 },
                 role:
                   loginEmail === "siddharthptru@gmail.com" ? "admin" : "user",
                 totalKills: 0,
@@ -1684,7 +1688,7 @@
             email: pendingGoogleUser.email,
             provider: "google",
             wallet_deposit: 0,
-            wallet_winnings: 0,
+            wallet: { winnings: 0 },
             role:
               pendingGoogleUser.email === "siddharthptru@gmail.com"
                 ? "admin"
@@ -1770,7 +1774,7 @@
                     email: u.email,
                     username: u.displayName || u.email.split("@")[0],
                     wallet_deposit: 0,
-                    wallet_winnings: 0,
+                    wallet: { winnings: 0 },
                     wallet_bonus: 0,
                     appId: "ACX" + Math.floor(100000 + Math.random() * 900000),
                     createdAt: Date.now(),
@@ -1913,31 +1917,50 @@
           "value",
           (s) => {
             const data = s.val() || {};
-            const players = Object.values(data)
-              .filter((u) => {
-                if (u.role === "admin") return false;
-                if (!u.username) return false;
-                const name = u.username.trim().toLowerCase();
-                if (
-                  name === "error" ||
-                  name === "top winners" ||
-                  name === "undefined"
-                )
-                  return false;
-                return true;
-              })
-              .sort(
-                (a, b) => (b.wallet_winnings || 0) - (a.wallet_winnings || 0),
+            const allUsers = Object.keys(data).map(uid => ({ uid, ...data[uid] })).filter((u) => {
+              if (u.role === "admin") return false;
+              if (!u.username) return false;
+              const name = u.username.trim().toLowerCase();
+              if (
+                name === "error" ||
+                name === "top winners" ||
+                name === "undefined"
               )
-              .slice(0, 20);
+                return false;
+              return true;
+            });
+
+            const clean = (val) => {
+              return parseFloat(String(val).replace(/[^\d.]/g, "")) || 0;
+            };
+
+            // 1. Total Earnings & Weekly
+            const processedUsers = allUsers.map(u => {
+              const winnings = clean(u.wallet?.winnings);
+              console.log("SYNC WINNINGS:", u.uid, winnings);
+              
+              const total = winnings;
+
+              const weekly =
+                u.weeklyWinnings ||
+                u.weekly_winnings ||
+                0;
+              const weeklyFinal = clean(weekly) || total;
+
+              return { ...u, total, weeklyFinal };
+            });
+
+            const totalWinners = [...processedUsers]
+              .sort((a, b) => b.total - a.total)
+              .slice(0, 3);
 
             document.getElementById("user-leaderboard-list").innerHTML =
-              players
+              totalWinners
                 .map(
                   (p, i) => `
-                    <div class="flex justify-between items-center p-4 bg-gray-50 rounded-2xl border">
+                    <div class="flex justify-between items-center p-4 ${i === 0 ? 'bg-yellow-50 border-yellow-200' : 'bg-gray-50 border-gray-100'} rounded-2xl border">
                         <div class="flex items-center gap-4">
-                            <span class="text-xs font-black text-gray-400 w-6">#${i + 1}</span>
+                            <span class="text-xs font-black ${i === 0 ? 'text-yellow-500' : 'text-gray-400'} w-6">#${i + 1}</span>
                             <div class="w-10 h-10 rounded-full bg-blue-100 flex items-center justify-center overflow-hidden">
                                 ${p.profilePic ? `<img src="${p.profilePic}" class="w-full h-full object-cover">` : `<i class="fas fa-user text-blue-500"></i>`}
                             </div>
@@ -1946,7 +1969,33 @@
                                 <p class="text-[8px] font-bold text-gray-400 uppercase">${p.totalKills || 0} Kills | ${p.matchesPlayed || 0} Matches</p>
                             </div>
                         </div>
-                        <p class="text-xs font-black text-green-600">₹${(p.wallet_winnings || 0).toFixed(0)}</p>
+                        <p class="text-xs font-black text-green-600">₹${p.total.toFixed(0)}</p>
+                    </div>
+                `,
+                )
+                .join("") ||
+              '<p class="text-center text-[8px] text-gray-400 py-4 font-bold uppercase">No Players Found</p>';
+
+            // 2. Weekly Top Winners
+            const weeklyWinners = [...processedUsers]
+              .sort((a, b) => b.weeklyFinal - a.weeklyFinal)
+              .slice(0, 3);
+
+            document.getElementById("weekly-leaderboard-list").innerHTML =
+              weeklyWinners
+                .map(
+                  (p, i) => `
+                    <div class="flex justify-between items-center p-4 ${i === 0 ? 'bg-blue-50 border-blue-200' : 'bg-gray-50 border-gray-100'} rounded-2xl border">
+                        <div class="flex items-center gap-4">
+                            <span class="text-xs font-black ${i === 0 ? 'text-blue-500' : 'text-gray-400'} w-6">#${i + 1}</span>
+                            <div class="w-10 h-10 rounded-full bg-blue-100 flex items-center justify-center overflow-hidden">
+                                ${p.profilePic ? `<img src="${p.profilePic}" class="w-full h-full object-cover">` : `<i class="fas fa-user text-blue-500"></i>`}
+                            </div>
+                            <div>
+                                <p class="text-xs font-black text-gray-900 uppercase">${p.username}</p>
+                            </div>
+                        </div>
+                        <p class="text-xs font-black text-green-600">₹${p.weeklyFinal.toFixed(0)}</p>
                     </div>
                 `,
                 )
@@ -2280,18 +2329,22 @@
               db.ref(`users/${currentUser.uid}`).update({ appId: newAppId });
               cachedUserData.appId = newAppId;
             }
-            const total =
-              (cachedUserData.wallet_deposit || 0) +
-              (cachedUserData.wallet_winnings || 0);
+            const clean = (val) => {
+              return parseFloat(String(val).replace(/[^\d.]/g, "")) || 0;
+            };
+
+            const winnings = clean(cachedUserData.wallet?.winnings);
+            const deposit = clean(cachedUserData.wallet_deposit);
+            const total = deposit + winnings;
             
             const headerWallet = document.getElementById("header-wallet");
             if (headerWallet) headerWallet.innerText = `₹${total.toFixed(2)}`;
             
             const walletDepositLarge = document.getElementById("wallet-deposit-large");
-            if (walletDepositLarge) walletDepositLarge.innerText = `₹${(cachedUserData.wallet_deposit || 0).toFixed(2)}`;
+            if (walletDepositLarge) walletDepositLarge.innerText = `₹${deposit.toFixed(2)}`;
             
             const walletWinningsLarge = document.getElementById("wallet-winnings-large");
-            if (walletWinningsLarge) walletWinningsLarge.innerText = `₹${(cachedUserData.wallet_winnings || 0).toFixed(2)}`;
+            if (walletWinningsLarge) walletWinningsLarge.innerText = `₹${winnings.toFixed(2)}`;
             
             const profileName = document.getElementById("profile-name");
             if (profileName) profileName.innerText = cachedUserData.username;
@@ -2974,11 +3027,11 @@
 
           const total =
             (cachedUserData.wallet_deposit || 0) +
-            (cachedUserData.wallet_winnings || 0);
+            (cachedUserData.wallet?.winnings || 0);
           if (total < t.entryFee) throw new Error("Insufficient Balance!");
 
           // Deduct balance (prefer winnings first)
-          let newWinnings = cachedUserData.wallet_winnings || 0;
+          let newWinnings = cachedUserData.wallet?.winnings || 0;
           let newDeposit = cachedUserData.wallet_deposit || 0;
           let remainingFee = t.entryFee;
 
@@ -2992,7 +3045,7 @@
           }
 
           const updates = {};
-          updates[`users/${currentUser.uid}/wallet_winnings`] = newWinnings;
+          updates[`users/${currentUser.uid}/wallet/winnings`] = newWinnings;
           updates[`users/${currentUser.uid}/wallet_deposit`] = newDeposit;
           updates[`users/${currentUser.uid}/matchesPlayed`] =
             (cachedUserData.matchesPlayed || 0) + 1;
@@ -3397,7 +3450,7 @@
             `Min withdraw is ₹${appSettings.minWithdraw}`,
             "error",
           );
-        if (amount > (cachedUserData.wallet_winnings || 0))
+        if (amount > (cachedUserData.wallet?.winnings || 0))
           return showToast("Insufficient Winnings!", "error");
 
         try {
