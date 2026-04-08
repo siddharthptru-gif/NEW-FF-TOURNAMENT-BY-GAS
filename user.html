@@ -437,24 +437,7 @@
 
           <!-- Advanced Stats Grid -->
           <div class="grid grid-cols-2 gap-4">
-            <div class="bg-white p-4 rounded-2xl border shadow-sm">
-              <p id="stat-win-rate" class="text-xl font-black text-blue-600">
-                0%
-              </p>
-              <p class="text-[10px] uppercase text-gray-400">Win Rate</p>
-            </div>
-            <div class="bg-white p-4 rounded-2xl border shadow-sm">
-              <p id="stat-avg-kills" class="text-xl font-black text-indigo-600">
-                0.0
-              </p>
-              <p class="text-[10px] uppercase text-gray-400">Avg Kills/Match</p>
-            </div>
-            <div class="bg-white p-4 rounded-2xl border shadow-sm">
-              <p id="stat-avg-earning" class="text-xl font-black text-gray-900">
-                ₹0
-              </p>
-              <p class="text-[10px] uppercase text-gray-400">Avg Earning</p>
-            </div>
+
             <div class="bg-white p-4 rounded-2xl border shadow-sm">
               <p
                 id="stat-total-deposits"
@@ -1292,22 +1275,12 @@
         const deposits = userData.wallet_deposit || 0;
         const withdrawals = userData.totalWithdrawals || 0;
 
-        // Avg Earning
-        const avgEarning = matches > 0 ? earnings / matches : 0;
-        // Win Rate
-        const winRate = matches > 0 ? (wins / matches) * 100 : 0;
-        // Avg Kills
-        const avgKills = matches > 0 ? kills / matches : 0;
-
         animateCounter("stat-matches-played", matches);
         animateCounter("stat-total-kills", kills);
         animateCounter("stat-total-won", earnings);
         animateCounter("stat-total-wins", wins);
-        animateCounter("stat-avg-earning", avgEarning);
         animateCounter("stat-total-deposits", deposits);
         animateCounter("stat-total-withdrawals", withdrawals);
-        animateCounter("stat-win-rate", winRate);
-        animateCounter("stat-avg-kills", avgKills);
       }
 
       function showToast(msg, type = "info") {

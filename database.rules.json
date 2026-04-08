@@ -1,11 +1,13 @@
 {
   "rules": {
+    // Helper: Check if user is a hardcoded admin or has the admin role in DB
     "users": {
-      ".indexOn": ["appId", "status", "username", "banned"],
-      ".read": "auth != null && root.child('users').child(auth.uid).child('role').val() === 'admin'",
+      ".indexOn": ["appId"],
+      // Allow admins to read the entire users list
+      ".read": "auth != null && (root.child('users').child(auth.uid).child('role').val() === 'admin' || auth.token.email === 'siddharthptru@gmail.com' || auth.token.email === 'user-siddharthptru@gmail.com' || auth.token.email === '37488473@gmail.com')",
       "$uid": {
-        ".read": "auth != null && auth.uid === $uid",
-        ".write": "auth != null && (auth.uid === $uid || root.child('users').child(auth.uid).child('role').val() === 'admin')"
+        ".read": "auth != null && (auth.uid === $uid || root.child('users').child(auth.uid).child('role').val() === 'admin' || auth.token.email === 'siddharthptru@gmail.com')",
+        ".write": "auth != null && (auth.uid === $uid || root.child('users').child(auth.uid).child('role').val() === 'admin' || auth.token.email === 'siddharthptru@gmail.com')"
       }
     },
     "usernames": {
@@ -16,13 +18,13 @@
     },
     "settings": {
       ".read": "true",
-      ".write": "auth != null && root.child('users').child(auth.uid).child('role').val() === 'admin'"
+      ".write": "auth != null && (root.child('users').child(auth.uid).child('role').val() === 'admin' || auth.token.email === 'siddharthptru@gmail.com')"
     },
     "tournaments": {
       ".read": "true",
       ".indexOn": ["status"],
+      ".write": "auth != null && (root.child('users').child(auth.uid).child('role').val() === 'admin' || auth.token.email === 'siddharthptru@gmail.com')",
       "$tid": {
-        ".write": "auth != null && root.child('users').child(auth.uid).child('role').val() === 'admin'",
         "participants": {
           "$uid": {
             ".write": "auth != null && (auth.uid === $uid || root.child('users').child(auth.uid).child('role').val() === 'admin')"
@@ -32,29 +34,33 @@
     },
     "transactions": {
       ".indexOn": ["timestamp"],
-      ".read": "auth != null && root.child('users').child(auth.uid).child('role').val() === 'admin'",
-      ".write": "auth != null && root.child('users').child(auth.uid).child('role').val() === 'admin'"
+      ".read": "auth != null && (root.child('users').child(auth.uid).child('role').val() === 'admin' || auth.token.email === 'siddharthptru@gmail.com' || auth.token.email === 'user-siddharthptru@gmail.com' || auth.token.email === '37488473@gmail.com')",
+      ".write": "auth != null && (root.child('users').child(auth.uid).child('role').val() === 'admin' || auth.token.email === 'siddharthptru@gmail.com' || auth.token.email === 'user-siddharthptru@gmail.com' || auth.token.email === '37488473@gmail.com')"
     },
-    "tickets": {
-      ".indexOn": ["uid"],
+    "supportTickets": {
+      ".read": "auth != null",
+      ".write": "auth != null",
+      ".indexOn": ["uid"]
+    },
+    "supportMessages": {
       ".read": "auth != null",
       ".write": "auth != null"
     },
     "addMoneyRequests": {
-      ".read": "auth != null && root.child('users').child(auth.uid).child('role').val() === 'admin'",
+      ".read": "auth != null && (root.child('users').child(auth.uid).child('role').val() === 'admin' || auth.token.email === 'siddharthptru@gmail.com')",
       ".write": "auth != null"
     },
     "withdrawRequests": {
-      ".read": "auth != null && root.child('users').child(auth.uid).child('role').val() === 'admin'",
+      ".read": "auth != null && (root.child('users').child(auth.uid).child('role').val() === 'admin' || auth.token.email === 'siddharthptru@gmail.com')",
       ".write": "auth != null"
     },
     "reports": {
-      ".read": "auth != null && root.child('users').child(auth.uid).child('role').val() === 'admin'",
+      ".read": "auth != null && (root.child('users').child(auth.uid).child('role').val() === 'admin' || auth.token.email === 'siddharthptru@gmail.com')",
       ".write": "auth != null"
     },
     "announcements": {
       ".read": "true",
-      ".write": "auth != null && root.child('users').child(auth.uid).child('role').val() === 'admin'"
+      ".write": "auth != null && (root.child('users').child(auth.uid).child('role').val() === 'admin' || auth.token.email === 'siddharthptru@gmail.com')"
     },
     "userNotifications": {
       "$uid": {
@@ -63,8 +69,12 @@
       }
     },
     "auditLogs": {
-      ".read": "auth != null && root.child('users').child(auth.uid).child('role').val() === 'admin'",
-      ".write": "auth != null && root.child('users').child(auth.uid).child('role').val() === 'admin'"
+      ".read": "auth != null && (root.child('users').child(auth.uid).child('role').val() === 'admin' || auth.token.email === 'siddharthptru@gmail.com')",
+      ".write": "auth != null"
+    },
+    "dynamicFeatures": {
+      ".read": "true",
+      ".write": "auth != null && (root.child('users').child(auth.uid).child('role').val() === 'admin' || auth.token.email === 'siddharthptru@gmail.com')"
     }
   }
 }
