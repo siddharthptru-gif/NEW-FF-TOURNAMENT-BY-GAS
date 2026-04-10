@@ -1916,13 +1916,13 @@
             };
 
             const processedUsers = allUsers.map(u => {
-              const winnings = clean(u.totalWinnings);
+              const winnings = clean(u.totalWinnings !== undefined ? u.totalWinnings : (u.wallet && u.wallet.winnings ? u.wallet.winnings : 0));
               return { ...u, winnings };
             });
 
             const sortedUsers = [...processedUsers]
               .sort((a, b) => b.winnings - a.winnings)
-              .slice(0, 50);
+              .slice(0, 7);
 
             const currentRanks = {};
             sortedUsers.forEach((u, index) => {
@@ -1999,7 +1999,9 @@
           if (!t) return;
 
           const mdTitle = document.getElementById("md-title");
-          if (mdTitle) mdTitle.innerText = t.title;
+          if (mdTitle) {
+              mdTitle.innerHTML = `${t.title} ${t.matchCode ? `<span class="text-blue-500">#${t.matchCode}</span>` : ''}`;
+          }
           
           const mdMap = document.getElementById("md-map");
           if (mdMap) mdMap.innerText = t.mapSettings || "Bermuda";
@@ -2222,7 +2224,7 @@
                         </div>
                         <div class="p-5">
                             <div class="flex justify-between items-center mb-3">
-                                <h4 class="font-black text-gray-900 text-sm uppercase">${t.title}</h4>
+                                <h4 class="font-black text-gray-900 text-sm uppercase">${t.title} ${t.matchCode ? `<span class="text-blue-500">#${t.matchCode}</span>` : ''}</h4>
                                 <span class="text-[8px] px-2 py-0.5 ${t.status === "Live" ? "bg-red-50 text-red-600" : t.status === "Completed" ? "bg-gray-100 text-gray-600" : "bg-blue-50 text-blue-600"} font-black rounded uppercase">${t.status}</span>
                             </div>
                             <div class="grid grid-cols-2 gap-2">
@@ -2575,8 +2577,8 @@
         db.ref(`tournaments/${id}`).once("value", (s) => {
           const t = s.val();
           if (!t) return;
-          document.getElementById("results-modal-title").innerText =
-            t.title + " Results";
+          document.getElementById("results-modal-title").innerHTML =
+            `${t.title} ${t.matchCode ? `<span class="text-blue-500">#${t.matchCode}</span>` : ''} Results`;
 
           const imgContainer = document.getElementById(
             "results-image-container",

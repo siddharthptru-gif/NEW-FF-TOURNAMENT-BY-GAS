@@ -167,6 +167,12 @@
             Banners
           </button>
           <button
+            onclick="showSection('leaderboard')"
+            class="sidebar-item w-full text-left p-3 rounded-xl font-bold"
+          >
+            Leaderboard
+          </button>
+          <button
             onclick="showSection('settings')"
             class="sidebar-item w-full text-left p-3 rounded-xl font-bold"
           >
@@ -765,6 +771,7 @@
                             <div class="space-y-3">
                                 <button onclick="showSection('tournaments')" class="w-full p-4 bg-blue-600 rounded-xl font-bold">Create Tournament</button>
                                 <button onclick="showSection('wallet')" class="w-full p-4 bg-green-600 rounded-xl font-bold">Approve Deposits</button>
+                                <button onclick="showSection('leaderboard')" class="w-full p-4 bg-yellow-600 rounded-xl font-bold">Manage Leaderboard</button>
                                 <button onclick="showSection('banners')" class="w-full p-4 bg-pink-600 rounded-xl font-bold">Change Banners</button>
                                 <button onclick="showSection('support')" class="w-full p-4 bg-purple-600 rounded-xl font-bold">View Support Tickets</button>
                             </div>
@@ -814,16 +821,56 @@
           loadBanners();
         } else if (sectionId === "tournaments") {
           contentArea.innerHTML = `
-                    <div class="flex space-x-4 mb-6">
-                        <button onclick="openCreateMatchModal()" class="bg-blue-600 text-white px-6 py-3 rounded-xl font-bold uppercase">Create Match</button>
-                        <button onclick="loadMatches('running')" class="bg-gray-700 text-white px-6 py-3 rounded-xl font-bold uppercase">Running</button>
-                        <button onclick="loadMatches('completed')" class="bg-gray-700 text-white px-6 py-3 rounded-xl font-bold uppercase">Completed</button>
+                    <div class="flex justify-between items-center mb-6">
+                        <div class="flex space-x-4">
+                            <button onclick="openCreateMatchModal()" class="bg-blue-600 text-white px-6 py-3 rounded-xl font-bold uppercase">Create Match</button>
+                            <button onclick="setAdminMatchFilter('running')" id="admin-filter-running" class="bg-blue-600 text-white px-6 py-3 rounded-xl font-bold uppercase">Running</button>
+                            <button onclick="setAdminMatchFilter('completed')" id="admin-filter-completed" class="bg-gray-700 text-white px-6 py-3 rounded-xl font-bold uppercase">Completed</button>
+                            <button onclick="setAdminMatchFilter('old')" id="admin-filter-old" class="bg-gray-700 text-white px-6 py-3 rounded-xl font-bold uppercase">Old Matches</button>
+                        </div>
+                        <div class="bg-gray-800 px-4 py-2 rounded-xl border border-gray-700 text-center">
+                            <p class="text-[10px] text-gray-400 font-bold uppercase">IST Time</p>
+                            <p id="admin-clock" class="text-lg font-black text-blue-400">--:--:--</p>
+                        </div>
                     </div>
-                    <div id="matches-list" class="space-y-4">
-                        <!-- Matches will be loaded here -->
+                    <div class="mb-6">
+                        <input type="text" id="match-search" placeholder="Search by 6-digit Match Code (e.g., 000001#)" class="w-full p-4 bg-gray-700 rounded-xl text-white outline-none border border-gray-600 focus:border-blue-500 transition-colors">
+                    </div>
+                    
+                    <div id="admin-categories-view" class="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-5 gap-4 mb-6">
+                        <!-- Categories will be loaded here -->
+                    </div>
+
+                    <div id="admin-matches-view" class="hidden">
+                        <div class="flex items-center mb-6">
+                            <button onclick="showAdminCategories()" class="bg-gray-700 hover:bg-gray-600 text-white px-4 py-2 rounded-xl font-bold uppercase mr-4 transition"><i class="fas fa-arrow-left mr-2"></i>Back</button>
+                            <h2 id="admin-current-category-title" class="text-2xl font-black text-white uppercase tracking-wider">Category Name</h2>
+                        </div>
+                        <div id="matches-list" class="space-y-4">
+                            <!-- Matches will be loaded here -->
+                        </div>
                     </div>
                 `;
-          loadMatches("running");
+          startAdminClock();
+          window.currentAdminFilter = "running";
+          window.currentAdminCategory = null;
+          loadAdminCategories();
+          
+          document.getElementById("match-search").addEventListener("input", (e) => {
+              const query = e.target.value.trim().toLowerCase();
+              if (query.length > 0) {
+                  document.getElementById("admin-categories-view").classList.add("hidden");
+                  document.getElementById("admin-matches-view").classList.remove("hidden");
+                  document.getElementById("admin-current-category-title").innerText = "Search Results";
+                  searchMatches(query);
+              } else {
+                  if (window.currentAdminCategory) {
+                      setAdminCategory(window.currentAdminCategory);
+                  } else {
+                      showAdminCategories();
+                  }
+              }
+          });
         } else if (sectionId === "wallet") {
           contentArea.innerHTML = `
                     <div class="flex space-x-4 mb-6">
@@ -867,6 +914,33 @@
                     </div>
                 `;
           loadTickets();
+        } else if (sectionId === "leaderboard") {
+          contentArea.innerHTML = `
+                    <div class="bg-gray-700 p-6 rounded-3xl mb-6">
+                        <div class="flex justify-between items-center mb-4">
+                            <h3 class="text-xl font-bold">Leaderboard Management</h3>
+                            <button onclick="resetLeaderboard()" class="bg-red-600 hover:bg-red-700 text-white px-6 py-3 rounded-xl font-bold uppercase transition-colors">
+                                Reset Leaderboard Now
+                            </button>
+                        </div>
+                        <p class="text-gray-400 text-sm mb-4">Resetting the leaderboard will set all users' monthly winnings to 0. This does NOT affect their actual wallet balance.</p>
+                        <div class="bg-gray-800 p-4 rounded-xl flex justify-between items-center">
+                            <div>
+                                <p class="text-gray-300">Last Reset: <span id="last-reset-time" class="font-bold text-white">Loading...</span></p>
+                                <p class="text-gray-300 mt-1">Next Auto Reset: <span id="next-reset-time" class="font-bold text-yellow-400">Loading...</span></p>
+                            </div>
+                            <div class="text-right">
+                                <p class="text-sm text-gray-400">Time until next reset:</p>
+                                <p id="reset-countdown" class="text-xl font-black text-blue-400">--:--:--</p>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="bg-gray-700 p-6 rounded-3xl">
+                        <h3 class="text-xl font-bold mb-4">Current Top 10</h3>
+                        <div id="admin-leaderboard-list" class="space-y-2"></div>
+                    </div>
+                `;
+          loadAdminLeaderboard();
         } else if (sectionId === "settings") {
           contentArea.innerHTML = `
                     <div class="space-y-8">
@@ -1477,6 +1551,7 @@
                     
                     <div class="space-y-2">
                         <input type="number" id="edit-amount" placeholder="Enter Amount" class="w-full p-3 bg-gray-900 rounded-xl text-white outline-none border border-gray-700 focus:border-blue-500 transition-colors">
+                        <input type="text" id="edit-message" placeholder="Message (e.g. Match 000001# Prize)" class="w-full p-3 bg-gray-900 rounded-xl text-white outline-none border border-gray-700 focus:border-blue-500 transition-colors text-sm">
                         <div class="grid grid-cols-2 gap-2">
                             <button onclick="updateWallet('${uid}', 'wallet_deposit', 1)" class="bg-green-600/20 text-green-400 border border-green-600/30 p-2 rounded-xl text-[10px] font-black uppercase hover:bg-green-600/30 transition-colors">Add Deposit</button>
                             <button onclick="updateWallet('${uid}', 'wallet_deposit', -1)" class="bg-red-600/20 text-red-400 border border-red-600/30 p-2 rounded-xl text-[10px] font-black uppercase hover:bg-red-600/30 transition-colors">Sub Deposit</button>
@@ -1519,11 +1594,40 @@
 
       function updateWallet(uid, walletType, multiplier) {
         const amount = parseFloat(document.getElementById("edit-amount").value);
+        let customMessage = document.getElementById("edit-message").value.trim();
         if (isNaN(amount)) return showToast("Enter valid amount", "error");
 
         db.ref(`users/${uid}/${walletType}`).transaction(
           (current) => (current || 0) + amount * multiplier,
         );
+        
+        if (walletType === "wallet/winnings") {
+          db.ref(`users/${uid}`).once("value", (snap) => {
+            const user = snap.val();
+            if (user) {
+              const currentTotalWinnings = user.totalWinnings !== undefined ? user.totalWinnings : (user.wallet && user.wallet.winnings ? user.wallet.winnings : 0);
+              let newTotal = currentTotalWinnings + (amount * multiplier);
+              if (multiplier === -1) newTotal = Math.max(0, newTotal);
+              db.ref(`users/${uid}/totalWinnings`).set(newTotal);
+            }
+          });
+        }
+
+        if (!customMessage) {
+            customMessage = multiplier === 1 ? "CREDIT BY ADMINS" : "DEBIT BY ADMINS";
+        } else {
+            customMessage = customMessage.toUpperCase() + (multiplier === 1 ? " (CREDIT BY ADMINS)" : " (DEBIT BY ADMINS)");
+        }
+
+        const txData = {
+            amount: amount,
+            type: multiplier === 1 ? "credit" : "debit",
+            status: "Approved",
+            message: customMessage,
+            timestamp: Date.now()
+        };
+        db.ref(`users/${uid}/transactions`).push(txData);
+        db.ref("transactions").push({ uid, ...txData });
         
         showToast("Wallet updated!");
       }
@@ -2057,7 +2161,185 @@
       }
 
       // Tournament Logic
-      function loadMatches(type = "running") {
+      let adminClockInterval;
+      function startAdminClock() {
+          if (adminClockInterval) clearInterval(adminClockInterval);
+          adminClockInterval = setInterval(() => {
+              const clockEl = document.getElementById("admin-clock");
+              if (!clockEl) {
+                  clearInterval(adminClockInterval);
+                  return;
+              }
+              const now = new Date();
+              const options = { timeZone: 'Asia/Kolkata', hour12: true, hour: '2-digit', minute: '2-digit', second: '2-digit' };
+              clockEl.innerText = now.toLocaleTimeString('en-US', options);
+          }, 1000);
+      }
+
+      function searchMatches(query) {
+        const matchesList = document.getElementById("matches-list");
+        if (!matchesList) return;
+        matchesList.innerHTML = '<p class="text-gray-400"><i class="fas fa-spinner fa-spin mr-2"></i>Searching...</p>';
+        
+        db.ref("tournaments").once("value", (snapshot) => {
+            const matches = snapshot.val();
+            if (!matches) {
+                matchesList.innerHTML = '<p class="text-gray-400">No matches found.</p>';
+                return;
+            }
+            
+            let found = false;
+            matchesList.innerHTML = "";
+            const grouped = {};
+            
+            Object.keys(matches).forEach(key => {
+                const match = matches[key];
+                if (match.matchCode && match.matchCode.toLowerCase().includes(query)) {
+                    found = true;
+                    const cat = match.category || "Uncategorized";
+                    if (!grouped[cat]) grouped[cat] = [];
+                    grouped[cat].push({ key, ...match });
+                }
+            });
+            
+            if (!found) {
+                matchesList.innerHTML = '<p class="text-gray-400">No matches found with that code.</p>';
+                return;
+            }
+            
+            Object.keys(grouped).forEach((cat) => {
+                const catHeader = document.createElement("h4");
+                catHeader.className = "text-lg font-bold text-blue-400 mt-6 mb-3 uppercase tracking-wider border-b border-gray-700 pb-2";
+                catHeader.innerText = cat;
+                matchesList.appendChild(catHeader);
+
+                grouped[cat].forEach((match) => {
+                  matchesList.innerHTML += createMatchCard(match.key, match);
+                });
+            });
+        });
+      }
+
+      function createMatchCard(key, match) {
+          const mode = match.category || "OTHER";
+          const matchCodeStr = match.matchCode ? `<span class="text-blue-400 font-black ml-2 text-sm">#${match.matchCode}</span>` : '';
+          return `
+            <div class="bg-gray-700 p-6 rounded-3xl border border-gray-600 hover:border-blue-500/50 transition-colors relative">
+                <div class="absolute top-0 right-0 bg-gray-800 px-3 py-1 rounded-bl-xl rounded-tr-3xl border-b border-l border-gray-600">
+                    <p class="text-[8px] font-black text-gray-400 uppercase tracking-widest">Mode: ${mode}</p>
+                </div>
+                <div class="flex justify-between items-start mb-4 mt-2">
+                    <div>
+                        <h3 class="font-black text-xl text-white">${match.title}${matchCodeStr}</h3>
+                        <p class="text-sm text-gray-400">${match.matchTime}</p>
+                    </div>
+                    <span class="px-3 py-1 rounded-full text-[10px] font-black uppercase ${match.status === "Live" ? "bg-red-600 text-white" : match.status === "Completed" ? "bg-gray-600 text-gray-300" : "bg-blue-600 text-white"}">${match.status}</span>
+                </div>
+                <div class="grid grid-cols-3 gap-4 text-[10px] font-bold uppercase text-gray-400 mb-4">
+                    <div><p class="text-gray-500">Fee</p><p class="text-white">₹${match.entryFee}</p></div>
+                    <div><p class="text-gray-500">Prize</p><p class="text-white">₹${match.prizePool}</p></div>
+                    <div><p class="text-gray-500">Players</p><p class="text-white">${Object.keys(match.participants || {}).length}/${match.maxPlayers}</p></div>
+                </div>
+                <div class="flex space-x-2">
+                    <button onclick="openMatchDetails('${key}')" class="flex-1 py-3 bg-gray-600 hover:bg-gray-500 text-white rounded-xl font-bold text-xs uppercase transition">Manage</button>
+                    <button onclick="deleteMatch('${key}')" class="p-3 bg-red-600/20 hover:bg-red-600 text-red-400 hover:text-white rounded-xl font-bold transition"><i class="fas fa-trash"></i></button>
+                </div>
+            </div>
+          `;
+      }
+
+      function setAdminMatchFilter(filter) {
+          window.currentAdminFilter = filter;
+          
+          // Update button styles
+          const buttons = ['running', 'completed', 'old'];
+          buttons.forEach(b => {
+              const el = document.getElementById(`admin-filter-${b}`);
+              if (el) {
+                  if (b === filter) {
+                      el.classList.remove('bg-gray-700');
+                      el.classList.add('bg-blue-600');
+                  } else {
+                      el.classList.remove('bg-blue-600');
+                      el.classList.add('bg-gray-700');
+                  }
+              }
+          });
+
+          if (window.currentAdminCategory) {
+              setAdminCategory(window.currentAdminCategory);
+          } else {
+              loadAdminCategories();
+          }
+      }
+
+      function showAdminCategories() {
+          window.currentAdminCategory = null;
+          document.getElementById("admin-categories-view").classList.remove("hidden");
+          document.getElementById("admin-matches-view").classList.add("hidden");
+          loadAdminCategories();
+      }
+
+      function setAdminCategory(category) {
+          window.currentAdminCategory = category;
+          document.getElementById("admin-categories-view").classList.add("hidden");
+          document.getElementById("admin-matches-view").classList.remove("hidden");
+          document.getElementById("admin-current-category-title").innerText = category;
+          loadMatches(window.currentAdminFilter, category);
+      }
+
+      function loadAdminCategories() {
+          const catContainer = document.getElementById("admin-categories-view");
+          if (!catContainer) return;
+          catContainer.innerHTML = '<p class="text-gray-400 col-span-full"><i class="fas fa-spinner fa-spin mr-2"></i>Loading categories...</p>';
+
+          db.ref("tournaments").once("value", (snapshot) => {
+              const matches = snapshot.val() || {};
+              const now = Date.now();
+              const ONE_DAY = 24 * 60 * 60 * 1000;
+              const filter = window.currentAdminFilter || "running";
+
+              let allCategories = ["ALL", "BATTLE ROYALE", "FF SURVIVAL", "LOSS/HEAL LW", "CS/LW 1V1", "CS/LW 2V2", "ONLY HEAD 1V1", "CS 4V4", "FIST FIGHT", "FREE MATCH"];
+              
+              const categoryCounts = {};
+              allCategories.forEach(c => categoryCounts[c] = 0);
+
+              Object.keys(matches).forEach(key => {
+                  const match = matches[key];
+                  const isCompleted = match.status === "Completed";
+                  const isOld = match.createdAt && (now - match.createdAt > ONE_DAY);
+                  
+                  let include = false;
+                  if (filter === "old" && isOld) include = true;
+                  else if (filter === "running" && !isCompleted && !isOld) include = true;
+                  else if (filter === "completed" && isCompleted && !isOld) include = true;
+
+                  if (include) {
+                      const cat = match.category || "OTHER";
+                      if (!allCategories.includes(cat)) {
+                          allCategories.push(cat);
+                          categoryCounts[cat] = 0;
+                      }
+                      categoryCounts[cat]++;
+                      categoryCounts["ALL"]++;
+                  }
+              });
+
+              let html = "";
+              allCategories.forEach(c => {
+                  const count = categoryCounts[c] || 0;
+                  html += `
+                      <div onclick="setAdminCategory('${c}')" class="bg-gray-800 p-4 rounded-2xl border border-gray-700 hover:border-blue-500 cursor-pointer transition-colors text-center">
+                          <h4 class="font-black text-sm text-white uppercase truncate mb-1">${c}</h4>
+                          <p class="text-[10px] font-bold text-gray-400 uppercase">${count} Matches</p>
+                      </div>
+                  `;
+              });
+              catContainer.innerHTML = html;
+          });
+      }
+
+      function loadMatches(type = "running", category = "ALL") {
         const matchesList = document.getElementById("matches-list");
         if (!matchesList) return;
         matchesList.innerHTML =
@@ -2082,17 +2364,26 @@
               // Sort by timestamp descending
               const sortedKeys = Object.keys(matches).sort((a, b) => (matches[b].timestamp || 0) - (matches[a].timestamp || 0));
               
+              const now = Date.now();
+              const ONE_DAY = 24 * 60 * 60 * 1000;
+              
               sortedKeys.forEach((key) => {
                 const match = matches[key];
                 const isCompleted = match.status === "Completed";
+                const isOld = match.createdAt && (now - match.createdAt > ONE_DAY);
                 
-                // If type is running, we want everything EXCEPT completed
-                if (type === "running" && isCompleted) return;
-                // If type is completed, the query already filtered it, but extra check doesn't hurt
-                if (type === "completed" && !isCompleted) return;
+                if (type === "old") {
+                    if (!isOld) return;
+                } else if (type === "running") {
+                    if (isCompleted || isOld) return;
+                } else if (type === "completed") {
+                    if (!isCompleted || isOld) return;
+                }
+
+                const mode = match.category || "OTHER";
+                if (category !== "ALL" && mode !== category) return;
 
                 count++;
-                const mode = match.category || "OTHER";
                 if (!grouped[mode]) grouped[mode] = [];
                 grouped[mode].push({ key, match });
               });
@@ -2109,29 +2400,7 @@
                 `;
                 
                 grouped[mode].forEach(({ key, match }) => {
-                  html += `
-                            <div class="bg-gray-700 p-6 rounded-3xl border border-gray-600 hover:border-blue-500/50 transition-colors relative">
-                                <div class="absolute top-0 right-0 bg-gray-800 px-3 py-1 rounded-bl-xl rounded-tr-3xl border-b border-l border-gray-600">
-                                    <p class="text-[8px] font-black text-gray-400 uppercase tracking-widest">Mode: ${mode}</p>
-                                </div>
-                                <div class="flex justify-between items-start mb-4 mt-2">
-                                    <div>
-                                        <h3 class="font-black text-xl text-white">${match.title}</h3>
-                                        <p class="text-sm text-gray-400">${match.matchTime}</p>
-                                    </div>
-                                    <span class="px-3 py-1 rounded-full text-[10px] font-black uppercase ${match.status === "Live" ? "bg-red-600 text-white" : match.status === "Completed" ? "bg-gray-600 text-gray-300" : "bg-blue-600 text-white"}">${match.status}</span>
-                                </div>
-                                <div class="grid grid-cols-3 gap-4 text-[10px] font-bold uppercase text-gray-400 mb-4">
-                                    <div><p class="text-gray-500">Fee</p><p class="text-white">₹${match.entryFee}</p></div>
-                                    <div><p class="text-gray-500">Prize</p><p class="text-white">₹${match.prizePool}</p></div>
-                                    <div><p class="text-gray-500">Players</p><p class="text-white">${Object.keys(match.participants || {}).length}/${match.maxPlayers}</p></div>
-                                </div>
-                                <div class="flex space-x-2">
-                                    <button onclick="openMatchDetails('${key}')" class="flex-1 py-3 bg-gray-600 hover:bg-gray-500 text-white rounded-xl font-bold text-xs uppercase transition">Manage</button>
-                                    <button onclick="deleteMatch('${key}')" class="p-3 bg-red-600/20 hover:bg-red-600 text-red-400 hover:text-white rounded-xl font-bold transition"><i class="fas fa-trash"></i></button>
-                                </div>
-                            </div>
-                  `;
+                  html += createMatchCard(key, match);
                 });
                 
                 html += `
@@ -2222,6 +2491,11 @@ Winnings will be credited to the wallet within 1-2 hours after the match ends an
               catSelect.innerHTML += `<option value="${mode}">${mode}</option>`;
             }
           });
+          
+          if (window.currentAdminCategory && window.currentAdminCategory !== "ALL") {
+              catSelect.value = window.currentAdminCategory;
+          }
+          
           openModal("create-match-modal");
         });
       }
@@ -2257,6 +2531,11 @@ Winnings will be credited to the wallet within 1-2 hours after the match ends an
             imageUrl = await uploadImageToImgBB(fileInput.files[0]);
           }
 
+          const counterSnap = await db.ref("settings/matchCounter").once("value");
+          let counter = (counterSnap.val() || 0) + 1;
+          await db.ref("settings/matchCounter").set(counter);
+          const matchCode = String(counter).padStart(6, '0') + '#';
+
           const matchData = {
             title: document.getElementById("match-name").value,
             category: document.getElementById("match-category").value,
@@ -2273,6 +2552,8 @@ Winnings will be credited to the wallet within 1-2 hours after the match ends an
             roomId: "",
             roomPassword: "",
             participants: {},
+            matchCode: matchCode,
+            createdAt: Date.now()
           };
 
           const newMatchRef = db.ref("tournaments").push();
@@ -2314,7 +2595,7 @@ Winnings will be credited to the wallet within 1-2 hours after the match ends an
             "fixed inset-0 bg-gray-900/90 z-50 flex items-center justify-center p-4";
           modal.innerHTML = `
                     <div class="bg-gray-800 p-8 rounded-3xl w-full max-w-4xl border border-gray-700 max-h-[90vh] overflow-y-auto">
-                        <h2 class="text-3xl font-black mb-6">${match.title}</h2>
+                        <h2 class="text-3xl font-black mb-6">${match.title} ${match.matchCode ? `<span class="text-blue-500">#${match.matchCode}</span>` : ''}</h2>
                         <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
                             <div>
                                 <h3 class="text-xl font-bold mb-4">Live Control</h3>
@@ -2407,7 +2688,8 @@ Winnings will be credited to the wallet within 1-2 hours after the match ends an
 
                 const updates = {};
                 updates.totalKills = (user.totalKills || 0) + killDiff;
-                updates.totalWinnings = (user.totalWinnings || 0) + prizeDiff;
+                const currentTotalWinnings = user.totalWinnings !== undefined ? user.totalWinnings : (user.wallet && user.wallet.winnings ? user.wallet.winnings : 0);
+                updates.totalWinnings = currentTotalWinnings + prizeDiff;
                 
                 if (!wasProcessed) {
                   updates.matchesPlayed = (user.matchesPlayed || 0) + 1;
@@ -3149,6 +3431,109 @@ Winnings will be credited to the wallet within 1-2 hours after the match ends an
             }
           }
         }
+      let leaderboardTimerInterval = null;
+
+      function loadAdminLeaderboard() {
+        db.ref("settings/leaderboardLastReset").on("value", (snap) => {
+          const lastReset = snap.val() || 0;
+          if (lastReset) {
+            const el = document.getElementById("last-reset-time");
+            if (el) el.innerText = new Date(lastReset).toLocaleString();
+          } else {
+            const el = document.getElementById("last-reset-time");
+            if (el) el.innerText = "Never";
+          }
+
+          // Calculate next reset (1st of next month)
+          const now = new Date();
+          let nextResetDate;
+          if (lastReset) {
+            const lastResetDateObj = new Date(lastReset);
+            nextResetDate = new Date(lastResetDateObj.getFullYear(), lastResetDateObj.getMonth() + 1, 1);
+          } else {
+            nextResetDate = new Date(now.getFullYear(), now.getMonth() + 1, 1);
+          }
+
+          const nextEl = document.getElementById("next-reset-time");
+          if (nextEl) nextEl.innerText = nextResetDate.toLocaleString();
+
+          if (leaderboardTimerInterval) clearInterval(leaderboardTimerInterval);
+          
+          leaderboardTimerInterval = setInterval(() => {
+            const current = new Date().getTime();
+            const distance = nextResetDate.getTime() - current;
+
+            const countEl = document.getElementById("reset-countdown");
+            if (!countEl) {
+                clearInterval(leaderboardTimerInterval);
+                return;
+            }
+
+            if (distance < 0) {
+              countEl.innerText = "RESETTING...";
+              // Auto reset if time passed
+              if (current - lastReset > 24 * 60 * 60 * 1000) { // Ensure we don't reset multiple times a day
+                  window.resetLeaderboard(true);
+              }
+              return;
+            }
+
+            const days = Math.floor(distance / (1000 * 60 * 60 * 24));
+            const hours = Math.floor((distance % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
+            const minutes = Math.floor((distance % (1000 * 60 * 60)) / (1000 * 60));
+            const seconds = Math.floor((distance % (1000 * 60)) / 1000);
+
+            countEl.innerText = `${days}d ${hours}h ${minutes}m ${seconds}s`;
+          }, 1000);
+        });
+
+        db.ref("users").on("value", (snap) => {
+          const data = snap.val() || {};
+          const allUsers = Object.keys(data).map(uid => ({ uid, ...data[uid] })).filter(u => u.username && u.username.trim().toLowerCase() !== "error" && u.username.trim().toLowerCase() !== "top winners" && u.username.trim().toLowerCase() !== "undefined");
+          
+          const clean = (val) => parseFloat(String(val).replace(/[^\d.-]/g, "")) || 0;
+          
+          const processedUsers = allUsers.map(u => {
+            const winnings = clean(u.totalWinnings !== undefined ? u.totalWinnings : (u.wallet && u.wallet.winnings ? u.wallet.winnings : 0));
+            return { ...u, winnings };
+          });
+
+          const sortedUsers = [...processedUsers].sort((a, b) => b.winnings - a.winnings).slice(0, 10);
+          
+          const list = document.getElementById("admin-leaderboard-list");
+          if (!list) return;
+          
+          list.innerHTML = sortedUsers.map((u, i) => `
+            <div class="flex justify-between items-center bg-gray-800 p-3 rounded-xl border border-gray-700">
+              <div class="flex items-center space-x-3">
+                <span class="text-gray-400 font-bold w-6">#${i + 1}</span>
+                <span class="text-white font-bold">${u.username}</span>
+              </div>
+              <span class="text-green-400 font-bold">₹${u.winnings.toFixed(2)}</span>
+            </div>
+          `).join("");
+        });
+      }
+
+      window.resetLeaderboard = function(isAuto = false) {
+        if (!isAuto && !confirm("Are you sure you want to reset the leaderboard? This will set all users' monthly winnings to 0. Their actual wallet balances will NOT be affected.")) return;
+        
+        db.ref("users").once("value", (snap) => {
+          const data = snap.val() || {};
+          const updates = {};
+          Object.keys(data).forEach(uid => {
+            updates[`users/${uid}/totalWinnings`] = 0;
+          });
+          updates["settings/leaderboardLastReset"] = Date.now();
+          
+          db.ref().update(updates).then(() => {
+            showToast(isAuto ? "Leaderboard auto-reset successfully!" : "Leaderboard reset successfully!");
+          }).catch(err => {
+            showToast("Error resetting leaderboard: " + err.message, "error");
+          });
+        });
+      };
+
       });
     </script>
   </body>
