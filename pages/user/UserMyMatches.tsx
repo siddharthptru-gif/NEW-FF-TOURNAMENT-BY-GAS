@@ -30,16 +30,6 @@ const UserMyMatches: React.FC = () => {
     window.location.href = "intent:#Intent;package=com.dts.freefireth;end";
   };
 
-  const submitResult = (tid: string) => {
-    const proofUrl = window.prompt("Paste Screenshot URL (Imgur/Cloud):");
-    if (!proofUrl) return;
-    db.ref(`tournaments/${tid}/participants/${auth.currentUser?.uid}`).update({
-      resultSubmitted: true,
-      resultScreenshot: proofUrl
-    });
-    alert("Result submitted for admin verification!");
-  };
-
   const filtered = tournaments.filter(t => t.status === activeTab);
 
   return (
@@ -74,10 +64,12 @@ const UserMyMatches: React.FC = () => {
 
             <div className="flex justify-between items-center text-[10px] font-black border-t pt-4">
               <span className="text-gray-400 uppercase">{new Date(t.matchTime).toLocaleString()}</span>
-              {t.status === 'Completed' ? (
-                <button onClick={() => alert("Admin uploaded screenshot: " + (t.resultScreenshot || 'No screenshot available'))} className="text-green-600 uppercase underline">View Uploaded Screenshot</button>
-              ) : (
-                <button onClick={() => submitResult(t.id)} className="text-blue-600 uppercase underline">Submit Screenshot</button>
+              {t.status === 'Completed' && t.matchProofImages && (
+                <div className="flex gap-2">
+                    {Object.values(t.matchProofImages).map((url: string, i: number) => (
+                        <a key={i} href={url} target="_blank" rel="noreferrer" className="text-green-600 uppercase underline text-[8px]">Proof {i+1}</a>
+                    ))}
+                </div>
               )}
             </div>
           </div>

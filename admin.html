@@ -881,6 +881,18 @@
                             <button onclick="saveSettings()" class="mt-4 w-full p-3 bg-blue-600 rounded-xl font-bold">Save Settings</button>
                         </div>
                         <div class="bg-gray-700 p-6 rounded-3xl">
+                            <h3 class="text-xl font-bold mb-4">Payment Settings (QR Code)</h3>
+                            <div class="flex items-center space-x-4 mb-4">
+                                <img id="qr-preview" src="" class="w-32 h-32 object-contain bg-gray-800 rounded-xl border border-gray-600">
+                                <div class="flex-1">
+                                    <input type="text" id="set-qr-url" placeholder="QR Code Image URL" class="w-full p-3 bg-gray-600 rounded-xl mb-2 text-white">
+                                    <span class="text-gray-400 text-sm block mb-2">OR Upload Image:</span>
+                                    <input type="file" id="qr-upload" accept="image/*" class="w-full text-gray-400 text-sm">
+                                </div>
+                            </div>
+                            <button onclick="savePaymentSettings()" class="w-full p-3 bg-blue-600 rounded-xl font-bold">Save QR Code</button>
+                        </div>
+                        <div class="bg-gray-700 p-6 rounded-3xl">
                             <h3 class="text-xl font-bold mb-4">Security</h3>
                             <p class="text-gray-400 mb-4 text-sm">Update your admin account password.</p>
                             <button onclick="openChangePasswordModal()" class="w-full p-3 bg-blue-600 rounded-xl font-bold">Change Password</button>
@@ -2176,8 +2188,7 @@ Any misbehavior with admins or other players will lead to a permanent ban.
 If any player is found violating these rules, their winnings will be voided, and they will be banned from future tournaments.
 
 🏆 RESULTS & REWARDS
-Winnings will be credited to the wallet within 1-2 hours after the match ends and verification is complete.
-Screenshots of the final result are mandatory for prize claims.`;
+Winnings will be credited to the wallet within 1-2 hours after the match ends and verification is complete.`;
 
       function openCreateMatchModal() {
         const catSelect = document.getElementById("match-category");
@@ -2322,7 +2333,7 @@ Screenshots of the final result are mandatory for prize claims.`;
                                 <textarea id="update-notes" placeholder="Admin Notes" class="w-full p-3 bg-gray-700 rounded-xl mb-2 text-white outline-none">${match.adminNotes || ""}</textarea>
                                 <textarea id="update-announcement" placeholder="Announcement" class="w-full p-3 bg-gray-700 rounded-xl mb-2 text-white outline-none">${match.announcement || ""}</textarea>
                                 <div class="mb-4">
-                                    <p class="text-xs text-gray-400 mb-1">Match Result Image (Optional)</p>
+                                    <p class="text-xs text-gray-400 mb-1">Match Result Image (Required for Completion)</p>
                                     <input type="text" id="update-result-image" value="${match.resultImageUrl || ""}" placeholder="Result Image URL" class="w-full p-3 bg-gray-700 rounded-xl mb-2 text-white outline-none">
                                     <input type="file" id="update-result-image-upload" accept="image/*" class="w-full text-gray-400 text-xs">
                                 </div>
@@ -2678,6 +2689,30 @@ Screenshots of the final result are mandatory for prize claims.`;
         db.ref("settings")
           .update(settings)
           .then(() => showToast("Settings saved!"));
+      }
+
+      async function savePaymentSettings() {
+        let url = document.getElementById("set-qr-url").value;
+        const fileInput = document.getElementById("qr-upload");
+        
+        try {
+          if (fileInput && fileInput.files.length > 0) {
+            showLoading(true, "Compressing and uploading QR code...");
+            url = await uploadImageToImgBB(fileInput.files[0]);
+          }
+          
+          if (!url) return showToast("Please provide a QR code URL or upload an image.", "error");
+
+          showLoading(true, "Saving payment settings...");
+          await db.ref("settings").update({ qrCodeUrl: url });
+          showToast("Payment settings saved!");
+          document.getElementById("qr-preview").src = url;
+          document.getElementById("set-qr-url").value = url;
+        } catch (e) {
+          showToast("Error: " + e.message, "error");
+        } finally {
+          showLoading(false);
+        }
       }
 
       async function addGameMode() {

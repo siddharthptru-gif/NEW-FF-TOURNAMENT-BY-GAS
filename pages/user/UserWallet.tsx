@@ -16,7 +16,7 @@ const UserWallet: React.FC = () => {
   const [loading, setLoading] = useState(false);
   
   // Image handling state
-  const [qrSrc] = useState<string>("https://kommodo.ai/i/Fjm8jqq9o6JXeG2SYYCC");
+  const [qrSrc, setQrSrc] = useState<string>("");
   const [imgError, setImgError] = useState(false);
 
   useEffect(() => {
@@ -35,11 +35,17 @@ const UserWallet: React.FC = () => {
       });
     }
 
+    const settingsRef = db.ref('settings/qrCodeUrl');
+    settingsRef.on('value', (snapshot) => {
+        setQrSrc(snapshot.val() || "");
+    });
+
     return () => {
       if (user) {
         db.ref(`users/${user.uid}`).off();
         db.ref(`users/${user.uid}/transactions`).off();
       }
+      settingsRef.off();
     };
   }, []);
 

@@ -2,6 +2,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { db, storage } from '../../firebase';
 import { Tournament, UserData } from '../../types';
+import { uploadImageToImgBB } from '../../utils/imageUpload';
 
 const AdminManageTournaments: React.FC = () => {
   const [tournaments, setTournaments] = useState<Tournament[]>([]);
@@ -10,8 +11,10 @@ const AdminManageTournaments: React.FC = () => {
   const [editMatchId, setEditMatchId] = useState<string | null>(null);
   const [manageResultsId, setManageResultsId] = useState<string | null>(null);
   const [commentText, setCommentText] = useState('');
+  const [proofFile, setProofFile] = useState<File | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const editFileInputRef = useRef<HTMLInputElement>(null);
+  const proofInputRef = useRef<HTMLInputElement>(null);
 
   const [formData, setFormData] = useState({
     title: '',
@@ -185,6 +188,23 @@ const AdminManageTournaments: React.FC = () => {
       alert(error.message);
     } finally {
       setIsUploading(false);
+    }
+  };
+
+  const uploadProof = async () => {
+    if (!manageResultsId || !proofFile) return;
+    setIsUploading(true);
+    try {
+        const url = await uploadImageToImgBB(proofFile);
+        const proofRef = db.ref(`tournaments/${manageResultsId}/matchProofImages`).push();
+        await proofRef.set(url);
+        setProofFile(null);
+        if (proofInputRef.current) proofInputRef.current.value = '';
+        alert("Proof uploaded!");
+    } catch (err: any) {
+        alert(err.message);
+    } finally {
+        setIsUploading(false);
     }
   };
 
@@ -440,6 +460,22 @@ const AdminManageTournaments: React.FC = () => {
             <button onClick={() => setManageResultsId(null)} className="absolute top-6 right-6 text-gray-400"><i className="fas fa-times"></i></button>
             <h3 className="text-lg font-black mb-4 uppercase tracking-tighter">Manage Results</h3>
             
+            <div className="mb-4 space-y-2">
+              <label className="text-[8px] font-black uppercase text-gray-400">Upload Match Proof</label>
+              <div className="flex gap-2">
+                <input 
+                  type="file" 
+                  ref={proofInputRef}
+                  accept="image/*"
+                  onChange={e => setProofFile(e.target.files?.[0] || null)}
+                  className="flex-1 p-3 bg-gray-50 border rounded-xl text-[10px] font-bold outline-none"
+                />
+                <button onClick={uploadProof} disabled={isUploading} className="px-4 bg-indigo-600 text-white text-[8px] font-black uppercase rounded-xl">
+                    {isUploading ? 'Uploading...' : 'Upload'}
+                </button>
+              </div>
+            </div>
+
             <div className="mb-4 space-y-2">
               <label className="text-[8px] font-black uppercase text-gray-400">Commentary</label>
               <div className="flex gap-2">

@@ -952,41 +952,6 @@
       </div>
     </div>
 
-    <!-- Submit Result Modal -->
-    <div
-      id="submit-result-modal"
-      class="fixed inset-0 bg-black/60 z-[110] hidden items-center justify-center p-4"
-    >
-      <div class="bg-white w-full max-w-xs rounded-[40px] p-8 relative">
-        <button
-          onclick="closeSubmitResultModal()"
-          class="absolute top-6 right-6 text-gray-300"
-        >
-          <i class="fas fa-times"></i>
-        </button>
-        <h4 class="font-black text-center uppercase mb-6 text-gray-900">
-          Submit Result
-        </h4>
-        <div class="space-y-4">
-          <p class="text-[8px] text-center text-gray-400 font-bold uppercase">
-            Upload a screenshot of your match result to claim your prize.
-          </p>
-          <input
-            type="file"
-            id="result-screenshot-input"
-            accept="image/*"
-            class="w-full p-4 bg-gray-50 border rounded-2xl font-bold text-sm outline-none"
-          />
-          <button
-            onclick="confirmSubmitResult()"
-            class="w-full py-4 custom-gradient text-white font-black rounded-2xl shadow-lg uppercase text-xs"
-          >
-            Upload Screenshot
-          </button>
-        </div>
-      </div>
-    </div>
-
     <!-- Match Details Modal -->
     <div
       id="match-details-modal"
@@ -1139,6 +1104,17 @@
               id="md-comments"
               class="space-y-3 text-xs font-bold text-gray-800 bg-white p-3 rounded-xl shadow-sm"
             ></div>
+          </div>
+
+          <div id="md-proof-section" class="bg-gray-50 p-5 rounded-2xl border border-gray-100 hidden">
+            <p class="text-[10px] font-black uppercase text-gray-500 mb-3 text-center">
+              Match Proof (by Admin)
+            </p>
+            <div id="md-proof-images" class="grid grid-cols-2 gap-2">
+                <a href="" target="_blank" class="block w-full aspect-video rounded-xl overflow-hidden border border-gray-200">
+                  <img src="" class="w-full h-full object-cover hover:scale-110 transition-transform duration-300">
+                </a>
+            </div>
           </div>
         </div>
 
@@ -1940,9 +1916,7 @@
             };
 
             const processedUsers = allUsers.map(u => {
-              const currentWalletWinnings = clean(u.wallet?.winnings);
-              // Use totalWinnings for lifetime leaderboard if available, otherwise fallback to current wallet winnings
-              const winnings = u.totalWinnings !== undefined ? clean(u.totalWinnings) : currentWalletWinnings;
+              const winnings = clean(u.totalWinnings);
               return { ...u, winnings };
             });
 
@@ -2103,6 +2077,22 @@
               .join("");
           } else {
             commentsSection.classList.add("hidden");
+          }
+
+          // Match Proof Images
+          const proofSection = document.getElementById("md-proof-section");
+          const proofContainer = document.getElementById("md-proof-images");
+          if (t.resultImageUrl) {
+            if (proofSection) proofSection.classList.remove("hidden");
+            if (proofContainer) {
+              proofContainer.innerHTML = `
+                <a href="${t.resultImageUrl}" target="_blank" class="block w-full aspect-video rounded-xl overflow-hidden border border-gray-200">
+                  <img src="${t.resultImageUrl}" class="w-full h-full object-cover hover:scale-110 transition-transform duration-300">
+                </a>
+              `;
+            }
+          } else {
+            if (proofSection) proofSection.classList.add("hidden");
           }
 
           // Participants
@@ -2909,7 +2899,6 @@
                         `
                             : ""
                         }
-                        ${t.status !== "Completed" && t.status !== "Live" ? `<button onclick="submitResultPrompt('${id}')" class="w-full py-2 bg-gray-100 text-gray-500 text-[9px] font-black rounded-xl uppercase">Submit Result Screenshot</button>` : ""}
                     </div>`;
               })
               .join("");
@@ -2925,58 +2914,6 @@
         navigator.clipboard.writeText(rid);
         alert("Room ID Copied! Opening Free Fire...");
         window.location.href = "intent:#Intent;package=com.dts.freefireth;end";
-      }
-
-      let resultMatchId = null;
-      function submitResultPrompt(id) {
-        resultMatchId = id;
-        document
-          .getElementById("submit-result-modal")
-          .classList.replace("hidden", "flex");
-      }
-
-      function closeSubmitResultModal() {
-        document.getElementById("submit-result-modal").classList.remove("flex");
-        document.getElementById("submit-result-modal").classList.add("hidden");
-        resultMatchId = null;
-      }
-
-      async function confirmSubmitResult() {
-        if (!resultMatchId) return;
-        const fileInput = document.getElementById("result-screenshot-input");
-        if (fileInput.files.length === 0)
-          return alert("Please select a screenshot!");
-
-        const btn = document.querySelector(
-          "#submit-result-modal button.custom-gradient",
-        );
-        const originalText = btn.innerText;
-        btn.innerText = "Uploading...";
-        btn.disabled = true;
-
-        try {
-          const file = fileInput.files[0];
-          const imageUrl = await compressImage(file, `results/${resultMatchId}/${currentUser.uid}`);
-
-          await db
-            .ref(`tournaments/${resultMatchId}/participants/${currentUser.uid}`)
-            .update({
-              resultScreenshot: imageUrl,
-              resultSubmittedAt: Date.now(),
-            });
-
-          alert("Result submitted successfully!");
-          closeSubmitResultModal();
-        } catch (e) {
-          handleFirebaseError(
-            e,
-            "update",
-            `tournaments/${resultMatchId}/participants/${currentUser.uid}`,
-          );
-        } finally {
-          btn.innerText = originalText;
-          btn.disabled = false;
-        }
       }
 
       async function logout() {
@@ -3169,7 +3106,7 @@
               .slice(0, 10);
 
             const depHtml =
-              recentDeps
+              recentDeps.length > 0 ? recentDeps
                 .map(
                   (d) => {
                     let statusText = `Deposit (${d.status})`;
@@ -3189,11 +3126,10 @@
                         </div>`;
                   }
                 )
-                .join("") ||
-              '<p class="text-center text-xs text-gray-400 py-4 font-bold uppercase">No Deposits</p>';
+                .join("") : '<p class="text-center text-xs text-gray-400 py-4 font-bold uppercase">No Deposits</p>';
 
             const withHtml =
-              recentWiths
+              recentWiths.length > 0 ? recentWiths
                 .map(
                   (w) => `
                         <div class="bg-white p-3 rounded-2xl border flex justify-between items-center">
@@ -3201,8 +3137,7 @@
                             <p class="text-sm font-black text-red-600">- ₹${w.amount}</p>
                         </div>`,
                 )
-                .join("") ||
-              '<p class="text-center text-xs text-gray-400 py-4 font-bold uppercase">No Withdrawals</p>';
+                .join("") : '<p class="text-center text-xs text-gray-400 py-4 font-bold uppercase">No Withdrawals</p>';
 
             const depContainer = document.getElementById("deposit-history");
             if (depContainer) depContainer.innerHTML = depHtml;

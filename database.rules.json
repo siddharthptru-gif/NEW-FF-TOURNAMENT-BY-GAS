@@ -2,9 +2,9 @@
   "rules": {
     // Helper: Check if user is a hardcoded admin or has the admin role in DB
     "users": {
-      ".indexOn": ["appId"],
-      // Allow admins to read the entire users list
-      ".read": "auth != null && (root.child('users').child(auth.uid).child('role').val() === 'admin' || auth.token.email === 'siddharthptru@gmail.com' || auth.token.email === 'user-siddharthptru@gmail.com' || auth.token.email === '37488473@gmail.com')",
+      ".indexOn": ["appId", "username"],
+      // Allow all authenticated users to read the users list for the leaderboard
+      ".read": "auth != null",
       "$uid": {
         ".read": "auth != null && (auth.uid === $uid || root.child('users').child(auth.uid).child('role').val() === 'admin' || auth.token.email === 'siddharthptru@gmail.com')",
         ".write": "auth != null && (auth.uid === $uid || root.child('users').child(auth.uid).child('role').val() === 'admin' || auth.token.email === 'siddharthptru@gmail.com')"
@@ -18,6 +18,10 @@
     },
     "settings": {
       ".read": "true",
+      ".write": "auth != null && (root.child('users').child(auth.uid).child('role').val() === 'admin' || auth.token.email === 'siddharthptru@gmail.com')"
+    },
+    "leaderboard": {
+      ".read": "auth != null",
       ".write": "auth != null && (root.child('users').child(auth.uid).child('role').val() === 'admin' || auth.token.email === 'siddharthptru@gmail.com')"
     },
     "tournaments": {
@@ -47,12 +51,14 @@
       ".write": "auth != null"
     },
     "addMoneyRequests": {
-      ".read": "auth != null && (root.child('users').child(auth.uid).child('role').val() === 'admin' || auth.token.email === 'siddharthptru@gmail.com')",
-      ".write": "auth != null"
+      ".read": "auth != null && (root.child('users').child(auth.uid).child('role').val() === 'admin' || auth.token.email === 'siddharthptru@gmail.com' || query.orderByChild == 'uid' && query.equalTo == auth.uid)",
+      ".write": "auth != null",
+      ".indexOn": ["uid"]
     },
     "withdrawRequests": {
-      ".read": "auth != null && (root.child('users').child(auth.uid).child('role').val() === 'admin' || auth.token.email === 'siddharthptru@gmail.com')",
-      ".write": "auth != null"
+      ".read": "auth != null && (root.child('users').child(auth.uid).child('role').val() === 'admin' || auth.token.email === 'siddharthptru@gmail.com' || query.orderByChild == 'uid' && query.equalTo == auth.uid)",
+      ".write": "auth != null",
+      ".indexOn": ["uid"]
     },
     "reports": {
       ".read": "auth != null && (root.child('users').child(auth.uid).child('role').val() === 'admin' || auth.token.email === 'siddharthptru@gmail.com')",
