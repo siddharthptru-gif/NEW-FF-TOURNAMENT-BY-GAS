@@ -1261,13 +1261,35 @@
           return parseFloat(String(val).replace(/[^\d.]/g, "")) || 0;
         };
         const currentWalletWinnings = clean(userData.wallet?.winnings);
-        const earnings = userData.totalWinnings !== undefined ? clean(userData.totalWinnings) : currentWalletWinnings;
+        let earnings = userData.totalWinnings !== undefined ? clean(userData.totalWinnings) : currentWalletWinnings;
         const deposits = clean(userData.wallet_deposit);
         const withdrawals = userData.totalWithdrawals || 0;
 
+        // Calculate total winnings from transactions if available
+        if (currentUser) {
+            db.ref(`users/${currentUser.uid}/transactions`).once("value", (txSnap) => {
+                const txns = txSnap.val() || {};
+                let calculatedWinnings = 0;
+                let hasWinningsTx = false;
+                Object.values(txns).forEach(tx => {
+                    // Only count winnings additions
+                    if (tx.type === "credit" && tx.message && tx.message.includes("WINNINGS")) {
+                        calculatedWinnings += parseFloat(tx.amount) || 0;
+                        hasWinningsTx = true;
+                    }
+                });
+                
+                if (hasWinningsTx) {
+                    earnings = calculatedWinnings;
+                }
+                animateCounter("stat-total-won", earnings);
+            });
+        } else {
+            animateCounter("stat-total-won", earnings);
+        }
+
         animateCounter("stat-matches-played", matches);
         animateCounter("stat-total-kills", kills);
-        animateCounter("stat-total-won", earnings);
         animateCounter("stat-total-wins", wins);
         animateCounter("stat-total-deposits", deposits);
         animateCounter("stat-total-withdrawals", withdrawals);
@@ -3203,7 +3225,7 @@
                     (t) => `
                     <div class="bg-white p-3 rounded-2xl border flex justify-between items-center">
                         <div>
-                            <p class="text-xs font-black uppercase">${t.description || (t.type === "credit" ? "Credit" : "Debit")}</p>
+                            <p class="text-xs font-black uppercase">${t.message || t.description || (t.type === "credit" ? "Credit" : "Debit")}</p>
                             <p class="text-[10px] text-gray-400 font-bold">${t.timestamp ? new Date(t.timestamp).toLocaleString() : "N/A"}</p>
                         </div>
                         <p class="text-sm font-black ${t.type === "credit" ? "text-green-600" : "text-red-600"}">

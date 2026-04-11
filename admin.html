@@ -1597,17 +1597,21 @@
         let customMessage = document.getElementById("edit-message").value.trim();
         if (isNaN(amount)) return showToast("Enter valid amount", "error");
 
-        db.ref(`users/${uid}/${walletType}`).transaction(
+        // The actual path in the database for winnings is wallet/winnings
+        // The actual path for deposit is wallet_deposit
+        const dbPath = walletType === 'wallet/winnings' ? `users/${uid}/wallet/winnings` : `users/${uid}/${walletType}`;
+
+        db.ref(dbPath).transaction(
           (current) => (current || 0) + amount * multiplier,
         );
         
-        if (walletType === "wallet/winnings") {
+        // Only update totalWinnings if the walletType is actually winnings and we are adding
+        if (walletType === "wallet/winnings" && multiplier === 1) {
           db.ref(`users/${uid}`).once("value", (snap) => {
             const user = snap.val();
             if (user) {
               const currentTotalWinnings = user.totalWinnings !== undefined ? user.totalWinnings : (user.wallet && user.wallet.winnings ? user.wallet.winnings : 0);
-              let newTotal = currentTotalWinnings + (amount * multiplier);
-              if (multiplier === -1) newTotal = Math.max(0, newTotal);
+              let newTotal = currentTotalWinnings + amount;
               db.ref(`users/${uid}/totalWinnings`).set(newTotal);
             }
           });
@@ -1616,7 +1620,8 @@
         if (!customMessage) {
             customMessage = multiplier === 1 ? "CREDIT BY ADMINS" : "DEBIT BY ADMINS";
         } else {
-            customMessage = customMessage.toUpperCase() + (multiplier === 1 ? " (CREDIT BY ADMINS)" : " (DEBIT BY ADMINS)");
+            // Keep the custom message exactly as typed, just append the credit/debit note
+            customMessage = customMessage + (multiplier === 1 ? " (CREDIT)" : " (DEBIT)");
         }
 
         const txData = {
@@ -1624,12 +1629,15 @@
             type: multiplier === 1 ? "credit" : "debit",
             status: "Approved",
             message: customMessage,
+            description: customMessage, // Save to both for backward compatibility
             timestamp: Date.now()
         };
         db.ref(`users/${uid}/transactions`).push(txData);
         db.ref("transactions").push({ uid, ...txData });
         
         showToast("Wallet updated!");
+        document.getElementById("edit-amount").value = "";
+        document.getElementById("edit-message").value = "";
       }
 
       function updateStats(uid) {
