@@ -11,12 +11,12 @@ const AdminTickets: React.FC = () => {
   const chatEndRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
-    const ticketsRef = db.ref('tickets');
+    const ticketsRef = db.ref('supportTickets');
     const handleValue = (snapshot: any) => {
       const data = snapshot.val();
       if (data) {
         setTickets(Object.keys(data).map(key => ({ ...data[key], id: key }))
-          .sort((a, b) => b.lastUpdate - a.lastUpdate));
+          .sort((a, b) => b.createdAt - a.createdAt));
       }
     };
     ticketsRef.on('value', handleValue);
@@ -25,7 +25,7 @@ const AdminTickets: React.FC = () => {
 
   useEffect(() => {
     if (selectedTicketId) {
-      const msgsRef = db.ref(`tickets/${selectedTicketId}/messages`);
+      const msgsRef = db.ref(`supportMessages/${selectedTicketId}`);
       const handleMsgs = (snapshot: any) => {
         const data = snapshot.val();
         if (data) {
@@ -49,11 +49,10 @@ const AdminTickets: React.FC = () => {
     if (!replyText.trim() || !selectedTicketId) return;
 
     try {
-      const msgRef = db.ref(`tickets/${selectedTicketId}/messages`).push();
+      const msgRef = db.ref(`supportMessages/${selectedTicketId}`).push();
       const newMsg: ChatMessage = {
         senderId: 'admin',
         senderName: 'Admin Support',
-        // Fix: Added required senderAppId property
         senderAppId: 'ADMIN',
         role: 'admin',
         text: replyText.trim(),
@@ -61,9 +60,10 @@ const AdminTickets: React.FC = () => {
       };
 
       await msgRef.set(newMsg);
-      await db.ref(`tickets/${selectedTicketId}`).update({
+      await db.ref(`supportTickets/${selectedTicketId}`).update({
         lastUpdate: Date.now(),
-        lastMessage: replyText.trim()
+        lastMessage: replyText.trim(),
+        status: 'Answered'
       });
       setReplyText('');
     } catch (err: any) { alert(err.message); }
@@ -71,7 +71,7 @@ const AdminTickets: React.FC = () => {
 
   const closeTicket = async () => {
     if (selectedTicketId && window.confirm("Close this ticket?")) {
-      await db.ref(`tickets/${selectedTicketId}`).update({ status: 'resolved' });
+      await db.ref(`supportTickets/${selectedTicketId}`).update({ status: 'Resolved' });
       setSelectedTicketId(null);
     }
   };

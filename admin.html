@@ -1819,7 +1819,7 @@
                                     <h3 class="font-bold text-lg">${ticket.username || "User"} (${ticket.appId || "No ID"})</h3>
                                     <p class="text-sm text-gray-400">Status: ${ticket.status} | Last: ${ticket.lastMessage || "No message"}</p>
                                 </div>
-                                ${ticket.status === "open" ? '<span class="bg-blue-600 px-2 py-1 rounded-full text-xs">New</span>' : ""}
+                                ${ticket.status === "Open" ? '<span class="bg-blue-600 px-2 py-1 rounded-full text-xs">New</span>' : ""}
                             </div>
                         `;
               });
@@ -1871,9 +1871,9 @@
                                 <button onclick="replyToTicket('${key}')" class="px-6 py-3 bg-blue-600 rounded-xl font-bold">Send</button>
                             </div>
                             <div class="mt-4 flex gap-2">
-                                <button onclick="updateTicketStatus('${key}', 'open')" class="flex-1 p-2 bg-gray-600 rounded-lg text-xs font-bold">Mark Open</button>
-                                <button onclick="updateTicketStatus('${key}', 'answered')" class="flex-1 p-2 bg-green-600 rounded-lg text-xs font-bold">Mark Answered</button>
-                                <button onclick="updateTicketStatus('${key}', 'closed')" class="flex-1 p-2 bg-red-600 rounded-lg text-xs font-bold">Close Ticket</button>
+                                <button onclick="updateTicketStatus('${key}', 'Open')" class="flex-1 p-2 bg-gray-600 rounded-lg text-xs font-bold">Mark Open</button>
+                                <button onclick="updateTicketStatus('${key}', 'Answered')" class="flex-1 p-2 bg-green-600 rounded-lg text-xs font-bold">Mark Answered</button>
+                                <button onclick="updateTicketStatus('${key}', 'Resolved')" class="flex-1 p-2 bg-red-600 rounded-lg text-xs font-bold">Close Ticket</button>
                             </div>
                         </div>
                     `;
@@ -1894,7 +1894,7 @@
         db.ref(`supportTickets/${key}`).update({
           lastMessage: text,
           lastUpdate: Date.now(),
-          status: "answered",
+          status: "Answered",
         });
         document.getElementById("reply-text").value = "";
       }
