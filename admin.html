@@ -14,55 +14,82 @@
     <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-database.js"></script>
     <style>
       :root {
-        --theme-bg: #0f172a;
-        --theme-surface: #1f2937;
-        --theme-surface-2: #374151;
-        --theme-text: #f8fafc;
-        --theme-text-muted: #9ca3af;
+        --premium-bg: #0a0a0c;
+        --premium-surface: rgba(255, 255, 255, 0.03);
+        --premium-border: rgba(255, 255, 255, 0.08);
+        --premium-accent: #3b82f6;
+        --premium-text: #ffffff;
+        --premium-text-muted: #94a3b8;
       }
       body {
         font-family: "Inter", sans-serif;
+        background-color: var(--premium-bg);
+        color: var(--premium-text);
       }
-      .dark-theme {
-        background-color: var(--theme-bg) !important;
-        color: var(--theme-text) !important;
+      .glass {
+        background: var(--premium-surface);
+        backdrop-filter: blur(12px);
+        -webkit-backdrop-filter: blur(12px);
+        border: 1px solid var(--premium-border);
       }
-      .bg-gray-800 {
-        background-color: var(--theme-surface) !important;
+      .glass-card {
+        background: rgba(255, 255, 255, 0.02);
+        backdrop-filter: blur(8px);
+        -webkit-backdrop-filter: blur(8px);
+        border: 1px solid rgba(255, 255, 255, 0.05);
+        transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
       }
-      .bg-gray-700 {
-        background-color: var(--theme-surface-2) !important;
-      }
-      .bg-gray-600 {
-        background-color: var(--theme-surface-2) !important;
-      }
-      .text-gray-400 {
-        color: var(--theme-text-muted) !important;
-      }
-      .text-white:not(button):not(button *):not([class*="bg-blue-"]):not([class*="bg-red-"]):not([class*="bg-green-"]):not([class*="bg-pink-"]):not([class*="bg-purple-"]) {
-        color: var(--theme-text) !important;
+      .sidebar-item {
+        transition: all 0.2s ease;
+        border: 1px solid transparent;
       }
       .sidebar-item:hover {
-        background-color: var(--theme-surface-2) !important;
+        background: rgba(255, 255, 255, 0.05) !important;
+        border-color: rgba(255, 255, 255, 0.1);
       }
       .sidebar-item.active {
-        background-color: #3b82f6 !important;
+        background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%) !important;
         color: #ffffff !important;
+        box-shadow: 0 4px 12px rgba(59, 130, 246, 0.3);
+      }
+      .custom-scrollbar::-webkit-scrollbar {
+        width: 4px;
+      }
+      .custom-scrollbar::-webkit-scrollbar-track {
+        background: transparent;
+      }
+      .custom-scrollbar::-webkit-scrollbar-thumb {
+        background: rgba(255, 255, 255, 0.1);
+        border-radius: 10px;
+      }
+      .custom-scrollbar::-webkit-scrollbar-thumb:hover {
+        background: rgba(255, 255, 255, 0.2);
+      }
+      .cinematic-overlay {
+        position: fixed;
+        inset: 0;
+        background: radial-gradient(circle at 50% 50%, transparent 0%, rgba(0,0,0,0.4) 100%);
+        pointer-events: none;
+        z-index: 1;
       }
     </style>
   </head>
-  <body class="dark-theme">
+  <body class="bg-[#0a0a0c] text-white">
+    <div class="cinematic-overlay"></div>
     <!-- Loading Overlay -->
     <div
       id="loading-overlay"
-      class="fixed inset-0 bg-gray-900/90 z-[9999] flex-col items-center justify-center hidden"
+      class="fixed inset-0 bg-black/80 backdrop-blur-md z-[9999] flex flex-col items-center justify-center hidden"
     >
-      <div class="bg-gray-800 p-8 rounded-2xl border border-gray-700 shadow-2xl flex flex-col items-center space-y-4 max-w-xs w-full mx-4">
-        <i class="fas fa-spinner fa-spin text-5xl text-blue-500"></i>
-        <p class="text-white font-medium text-center" id="loading-text">Processing...</p>
+      <div class="glass-card p-10 rounded-3xl border border-white/10 shadow-2xl flex flex-col items-center space-y-6 max-w-xs w-full mx-4">
+        <div class="relative">
+            <div class="w-16 h-16 border-4 border-blue-500/20 border-t-blue-500 rounded-full animate-spin"></div>
+            <i class="fas fa-shield-alt absolute inset-0 flex items-center justify-center text-blue-500 text-xl"></i>
+        </div>
+        <p class="text-white font-bold text-center tracking-tight" id="loading-text">Processing...</p>
         <button 
           onclick="forceCancelLoading()" 
-          class="mt-4 px-4 py-2 bg-red-600/20 hover:bg-red-600/40 text-red-400 text-sm font-medium rounded-lg border border-red-600/30 transition-colors"
+          class="mt-4 px-6 py-2.5 bg-red-500/10 hover:bg-red-500/20 text-red-400 text-[10px] font-black uppercase tracking-widest rounded-xl border border-red-500/20 transition-all active:scale-95"
         >
           Cancel Operation
         </button>
@@ -83,8 +110,8 @@
         <h2 class="text-2xl font-black text-white mb-6 uppercase text-center tracking-tighter">Admin Login</h2>
         <div id="login-error" class="text-red-500 mb-4 text-sm hidden text-center font-bold"></div>
         <div class="space-y-4">
-          <input type="text" id="login-email" placeholder="Email Address" class="w-full p-4 bg-gray-700 rounded-2xl text-white outline-none border border-transparent focus:border-blue-500 transition-all" />
-          <input type="password" id="login-password" placeholder="Password" class="w-full p-4 bg-gray-700 rounded-2xl text-white outline-none border border-transparent focus:border-blue-500 transition-all" />
+          <input type="text" id="login-email" placeholder="Email Address" class="w-full p-4 bg-white/5 border border-white/10 rounded-2xl text-white outline-none focus:border-blue-500 transition-all" />
+          <input type="password" id="login-password" placeholder="Password" class="w-full p-4 bg-white/5 border border-white/10 rounded-2xl text-white outline-none focus:border-blue-500 transition-all" />
           <button id="login-btn" onclick="handleLogin()" class="w-full py-4 bg-blue-600 text-white font-black rounded-2xl uppercase active:scale-95 transition-all cursor-pointer hover:bg-blue-700 shadow-lg shadow-blue-900/20">
             Login
           </button>
@@ -95,116 +122,124 @@
     <!-- Admin Layout -->
     <div id="admin-layout" class="hidden flex h-screen">
       <!-- Sidebar -->
-      <aside class="w-64 bg-gray-800 p-6 flex flex-col">
-        <h1 class="text-xl font-black text-blue-500 mb-8 uppercase">
-          AddaClashX Admin
-        </h1>
-        <nav class="space-y-2 flex-1">
-          <button
-            onclick="showSection('dashboard')"
-            class="sidebar-item w-full text-left p-3 rounded-xl font-bold active"
-          >
-            Dashboard
-          </button>
-          <button
-            onclick="showSection('analytics')"
-            class="sidebar-item w-full text-left p-3 rounded-xl font-bold"
-          >
-            Analytics
-          </button>
-          <button
-            onclick="showSection('users')"
-            class="sidebar-item w-full text-left p-3 rounded-xl font-bold"
-          >
-            Users
-          </button>
-          <button
-            onclick="showSection('moderation')"
-            class="sidebar-item w-full text-left p-3 rounded-xl font-bold"
-          >
-            Moderation
-          </button>
-          <button
-            onclick="showSection('tournaments')"
-            class="sidebar-item w-full text-left p-3 rounded-xl font-bold"
-          >
-            Tournaments
-          </button>
-          <button
-            onclick="showSection('wallet')"
-            class="sidebar-item w-full text-left p-3 rounded-xl font-bold"
-          >
-            Wallet
-          </button>
-          <button
-            onclick="showSection('bulk')"
-            class="sidebar-item w-full text-left p-3 rounded-xl font-bold"
-          >
-            Bulk Tools
-          </button>
-          <button
-            onclick="showSection('notifications')"
-            class="sidebar-item w-full text-left p-3 rounded-xl font-bold"
-          >
-            Notifications
-          </button>
-          <button
-            onclick="showSection('modes')"
-            class="sidebar-item w-full text-left p-3 rounded-xl font-bold"
-          >
-            Game Modes
-          </button>
-          <button
-            onclick="showSection('support')"
-            class="sidebar-item w-full text-left p-3 rounded-xl font-bold"
-          >
-            Support
-          </button>
-          <button
-            onclick="showSection('banners')"
-            class="sidebar-item w-full text-left p-3 rounded-xl font-bold"
-          >
-            Banners
-          </button>
-          <button
-            onclick="showSection('leaderboard')"
-            class="sidebar-item w-full text-left p-3 rounded-xl font-bold"
-          >
-            Leaderboard
-          </button>
-          <button
-            onclick="showSection('settings')"
-            class="sidebar-item w-full text-left p-3 rounded-xl font-bold"
-          >
-            Settings
-          </button>
+      <aside class="w-64 glass border-r border-white/5 p-6 flex flex-col relative z-20">
+        <div class="mb-10">
+          <h1 class="text-2xl font-black text-white uppercase tracking-tighter flex items-center gap-2">
+            <span class="w-8 h-8 bg-blue-600 rounded-lg flex items-center justify-center shadow-lg shadow-blue-600/20">
+                <i class="fas fa-shield-alt text-sm"></i>
+            </span>
+            AddaClashX
+          </h1>
+          <p class="text-[9px] text-slate-500 font-black uppercase tracking-[0.2em] mt-2 pl-1">Admin Console</p>
+        </div>
+        
+        <nav class="space-y-6 flex-1 overflow-y-auto pr-2 custom-scrollbar">
+          <!-- Main Group -->
+          <div>
+            <p class="text-[10px] font-black text-slate-500 uppercase tracking-widest mb-3 px-3">Overview</p>
+            <div class="space-y-1">
+                <button onclick="showSection('dashboard')" class="sidebar-item w-full text-left p-3 rounded-xl font-bold text-sm flex items-center gap-3" data-section="dashboard">
+                  <i class="fas fa-th-large w-5 opacity-70"></i> Dashboard
+                </button>
+                <button onclick="showSection('analytics')" class="sidebar-item w-full text-left p-3 rounded-xl font-bold text-sm flex items-center gap-3" data-section="analytics">
+                  <i class="fas fa-chart-line w-5 opacity-70"></i> Analytics
+                </button>
+            </div>
+          </div>
+
+          <!-- Management Group -->
+          <div>
+            <p class="text-[10px] font-black text-slate-500 uppercase tracking-widest mb-3 px-3">Management</p>
+            <div class="space-y-1">
+                <button onclick="showSection('users')" class="sidebar-item w-full text-left p-3 rounded-xl font-bold text-sm flex items-center gap-3" data-section="users">
+                  <i class="fas fa-users w-5 opacity-70"></i> Users
+                </button>
+                <button onclick="showSection('moderation')" class="sidebar-item w-full text-left p-3 rounded-xl font-bold text-sm flex items-center gap-3" data-section="moderation">
+                  <i class="fas fa-shield-alt w-5 opacity-70"></i> Moderation
+                </button>
+                <button onclick="showSection('support')" class="sidebar-item w-full text-left p-3 rounded-xl font-bold text-sm flex items-center gap-3" data-section="support">
+                  <i class="fas fa-headset w-5 opacity-70"></i> Support
+                </button>
+            </div>
+          </div>
+
+          <!-- Content Group -->
+          <div>
+            <p class="text-[10px] font-black text-slate-500 uppercase tracking-widest mb-3 px-3">Content</p>
+            <div class="space-y-1">
+                <button onclick="showSection('tournaments')" class="sidebar-item w-full text-left p-3 rounded-xl font-bold text-sm flex items-center gap-3" data-section="tournaments">
+                  <i class="fas fa-trophy w-5 opacity-70"></i> Tournaments
+                </button>
+                <button onclick="showSection('modes')" class="sidebar-item w-full text-left p-3 rounded-xl font-bold text-sm flex items-center gap-3" data-section="modes">
+                  <i class="fas fa-gamepad w-5 opacity-70"></i> Game Modes
+                </button>
+                <button onclick="showSection('banners')" class="sidebar-item w-full text-left p-3 rounded-xl font-bold text-sm flex items-center gap-3" data-section="banners">
+                  <i class="fas fa-image w-5 opacity-70"></i> Banners
+                </button>
+                <button onclick="showSection('leaderboard')" class="sidebar-item w-full text-left p-3 rounded-xl font-bold text-sm flex items-center gap-3" data-section="leaderboard">
+                  <i class="fas fa-medal w-5 opacity-70"></i> Leaderboard
+                </button>
+            </div>
+          </div>
+
+          <!-- Financial Group -->
+          <div>
+            <p class="text-[10px] font-black text-slate-500 uppercase tracking-widest mb-3 px-3">Financial</p>
+            <div class="space-y-1">
+                <button onclick="showSection('wallet')" class="sidebar-item w-full text-left p-3 rounded-xl font-bold text-sm flex items-center gap-3" data-section="wallet">
+                  <i class="fas fa-wallet w-5 opacity-70"></i> Wallet
+                </button>
+            </div>
+          </div>
+
+          <!-- System Group -->
+          <div>
+            <p class="text-[10px] font-black text-slate-500 uppercase tracking-widest mb-3 px-3">System</p>
+            <div class="space-y-1">
+                <button onclick="showSection('bulk')" class="sidebar-item w-full text-left p-3 rounded-xl font-bold text-sm flex items-center gap-3" data-section="bulk">
+                  <i class="fas fa-tools w-5 opacity-70"></i> Bulk Tools
+                </button>
+                <button onclick="showSection('notifications')" class="sidebar-item w-full text-left p-3 rounded-xl font-bold text-sm flex items-center gap-3" data-section="notifications">
+                  <i class="fas fa-bell w-5 opacity-70"></i> Notifications
+                </button>
+                <button onclick="showSection('settings')" class="sidebar-item w-full text-left p-3 rounded-xl font-bold text-sm flex items-center gap-3" data-section="settings">
+                  <i class="fas fa-cog w-5 opacity-70"></i> Settings
+                </button>
+            </div>
+          </div>
         </nav>
-        <button onclick="handleLogout()" class="text-red-400 font-bold text-sm">
-          <i class="fas fa-sign-out-alt mr-2"></i>Logout
-        </button>
+
+        <div class="mt-auto pt-6 border-t border-white/5">
+          <button onclick="handleLogout()" class="w-full flex items-center gap-3 p-3 text-red-400 font-bold hover:bg-red-500/10 rounded-xl transition-all active:scale-95 text-sm">
+            <i class="fas fa-sign-out-alt w-5"></i> Logout
+          </button>
+        </div>
       </aside>
 
       <!-- Main Content -->
-      <main class="flex-1 overflow-y-auto p-8">
-        <header class="flex justify-between items-center mb-8">
-          <h2 id="section-title" class="text-3xl font-black uppercase">
-            Dashboard
-          </h2>
+      <main class="flex-1 overflow-y-auto p-8 relative z-10">
+        <header class="flex justify-between items-center mb-10">
+          <div>
+            <h2 id="section-title" class="text-4xl font-black uppercase tracking-tighter">
+                Dashboard
+            </h2>
+            <p id="section-subtitle" class="text-slate-500 text-xs font-bold uppercase tracking-widest mt-1">System Overview & Live Stats</p>
+          </div>
           <div class="flex items-center gap-4">
             <div class="relative">
               <button
                 onclick="document.getElementById('theme-dropdown').classList.toggle('hidden')"
-                class="flex items-center justify-center w-10 h-10 bg-gray-700 rounded-full hover:bg-gray-600 transition-colors"
+                class="flex items-center justify-center w-12 h-12 bg-white/5 border border-white/10 rounded-2xl hover:bg-white/10 transition-all active:scale-95 shadow-lg"
                 title="Change Theme"
               >
-                <i class="fas fa-palette text-gray-200"></i>
+                <i class="fas fa-palette text-blue-400"></i>
               </button>
               <div
                 id="theme-dropdown"
-                class="hidden absolute right-0 mt-2 w-64 bg-gray-800 rounded-xl border border-gray-700 shadow-xl z-50 p-4"
+                class="hidden absolute right-0 mt-3 w-64 glass rounded-2xl border border-white/10 shadow-2xl z-50 p-5"
               >
-                <h3 class="text-sm font-bold text-gray-400 mb-3 uppercase tracking-wider">Interface Color</h3>
-                <div class="grid grid-cols-5 gap-2" id="color-swatches">
+                <h3 class="text-[10px] font-black text-slate-500 mb-4 uppercase tracking-[0.2em]">Interface Color</h3>
+                <div class="grid grid-cols-5 gap-3" id="color-swatches">
                   <!-- Swatches injected via JS -->
                 </div>
               </div>
@@ -212,30 +247,31 @@
             <div class="relative">
               <button
                 onclick="toggleProfileDropdown()"
-                class="flex items-center space-x-3 bg-gray-700 p-2 rounded-full"
+                class="flex items-center space-x-3 bg-white/5 border border-white/10 p-1.5 pr-4 rounded-2xl hover:bg-white/10 transition-all active:scale-95 shadow-lg"
               >
               <img
                 id="admin-pic"
                 src="https://ui-avatars.com/api/?name=Admin"
-                class="w-10 h-10 rounded-full"
+                class="w-9 h-9 rounded-xl border border-white/10"
               />
-              <span id="admin-name" class="font-bold text-gray-200 pr-2"></span>
+              <span id="admin-name" class="font-bold text-white text-sm"></span>
             </button>
             <div
               id="profile-dropdown"
-              class="hidden absolute right-0 mt-2 w-48 bg-gray-800 rounded-xl border border-gray-700 shadow-xl z-50"
+              class="hidden absolute right-0 mt-3 w-56 glass rounded-2xl border border-white/10 shadow-2xl z-50 overflow-hidden"
             >
               <button
                 onclick="openChangePasswordModal()"
-                class="w-full text-left p-3 text-blue-400 font-bold hover:bg-gray-700 rounded-xl"
+                class="w-full text-left p-4 text-white font-bold hover:bg-white/5 flex items-center gap-3 transition-colors"
               >
-                Change Password
+                <i class="fas fa-key text-blue-400"></i> Change Password
               </button>
+              <div class="h-px bg-white/5"></div>
               <button
                 onclick="handleLogout()"
-                class="w-full text-left p-3 text-red-400 font-bold hover:bg-gray-700 rounded-xl"
+                class="w-full text-left p-4 text-red-400 font-bold hover:bg-red-500/10 flex items-center gap-3 transition-colors"
               >
-                Logout
+                <i class="fas fa-sign-out-alt"></i> Logout
               </button>
             </div>
           </div>
@@ -243,7 +279,7 @@
         </header>
         <div
           id="content-area"
-          class="bg-gray-800 p-6 rounded-3xl border border-gray-700 min-h-[500px]"
+          class="min-h-[600px] animate-fade-rise"
         >
           <!-- Dynamic Content -->
         </div>
@@ -265,11 +301,11 @@
           type="text"
           id="match-name"
           placeholder="Title"
-          class="w-full p-4 bg-gray-700 rounded-xl mb-4 text-white outline-none"
+          class="w-full p-4 bg-white/5 border border-white/10 rounded-xl mb-4 text-white outline-none focus:border-blue-500 transition-all"
         />
         <select
           id="match-category"
-          class="w-full p-4 bg-gray-700 rounded-xl mb-4 text-white outline-none"
+          class="w-full p-4 bg-white/5 border border-white/10 rounded-xl mb-4 text-white outline-none focus:border-blue-500 transition-all"
         >
           <option value="">Select Mode</option>
         </select>
@@ -277,52 +313,52 @@
           type="number"
           id="match-entry"
           placeholder="Entry Fee"
-          class="w-full p-4 bg-gray-700 rounded-xl mb-4 text-white outline-none"
+          class="w-full p-4 bg-white/5 border border-white/10 rounded-xl mb-4 text-white outline-none focus:border-blue-500 transition-all"
         />
         <input
           type="number"
           id="match-prize"
           placeholder="Prize Pool"
-          class="w-full p-4 bg-gray-700 rounded-xl mb-4 text-white outline-none"
+          class="w-full p-4 bg-white/5 border border-white/10 rounded-xl mb-4 text-white outline-none focus:border-blue-500 transition-all"
         />
         <input
           type="number"
           id="match-perkill"
           placeholder="Per Kill Prize"
-          class="w-full p-4 bg-gray-700 rounded-xl mb-4 text-white outline-none"
+          class="w-full p-4 bg-white/5 border border-white/10 rounded-xl mb-4 text-white outline-none focus:border-blue-500 transition-all"
         />
         <input
           type="number"
           id="match-maxplayers"
           placeholder="Max Players"
-          class="w-full p-4 bg-gray-700 rounded-xl mb-4 text-white outline-none"
+          class="w-full p-4 bg-white/5 border border-white/10 rounded-xl mb-4 text-white outline-none focus:border-blue-500 transition-all"
         />
         <input
           type="datetime-local"
           id="match-time"
-          class="w-full p-4 bg-gray-700 rounded-xl mb-4 text-white outline-none"
+          class="w-full p-4 bg-white/5 border border-white/10 rounded-xl mb-4 text-white outline-none focus:border-blue-500 transition-all"
         />
         <textarea
           id="match-rules"
           placeholder="Rules"
-          class="w-full p-4 bg-gray-700 rounded-xl mb-4 text-white outline-none"
+          class="w-full p-4 bg-white/5 border border-white/10 rounded-xl mb-4 text-white outline-none focus:border-blue-500 transition-all"
         ></textarea>
         <textarea
           id="match-announcement"
           placeholder="Announcement (Visible to users)"
-          class="w-full p-4 bg-gray-700 rounded-xl mb-4 text-white outline-none"
+          class="w-full p-4 bg-white/5 border border-white/10 rounded-xl mb-4 text-white outline-none focus:border-blue-500 transition-all"
         ></textarea>
         <textarea
           id="match-admin-notes"
           placeholder="Pinned Notes (Visible to users)"
-          class="w-full p-4 bg-gray-700 rounded-xl mb-4 text-white outline-none"
+          class="w-full p-4 bg-white/5 border border-white/10 rounded-xl mb-4 text-white outline-none focus:border-blue-500 transition-all"
         ></textarea>
         <div class="mb-6">
           <input
             type="text"
             id="match-image"
             placeholder="Image URL"
-            class="w-full p-4 bg-gray-700 rounded-xl mb-2 text-white outline-none"
+            class="w-full p-4 bg-white/5 border border-white/10 rounded-xl mb-2 text-white outline-none focus:border-blue-500 transition-all"
           />
           <p class="text-center text-gray-400 mb-2">OR</p>
           <input
@@ -365,19 +401,19 @@
           type="password"
           id="admin-security-code"
           placeholder="Security Code"
-          class="w-full p-4 bg-gray-700 rounded-xl mb-4 text-white outline-none"
+          class="w-full p-4 bg-white/5 border border-white/10 rounded-xl mb-4 text-white outline-none focus:border-blue-500 transition-all"
         />
         <input
           type="password"
           id="admin-current-password"
           placeholder="Current Password"
-          class="w-full p-4 bg-gray-700 rounded-xl mb-4 text-white outline-none"
+          class="w-full p-4 bg-white/5 border border-white/10 rounded-xl mb-4 text-white outline-none focus:border-blue-500 transition-all"
         />
         <input
           type="password"
           id="admin-new-password"
           placeholder="New Password"
-          class="w-full p-4 bg-gray-700 rounded-xl mb-6 text-white outline-none"
+          class="w-full p-4 bg-white/5 border border-white/10 rounded-xl mb-6 text-white outline-none focus:border-blue-500 transition-all"
         />
         <div class="flex space-x-4">
           <button
@@ -745,10 +781,13 @@
         const contentArea = document.getElementById("content-area");
 
         document.querySelectorAll(".sidebar-item").forEach((btn) => {
-          btn.classList.toggle(
-            "active",
-            btn.innerText.toLowerCase() === sectionId,
-          );
+          const btnSection = btn.getAttribute('data-section');
+          btn.classList.toggle("active", btnSection === sectionId);
+          const icon = btn.querySelector('i');
+          if (icon) {
+            icon.classList.toggle("opacity-100", btnSection === sectionId);
+            icon.classList.toggle("opacity-70", btnSection !== sectionId);
+          }
         });
 
         if (sectionId === "dashboard") {
@@ -762,18 +801,22 @@
                         ${createStatCard("Pending Withdrawals", "withdrawals", "fa-money-bill-wave", "text-red-500")}
                     </div>
                     <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
-                        <div class="lg:col-span-2 bg-gray-700 p-6 rounded-3xl">
-                            <h3 class="text-xl font-bold mb-4">Recent Activity</h3>
+                        <div class="lg:col-span-2 glass-card p-8 rounded-3xl border border-white/5 shadow-2xl">
+                            <h3 class="text-xl font-black uppercase tracking-tight mb-6 flex items-center gap-3">
+                                <i class="fas fa-history text-blue-400"></i> Recent Activity
+                            </h3>
                             <div id="activity-feed" class="space-y-4"></div>
                         </div>
-                        <div class="bg-gray-700 p-6 rounded-3xl">
-                            <h3 class="text-xl font-bold mb-4">Quick Actions</h3>
+                        <div class="glass-card p-8 rounded-3xl border border-white/5 shadow-2xl">
+                            <h3 class="text-xl font-black uppercase tracking-tight mb-6 flex items-center gap-3">
+                                <i class="fas fa-bolt text-yellow-400"></i> Quick Actions
+                            </h3>
                             <div class="space-y-3">
-                                <button onclick="showSection('tournaments')" class="w-full p-4 bg-blue-600 rounded-xl font-bold">Create Tournament</button>
-                                <button onclick="showSection('wallet')" class="w-full p-4 bg-green-600 rounded-xl font-bold">Approve Deposits</button>
-                                <button onclick="showSection('leaderboard')" class="w-full p-4 bg-yellow-600 rounded-xl font-bold">Manage Leaderboard</button>
-                                <button onclick="showSection('banners')" class="w-full p-4 bg-pink-600 rounded-xl font-bold">Change Banners</button>
-                                <button onclick="showSection('support')" class="w-full p-4 bg-purple-600 rounded-xl font-bold">View Support Tickets</button>
+                                <button onclick="showSection('tournaments')" class="w-full p-4 bg-blue-600 text-white rounded-xl font-bold hover:bg-blue-700 transition-all active:scale-95 shadow-lg shadow-blue-600/20">Create Tournament</button>
+                                <button onclick="showSection('wallet')" class="w-full p-4 bg-green-600 text-white rounded-xl font-bold hover:bg-green-700 transition-all active:scale-95 shadow-lg shadow-green-600/20">Approve Deposits</button>
+                                <button onclick="showSection('leaderboard')" class="w-full p-4 bg-yellow-600 text-white rounded-xl font-bold hover:bg-yellow-700 transition-all active:scale-95 shadow-lg shadow-yellow-600/20">Manage Leaderboard</button>
+                                <button onclick="showSection('banners')" class="w-full p-4 bg-pink-600 text-white rounded-xl font-bold hover:bg-pink-700 transition-all active:scale-95 shadow-lg shadow-pink-600/20">Change Banners</button>
+                                <button onclick="showSection('support')" class="w-full p-4 bg-purple-600 text-white rounded-xl font-bold hover:bg-purple-700 transition-all active:scale-95 shadow-lg shadow-purple-600/20">View Support Tickets</button>
                             </div>
                         </div>
                     </div>
@@ -782,12 +825,13 @@
         } else if (sectionId === "banners") {
           contentArea.innerHTML = `
                     <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
-                        <div class="bg-gray-700 p-6 rounded-3xl">
-                            <h3 class="text-xl font-bold mb-6">Update Mode Banner</h3>
-                            <div class="space-y-4">
+                        <div class="glass-card p-8 rounded-3xl border border-white/5 shadow-2xl relative overflow-hidden">
+                            <div class="absolute top-0 right-0 w-32 h-32 bg-blue-600/5 rounded-full blur-3xl -mr-16 -mt-16"></div>
+                            <h3 class="text-2xl font-black uppercase tracking-tighter mb-8 relative z-10">Update Mode Banner</h3>
+                            <div class="space-y-6 relative z-10">
                                 <div>
-                                    <label class="block text-sm text-gray-400 mb-2">Select Game Mode</label>
-                                    <select id="banner-mode-select" class="w-full p-4 bg-gray-600 rounded-xl text-white outline-none border border-gray-500">
+                                    <label class="text-[10px] font-black text-slate-500 uppercase tracking-widest mb-2 block">Select Game Mode</label>
+                                    <select id="banner-mode-select" class="w-full p-4 bg-white/5 border border-white/10 rounded-xl text-white outline-none focus:border-blue-500 transition-all font-bold">
                                         <option value="">Select Mode</option>
                                         <option value="ALL">ALL</option>
                                         <option value="BATTLE ROYALE">BATTLE ROYALE</option>
@@ -802,18 +846,18 @@
                                     </select>
                                 </div>
                                 <div>
-                                    <label class="block text-sm text-gray-400 mb-2">Banner Image URL</label>
-                                    <input type="text" id="banner-url-input" placeholder="https://example.com/banner.jpg" class="w-full p-4 bg-gray-600 rounded-xl text-white outline-none border border-gray-500">
-                                    <p class="text-center text-gray-400 my-2">OR</p>
-                                    <input type="file" id="banner-image-upload" accept="image/*" class="w-full text-gray-400 mb-4">
+                                    <label class="text-[10px] font-black text-slate-500 uppercase tracking-widest mb-2 block">Banner Image URL</label>
+                                    <input type="text" id="banner-url-input" placeholder="https://..." class="w-full p-4 bg-white/5 border border-white/10 rounded-xl text-white outline-none focus:border-blue-500 transition-all font-bold">
+                                    <p class="text-center text-slate-500 my-4 font-black text-[10px] uppercase tracking-widest">OR UPLOAD IMAGE</p>
+                                    <input type="file" id="banner-image-upload" accept="image/*" class="w-full text-slate-500 text-[10px] font-bold file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-[10px] file:font-black file:bg-blue-600/20 file:text-blue-400 hover:file:bg-blue-600/30 cursor-pointer">
                                 </div>
-                                <button onclick="updateBanner()" class="w-full py-4 bg-blue-600 rounded-xl font-bold uppercase hover:bg-blue-700 transition">Save Banner</button>
+                                <button onclick="updateBanner()" class="w-full py-4 bg-blue-600 text-white font-black rounded-xl uppercase shadow-lg shadow-blue-600/20 active:scale-95 transition-all">Save Banner</button>
                             </div>
                         </div>
-                        <div class="bg-gray-700 p-6 rounded-3xl">
-                            <h3 class="text-xl font-bold mb-6">Current Banners</h3>
-                            <div id="banners-list" class="space-y-4 max-h-[500px] overflow-y-auto pr-2">
-                                <p class="text-gray-400 text-center py-8">Loading banners...</p>
+                        <div class="glass-card p-8 rounded-3xl border border-white/5 shadow-2xl">
+                            <h3 class="text-2xl font-black uppercase tracking-tighter mb-8">Current Banners</h3>
+                            <div id="banners-list" class="space-y-4 max-h-[500px] overflow-y-auto pr-2 custom-scrollbar">
+                                <p class="text-slate-500 text-center py-8 font-bold uppercase tracking-widest text-[10px]">Loading banners...</p>
                             </div>
                         </div>
                     </div>
@@ -821,30 +865,31 @@
           loadBanners();
         } else if (sectionId === "tournaments") {
           contentArea.innerHTML = `
-                    <div class="flex justify-between items-center mb-6">
-                        <div class="flex space-x-4">
-                            <button onclick="openCreateMatchModal()" class="bg-blue-600 text-white px-6 py-3 rounded-xl font-bold uppercase">Create Match</button>
-                            <button onclick="setAdminMatchFilter('running')" id="admin-filter-running" class="bg-blue-600 text-white px-6 py-3 rounded-xl font-bold uppercase">Running</button>
-                            <button onclick="setAdminMatchFilter('completed')" id="admin-filter-completed" class="bg-gray-700 text-white px-6 py-3 rounded-xl font-bold uppercase">Completed</button>
-                            <button onclick="setAdminMatchFilter('old')" id="admin-filter-old" class="bg-gray-700 text-white px-6 py-3 rounded-xl font-bold uppercase">Old Matches</button>
+                    <div class="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-8">
+                        <div class="flex flex-wrap gap-3">
+                            <button onclick="openCreateMatchModal()" class="bg-blue-600 text-white px-6 py-3 rounded-xl font-black uppercase shadow-lg shadow-blue-600/20 active:scale-95 transition-all">Create Match</button>
+                            <button onclick="setAdminMatchFilter('running')" id="admin-filter-running" class="bg-white/5 text-white px-6 py-3 rounded-xl font-bold uppercase border border-white/10 active:scale-95 transition-all">Running</button>
+                            <button onclick="setAdminMatchFilter('completed')" id="admin-filter-completed" class="bg-white/5 text-white px-6 py-3 rounded-xl font-bold uppercase border border-white/10 active:scale-95 transition-all">Completed</button>
+                            <button onclick="setAdminMatchFilter('old')" id="admin-filter-old" class="bg-white/5 text-white px-6 py-3 rounded-xl font-bold uppercase border border-white/10 active:scale-95 transition-all">Old Matches</button>
                         </div>
-                        <div class="bg-gray-800 px-4 py-2 rounded-xl border border-gray-700 text-center">
-                            <p class="text-[10px] text-gray-400 font-bold uppercase">IST Time</p>
-                            <p id="admin-clock" class="text-lg font-black text-blue-400">--:--:--</p>
+                        <div class="glass-card px-5 py-2.5 rounded-2xl border border-white/10 text-center shadow-xl">
+                            <p class="text-[8px] text-slate-500 font-black uppercase tracking-[0.2em] mb-0.5">IST Server Time</p>
+                            <p id="admin-clock" class="text-xl font-black text-blue-400 tracking-tighter">--:--:--</p>
                         </div>
                     </div>
-                    <div class="mb-6">
-                        <input type="text" id="match-search" placeholder="Search by 6-digit Match Code (e.g., 000001#)" class="w-full p-4 bg-gray-700 rounded-xl text-white outline-none border border-gray-600 focus:border-blue-500 transition-colors">
+                    <div class="mb-8">
+                        <h4 class="text-[10px] font-black text-slate-500 uppercase tracking-widest mb-3">Quick Search</h4>
+                        <input type="text" id="match-search" placeholder="Search by 6-digit Match Code (e.g., 000001#)" class="w-full p-4 bg-white/5 rounded-2xl text-white outline-none border border-white/10 focus:border-blue-500 transition-all font-bold">
                     </div>
                     
-                    <div id="admin-categories-view" class="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-5 gap-4 mb-6">
+                    <div id="admin-categories-view" class="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-5 gap-4 mb-8">
                         <!-- Categories will be loaded here -->
                     </div>
 
                     <div id="admin-matches-view" class="hidden">
-                        <div class="flex items-center mb-6">
-                            <button onclick="showAdminCategories()" class="bg-gray-700 hover:bg-gray-600 text-white px-4 py-2 rounded-xl font-bold uppercase mr-4 transition"><i class="fas fa-arrow-left mr-2"></i>Back</button>
-                            <h2 id="admin-current-category-title" class="text-2xl font-black text-white uppercase tracking-wider">Category Name</h2>
+                        <div class="flex items-center mb-8">
+                            <button onclick="showAdminCategories()" class="bg-white/5 hover:bg-white/10 text-white px-5 py-2.5 rounded-xl font-bold uppercase text-[10px] border border-white/10 transition-all active:scale-95 mr-4"><i class="fas fa-arrow-left mr-2"></i>Back</button>
+                            <h2 id="admin-current-category-title" class="text-3xl font-black text-white uppercase tracking-tighter">Category Name</h2>
                         </div>
                         <div id="matches-list" class="space-y-4">
                             <!-- Matches will be loaded here -->
@@ -873,11 +918,11 @@
           });
         } else if (sectionId === "wallet") {
           contentArea.innerHTML = `
-                    <div class="flex space-x-4 mb-6">
-                        <button onclick="loadWallet('deposits')" class="bg-gray-700 text-white px-6 py-3 rounded-xl font-bold uppercase">Deposits</button>
-                        <button onclick="loadWallet('withdrawals')" class="bg-gray-700 text-white px-6 py-3 rounded-xl font-bold uppercase">Withdrawals</button>
-                        <button onclick="loadManualWallet()" class="bg-gray-700 text-white px-6 py-3 rounded-xl font-bold uppercase">Manual Wallet</button>
-                        <button onclick="loadTransactionLogs()" class="bg-gray-700 text-white px-6 py-3 rounded-xl font-bold uppercase">Logs</button>
+                    <div class="flex flex-wrap gap-3 mb-8">
+                        <button onclick="loadWallet('deposits')" class="bg-blue-600 text-white px-6 py-3 rounded-xl font-black uppercase shadow-lg shadow-blue-600/20 active:scale-95 transition-all text-xs">Deposits</button>
+                        <button onclick="loadWallet('withdrawals')" class="bg-white/5 text-white px-6 py-3 rounded-xl font-bold uppercase border border-white/10 active:scale-95 transition-all text-xs">Withdrawals</button>
+                        <button onclick="loadManualWallet()" class="bg-white/5 text-white px-6 py-3 rounded-xl font-bold uppercase border border-white/10 active:scale-95 transition-all text-xs">Manual Wallet</button>
+                        <button onclick="loadTransactionLogs()" class="bg-white/5 text-white px-6 py-3 rounded-xl font-bold uppercase border border-white/10 active:scale-95 transition-all text-xs">Logs</button>
                     </div>
                     <div id="wallet-list" class="space-y-4">
                         <!-- Wallet requests will be loaded here -->
@@ -886,15 +931,26 @@
           loadWallet("deposits");
         } else if (sectionId === "users") {
           contentArea.innerHTML = `
-                    <div class="mb-6 flex gap-4">
-                        <input type="text" id="user-search" placeholder="Search by username, email, UID..." class="flex-1 p-3 bg-gray-700 rounded-xl text-white outline-none">
-                        <select id="user-filter" class="p-3 bg-gray-700 rounded-xl text-white outline-none">
-                            <option value="all">All Roles</option>
-                            <option value="admin">Admin</option>
-                            <option value="user">User</option>
-                        </select>
+                    <div class="glass-card p-8 rounded-3xl border border-white/5 shadow-2xl mb-8">
+                        <div class="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-8">
+                            <div>
+                                <h3 class="text-2xl font-black uppercase tracking-tighter">User Directory</h3>
+                                <p class="text-slate-500 text-[10px] font-black uppercase tracking-widest mt-1">Manage and moderate your player base.</p>
+                            </div>
+                        </div>
+                        <div class="flex flex-col md:flex-row gap-4 mb-8">
+                            <div class="flex-1 relative">
+                                <i class="fas fa-search absolute left-4 top-1/2 -translate-y-1/2 text-slate-500"></i>
+                                <input type="text" id="user-search" placeholder="Search by username, email, UID..." class="w-full pl-12 pr-4 py-4 bg-white/5 border border-white/10 rounded-2xl text-white outline-none focus:border-blue-500 transition-all font-bold text-sm">
+                            </div>
+                            <select id="user-filter" class="p-4 bg-white/5 border border-white/10 rounded-2xl text-white outline-none focus:border-blue-500 transition-all font-bold text-sm min-w-[150px]">
+                                <option value="all">All Roles</option>
+                                <option value="admin">Admin</option>
+                                <option value="user">User</option>
+                            </select>
+                        </div>
+                        <div id="users-list" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6"></div>
                     </div>
-                    <div id="users-list" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4"></div>
                 `;
           document
             .getElementById("user-search")
@@ -905,86 +961,142 @@
           loadUsers();
         } else if (sectionId === "support") {
           contentArea.innerHTML = `
-                    <div class="flex space-x-4 mb-6">
-                        <button onclick="loadTickets()" class="bg-gray-700 text-white px-6 py-3 rounded-xl font-bold uppercase">Tickets</button>
-                        <button onclick="loadReports()" class="bg-gray-700 text-white px-6 py-3 rounded-xl font-bold uppercase">Reports</button>
-                    </div>
-                    <div id="support-content" class="space-y-4">
-                        <!-- Content will be loaded here -->
+                    <div class="glass-card p-8 rounded-3xl border border-white/5 shadow-2xl">
+                        <div class="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-8">
+                            <div>
+                                <h3 class="text-2xl font-black uppercase tracking-tighter">Support & Moderation</h3>
+                                <p class="text-slate-500 text-[10px] font-black uppercase tracking-widest mt-1">Handle tickets and review player reports.</p>
+                            </div>
+                            <div class="flex gap-3">
+                                <button onclick="loadTickets()" class="bg-blue-600 text-white px-6 py-3 rounded-xl font-black uppercase shadow-lg shadow-blue-600/20 active:scale-95 transition-all text-xs">Tickets</button>
+                                <button onclick="loadReports()" class="bg-white/5 text-white px-6 py-3 rounded-xl font-bold uppercase border border-white/10 active:scale-95 transition-all text-xs">Reports</button>
+                            </div>
+                        </div>
+                        <div id="support-content" class="space-y-4">
+                            <!-- Content will be loaded here -->
+                        </div>
                     </div>
                 `;
           loadTickets();
         } else if (sectionId === "leaderboard") {
           contentArea.innerHTML = `
-                    <div class="bg-gray-700 p-6 rounded-3xl mb-6">
-                        <div class="flex justify-between items-center mb-4">
-                            <h3 class="text-xl font-bold">Leaderboard Management</h3>
-                            <button onclick="resetLeaderboard()" class="bg-red-600 hover:bg-red-700 text-white px-6 py-3 rounded-xl font-bold uppercase transition-colors">
-                                Reset Leaderboard Now
-                            </button>
-                        </div>
-                        <p class="text-gray-400 text-sm mb-4">Resetting the leaderboard will set all users' monthly winnings to 0. This does NOT affect their actual wallet balance.</p>
-                        <div class="bg-gray-800 p-4 rounded-xl flex justify-between items-center">
+                    <div class="glass-card p-8 rounded-3xl mb-6 border border-white/5 shadow-2xl relative overflow-hidden">
+                        <div class="absolute top-0 right-0 w-64 h-64 bg-blue-600/5 rounded-full blur-3xl -mr-32 -mt-32"></div>
+                        <div class="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-8 relative z-10">
                             <div>
-                                <p class="text-gray-300">Last Reset: <span id="last-reset-time" class="font-bold text-white">Loading...</span></p>
-                                <p class="text-gray-300 mt-1">Next Auto Reset: <span id="next-reset-time" class="font-bold text-yellow-400">Loading...</span></p>
+                                <h3 class="text-3xl font-black uppercase tracking-tighter">Leaderboard Management</h3>
+                                <p class="text-slate-500 text-xs font-bold uppercase tracking-widest mt-1">Manage monthly rankings and reset cycles.</p>
                             </div>
-                            <div class="text-right">
-                                <p class="text-sm text-gray-400">Time until next reset:</p>
-                                <p id="reset-countdown" class="text-xl font-black text-blue-400">--:--:--</p>
+                            <div class="flex gap-3">
+                                <button onclick="loadAdminLeaderboard()" class="bg-white/5 hover:bg-white/10 text-white px-5 py-3 rounded-xl font-bold transition-all flex items-center gap-2 border border-white/10 active:scale-95">
+                                    <i class="fas fa-sync-alt"></i> Refresh
+                                </button>
+                                <button onclick="resetLeaderboard()" class="bg-red-600 hover:bg-red-700 text-white px-8 py-4 rounded-xl font-black uppercase transition-all shadow-lg shadow-red-900/20 active:scale-95">
+                                    Reset Leaderboard
+                                </button>
                             </div>
+                        </div>
+                        
+                        <div class="grid grid-cols-1 md:grid-cols-3 gap-6 relative z-10">
+                            <div class="bg-white/5 p-5 rounded-2xl border border-white/5">
+                                <p class="text-[9px] font-black text-slate-500 uppercase tracking-widest mb-2">Last Reset</p>
+                                <p id="last-reset-time" class="font-bold text-white">Loading...</p>
+                            </div>
+                            <div class="bg-white/5 p-5 rounded-2xl border border-white/5">
+                                <p class="text-[9px] font-black text-slate-500 uppercase tracking-widest mb-2">Next Auto Reset</p>
+                                <p id="next-reset-time" class="font-bold text-yellow-500">Loading...</p>
+                            </div>
+                            <div class="bg-white/5 p-5 rounded-2xl border border-white/5">
+                                <p class="text-[9px] font-black text-slate-500 uppercase tracking-widest mb-2">Time Remaining</p>
+                                <p id="reset-countdown" class="text-2xl font-black text-blue-400 tracking-tighter">--:--:--</p>
+                            </div>
+                        </div>
+                        
+                        <div class="mt-8 p-5 bg-blue-600/5 border border-blue-600/10 rounded-2xl flex items-start gap-4 relative z-10">
+                            <i class="fas fa-info-circle text-blue-400 mt-1"></i>
+                            <p class="text-xs text-blue-200/60 leading-relaxed font-medium">
+                                Resetting the leaderboard will set all users' <span class="text-blue-400 font-bold">monthly winnings</span> to 0. 
+                                This is a visual reset for the competition and <span class="text-white font-bold underline decoration-red-500/50">does not affect</span> actual wallet balances or withdrawal limits.
+                            </p>
                         </div>
                     </div>
-                    <div class="bg-gray-700 p-6 rounded-3xl">
-                        <h3 class="text-xl font-bold mb-4">Current Top 10</h3>
-                        <div id="admin-leaderboard-list" class="space-y-2"></div>
+                    
+                    <div class="glass-card p-8 rounded-3xl border border-white/5 shadow-2xl">
+                        <div class="flex justify-between items-center mb-8">
+                            <h3 class="text-xl font-black uppercase tracking-tighter">Current Top 10 Rankings</h3>
+                            <span class="px-4 py-1.5 bg-blue-600/10 text-blue-400 text-[9px] font-black rounded-full border border-blue-600/20 uppercase tracking-[0.2em]">Live Data</span>
+                        </div>
+                        <div id="admin-leaderboard-list" class="space-y-4"></div>
                     </div>
                 `;
           loadAdminLeaderboard();
         } else if (sectionId === "settings") {
           contentArea.innerHTML = `
                     <div class="space-y-8">
-                        <div class="bg-gray-700 p-6 rounded-3xl">
-                            <h3 class="text-xl font-bold mb-4">General Settings</h3>
-                            <input type="text" id="set-app-name" placeholder="App Name" class="w-full p-3 bg-gray-600 rounded-xl mb-2 text-white">
-                            <input type="number" id="set-min-withdrawal" placeholder="Min Withdrawal" class="w-full p-3 bg-gray-600 rounded-xl mb-2 text-white">
-                            <label class="flex items-center space-x-2">
-                                <input type="checkbox" id="set-maintenance" class="w-5 h-5">
-                                <span>Maintenance Mode</span>
-                            </label>
-                            <button onclick="saveSettings()" class="mt-4 w-full p-3 bg-blue-600 rounded-xl font-bold">Save Settings</button>
+                        <div class="glass-card p-8 rounded-3xl border border-white/5 shadow-2xl relative overflow-hidden">
+                            <div class="absolute top-0 right-0 w-32 h-32 bg-blue-600/5 rounded-full blur-3xl -mr-16 -mt-16"></div>
+                            <h3 class="text-2xl font-black uppercase tracking-tighter mb-8 relative z-10">General Settings</h3>
+                            <div class="space-y-6 relative z-10">
+                                <div>
+                                    <label class="text-[10px] font-black text-slate-500 uppercase tracking-widest mb-2 block">App Name</label>
+                                    <input type="text" id="set-app-name" placeholder="App Name" class="w-full p-4 bg-white/5 border border-white/10 rounded-xl text-white outline-none focus:border-blue-500 transition-all font-bold">
+                                </div>
+                                <div>
+                                    <label class="text-[10px] font-black text-slate-500 uppercase tracking-widest mb-2 block">Min Withdrawal (₹)</label>
+                                    <input type="number" id="set-min-withdrawal" placeholder="Min Withdrawal" class="w-full p-4 bg-white/5 border border-white/10 rounded-xl text-white outline-none focus:border-blue-500 transition-all font-bold">
+                                </div>
+                                <div class="flex items-center justify-between p-4 bg-white/5 border border-white/10 rounded-xl">
+                                    <span class="text-xs font-black uppercase tracking-widest text-slate-400">Maintenance Mode</span>
+                                    <label class="relative inline-flex items-center cursor-pointer">
+                                        <input type="checkbox" id="set-maintenance" class="sr-only peer">
+                                        <div class="w-11 h-6 bg-white/10 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-blue-600"></div>
+                                    </label>
+                                </div>
+                                <button onclick="saveSettings()" class="w-full py-4 bg-blue-600 text-white font-black rounded-xl uppercase shadow-lg shadow-blue-600/20 active:scale-95 transition-all">Save Settings</button>
+                            </div>
                         </div>
-                        <div class="bg-gray-700 p-6 rounded-3xl">
-                            <h3 class="text-xl font-bold mb-4">Payment Settings (QR Code)</h3>
-                            <div class="flex items-center space-x-4 mb-4">
-                                <img id="qr-preview" src="" class="w-32 h-32 object-contain bg-gray-800 rounded-xl border border-gray-600">
-                                <div class="flex-1">
-                                    <input type="text" id="set-qr-url" placeholder="QR Code Image URL" class="w-full p-3 bg-gray-600 rounded-xl mb-2 text-white">
-                                    <span class="text-gray-400 text-sm block mb-2">OR Upload Image:</span>
-                                    <input type="file" id="qr-upload" accept="image/*" class="w-full text-gray-400 text-sm">
+                        <div class="glass-card p-8 rounded-3xl border border-white/5 shadow-2xl">
+                            <h3 class="text-2xl font-black uppercase tracking-tighter mb-8">Payment Settings (QR Code)</h3>
+                            <div class="flex flex-col items-center gap-6">
+                                <div class="relative group">
+                                    <div class="absolute -inset-1 bg-gradient-to-r from-blue-600 to-indigo-600 rounded-2xl blur opacity-25 group-hover:opacity-50 transition duration-1000 group-hover:duration-200"></div>
+                                    <img id="qr-preview" src="" class="relative w-48 h-48 object-contain bg-white/5 rounded-2xl border border-white/10 shadow-2xl">
+                                </div>
+                                <div class="w-full space-y-6">
+                                    <div>
+                                        <label class="text-[10px] font-black text-slate-500 uppercase tracking-widest mb-2 block">QR Code Image URL</label>
+                                        <input type="text" id="set-qr-url" placeholder="https://..." class="w-full p-4 bg-white/5 border border-white/10 rounded-xl text-white outline-none focus:border-blue-500 transition-all font-bold">
+                                    </div>
+                                    <div class="text-center">
+                                        <p class="text-[10px] font-black text-slate-500 uppercase tracking-widest mb-4">OR UPLOAD NEW QR</p>
+                                        <input type="file" id="qr-upload" accept="image/*" class="w-full text-slate-500 text-[10px] font-bold file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-[10px] file:font-black file:bg-blue-600/20 file:text-blue-400 hover:file:bg-blue-600/30 cursor-pointer">
+                                    </div>
                                 </div>
                             </div>
-                            <button onclick="savePaymentSettings()" class="w-full p-3 bg-blue-600 rounded-xl font-bold">Save QR Code</button>
+                            <button onclick="savePaymentSettings()" class="w-full py-4 bg-blue-600 text-white font-black rounded-xl uppercase shadow-lg shadow-blue-600/20 active:scale-95 transition-all">Save QR Code</button>
                         </div>
-                        <div class="bg-gray-700 p-6 rounded-3xl">
-                            <h3 class="text-xl font-bold mb-4">Security</h3>
-                            <p class="text-gray-400 mb-4 text-sm">Update your admin account password.</p>
-                            <button onclick="openChangePasswordModal()" class="w-full p-3 bg-blue-600 rounded-xl font-bold">Change Password</button>
+                        <div class="glass-card p-8 rounded-3xl border border-white/5 shadow-2xl relative overflow-hidden">
+                            <div class="absolute top-0 right-0 w-32 h-32 bg-red-600/5 rounded-full blur-3xl -mr-16 -mt-16"></div>
+                            <h3 class="text-2xl font-black uppercase tracking-tighter mb-4 relative z-10">Security</h3>
+                            <p class="text-slate-500 mb-6 text-xs font-bold uppercase tracking-widest relative z-10">Update your admin account password.</p>
+                            <button onclick="openChangePasswordModal()" class="w-full py-4 bg-blue-600 text-white font-black rounded-xl uppercase shadow-lg shadow-blue-600/20 active:scale-95 transition-all relative z-10">Change Password</button>
                         </div>
-                        <div class="bg-gray-700 p-6 rounded-3xl">
-                            <h3 class="text-xl font-bold mb-4">Game Modes & Banners</h3>
-                            <div class="flex flex-col space-y-2 mb-4">
-                                <div class="flex space-x-2">
-                                    <input type="text" id="new-mode-name" placeholder="Mode Name (e.g., TDM, Classic)" class="flex-1 p-3 bg-gray-600 rounded-xl text-white">
-                                    <input type="text" id="new-mode-url" placeholder="Banner Image URL" class="flex-1 p-3 bg-gray-600 rounded-xl text-white">
+                        <div class="glass-card p-8 rounded-3xl border border-white/5 shadow-2xl">
+                            <h3 class="text-2xl font-black uppercase tracking-tighter mb-8">Game Modes & Banners</h3>
+                            <div class="space-y-6 mb-8">
+                                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                    <input type="text" id="new-mode-name" placeholder="Mode Name (e.g., TDM, Classic)" class="w-full p-4 bg-white/5 border border-white/10 rounded-xl text-white outline-none focus:border-blue-500 transition-all font-bold text-sm">
+                                    <input type="text" id="new-mode-url" placeholder="Banner Image URL" class="w-full p-4 bg-white/5 border border-white/10 rounded-xl text-white outline-none focus:border-blue-500 transition-all font-bold text-sm">
                                 </div>
-                                <div class="flex items-center space-x-2">
-                                    <span class="text-gray-400 text-sm">OR Upload:</span>
-                                    <input type="file" id="new-mode-upload" accept="image/*" class="flex-1 text-gray-400 text-sm">
-                                    <button onclick="addGameMode()" class="bg-green-600 px-4 py-2 rounded-xl font-bold">Add Mode</button>
+                                <div class="flex flex-col md:flex-row items-center gap-4">
+                                    <div class="flex-1 w-full">
+                                        <p class="text-[10px] font-black text-slate-500 uppercase tracking-widest mb-2">OR UPLOAD BANNER</p>
+                                        <input type="file" id="new-mode-upload" accept="image/*" class="w-full text-slate-500 text-[10px] font-bold file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-[10px] file:font-black file:bg-blue-600/20 file:text-blue-400 hover:file:bg-blue-600/30 cursor-pointer">
+                                    </div>
+                                    <button onclick="addGameMode()" class="w-full md:w-auto px-8 py-4 bg-green-600 text-white font-black rounded-xl uppercase shadow-lg shadow-green-600/20 active:scale-95 transition-all">Add Mode</button>
                                 </div>
                             </div>
-                            <div class="space-y-4" id="category-images-list">
+                            <div class="space-y-4 custom-scrollbar max-h-[400px] overflow-y-auto pr-2" id="category-images-list">
                                 <!-- Loaded dynamically -->
                             </div>
                         </div>
@@ -993,112 +1105,132 @@
           loadSettings();
         } else if (sectionId === "analytics") {
           contentArea.innerHTML = `
-                    <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                        <div class="bg-gray-700 p-6 rounded-3xl">
-                            <h3 class="text-xl font-bold mb-4">User Growth</h3>
-                            <div id="user-growth-stats" class="space-y-4">Loading...</div>
+                    <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
+                        <div class="glass-card p-8 rounded-3xl border border-white/5 shadow-2xl">
+                            <h3 class="text-2xl font-black uppercase tracking-tighter mb-8 flex items-center gap-3">
+                                <i class="fas fa-chart-line text-blue-400"></i> User Growth
+                            </h3>
+                            <div id="user-growth-stats" class="space-y-4 text-slate-400 font-bold uppercase tracking-widest text-[10px]">Loading...</div>
                         </div>
-                        <div class="bg-gray-700 p-6 rounded-3xl">
-                            <h3 class="text-xl font-bold mb-4">Revenue & Matches</h3>
-                            <div id="revenue-stats" class="space-y-4">Loading...</div>
+                        <div class="glass-card p-8 rounded-3xl border border-white/5 shadow-2xl">
+                            <h3 class="text-2xl font-black uppercase tracking-tighter mb-8 flex items-center gap-3">
+                                <i class="fas fa-coins text-yellow-400"></i> Revenue & Matches
+                            </h3>
+                            <div id="revenue-stats" class="space-y-4 text-slate-400 font-bold uppercase tracking-widest text-[10px]">Loading...</div>
                         </div>
                     </div>
                 `;
           loadAnalytics();
         } else if (sectionId === "moderation") {
           contentArea.innerHTML = `
-                    <div class="mb-6">
-                        <h3 class="text-xl font-bold mb-4">Suspicious Activity & Blacklist</h3>
-                        <div class="flex space-x-4 mb-4">
-                            <input type="text" id="blacklist-uid" placeholder="UID to Blacklist" class="flex-1 p-3 bg-gray-700 rounded-xl text-white outline-none">
-                            <button onclick="addToBlacklist()" class="bg-red-600 text-white px-6 py-3 rounded-xl font-bold uppercase">Blacklist</button>
+                    <div class="glass-card p-8 rounded-3xl border border-white/5 shadow-2xl mb-8 relative overflow-hidden">
+                        <div class="absolute top-0 right-0 w-64 h-64 bg-red-600/5 rounded-full blur-3xl -mr-32 -mt-32"></div>
+                        <h3 class="text-2xl font-black uppercase tracking-tighter mb-8 relative z-10">Suspicious Activity & Blacklist</h3>
+                        <div class="flex flex-col md:flex-row gap-4 mb-8 relative z-10">
+                            <input type="text" id="blacklist-uid" placeholder="UID to Blacklist" class="flex-1 p-4 bg-white/5 border border-white/10 rounded-xl text-white outline-none focus:border-blue-500 transition-all font-bold text-sm">
+                            <button onclick="addToBlacklist()" class="px-8 py-4 bg-red-600 text-white font-black rounded-xl uppercase shadow-lg shadow-red-900/20 active:scale-95 transition-all">Blacklist UID</button>
                         </div>
-                    </div>
-                    <div id="suspicious-list" class="space-y-4">
-                        <!-- Suspicious users will be loaded here -->
+                        <div id="suspicious-list" class="space-y-4 relative z-10">
+                            <!-- Suspicious users will be loaded here -->
+                        </div>
                     </div>
                 `;
           loadModeration();
         } else if (sectionId === "bulk") {
           contentArea.innerHTML = `
-                    <div class="space-y-6">
-                        <div class="bg-gray-700 p-6 rounded-3xl">
-                            <h3 class="text-xl font-bold mb-4">Bulk Wallet Credit</h3>
-                            <input type="number" id="bulk-amount" placeholder="Amount to credit all users" class="w-full p-3 bg-gray-600 rounded-xl mb-4 text-white outline-none">
-                            <button onclick="bulkCredit()" class="w-full p-3 bg-green-600 rounded-xl font-bold">Credit All Users</button>
+                    <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
+                        <div class="glass-card p-8 rounded-3xl border border-white/5 shadow-2xl">
+                            <h3 class="text-2xl font-black uppercase tracking-tighter mb-8">Bulk Wallet Credit</h3>
+                            <div class="space-y-6">
+                                <div>
+                                    <label class="text-[10px] font-black text-slate-500 uppercase tracking-widest mb-2 block">Amount to Credit All Users</label>
+                                    <input type="number" id="bulk-amount" placeholder="Enter Amount" class="w-full p-4 bg-white/5 border border-white/10 rounded-xl text-white outline-none focus:border-blue-500 transition-all font-bold">
+                                </div>
+                                <button onclick="bulkCredit()" class="w-full py-4 bg-green-600 text-white font-black rounded-xl uppercase shadow-lg shadow-green-600/20 active:scale-95 transition-all">Credit All Users</button>
+                            </div>
                         </div>
-                        <div class="bg-gray-700 p-6 rounded-3xl">
-                            <h3 class="text-xl font-bold mb-4">Bulk Announcement</h3>
-                            <textarea id="bulk-message" placeholder="Message to all users" class="w-full p-3 bg-gray-600 rounded-xl mb-4 text-white outline-none"></textarea>
-                            <input type="text" id="bulk-image" placeholder="Image URL (Optional)" class="w-full p-3 bg-gray-600 rounded-xl mb-2 text-white outline-none">
-                            <p class="text-center text-gray-400 mb-2 text-sm">OR Upload Image</p>
-                            <input type="file" id="bulk-image-upload" accept="image/*" class="w-full text-gray-400 mb-4 text-sm">
-                            <input type="text" id="bulk-link" placeholder="Action Link (Optional)" class="w-full p-3 bg-gray-600 rounded-xl mb-4 text-white outline-none">
-                            <button onclick="bulkAnnounce()" class="w-full p-3 bg-blue-600 rounded-xl font-bold">Send Announcement</button>
+                        <div class="glass-card p-8 rounded-3xl border border-white/5 shadow-2xl">
+                            <h3 class="text-2xl font-black uppercase tracking-tighter mb-8">Bulk Announcement</h3>
+                            <div class="space-y-6">
+                                <textarea id="bulk-message" placeholder="Message to all users..." class="w-full p-4 bg-white/5 border border-white/10 rounded-xl text-white outline-none focus:border-blue-500 transition-all font-bold min-h-[100px]"></textarea>
+                                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                    <input type="text" id="bulk-image" placeholder="Image URL (Optional)" class="w-full p-4 bg-white/5 border border-white/10 rounded-xl text-white outline-none focus:border-blue-500 transition-all font-bold text-sm">
+                                    <input type="text" id="bulk-link" placeholder="Action Link (Optional)" class="w-full p-4 bg-white/5 border border-white/10 rounded-xl text-white outline-none focus:border-blue-500 transition-all font-bold text-sm">
+                                </div>
+                                <div class="text-center">
+                                    <p class="text-[10px] font-black text-slate-500 uppercase tracking-widest mb-4">OR UPLOAD IMAGE</p>
+                                    <input type="file" id="bulk-image-upload" accept="image/*" class="w-full text-slate-500 text-[10px] font-bold file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-[10px] file:font-black file:bg-blue-600/20 file:text-blue-400 hover:file:bg-blue-600/30 cursor-pointer">
+                                </div>
+                                <button onclick="bulkAnnounce()" class="w-full py-4 bg-blue-600 text-white font-black rounded-xl uppercase shadow-lg shadow-blue-600/20 active:scale-95 transition-all">Send Announcement</button>
+                            </div>
                         </div>
-                        <div class="bg-gray-700 p-6 rounded-3xl">
-                            <h3 class="text-xl font-bold mb-4 text-red-400">Danger Zone</h3>
-                            <button onclick="bulkDeleteMatches()" class="w-full p-3 bg-red-800 rounded-xl font-bold">Delete All Completed Matches</button>
+                        <div class="lg:col-span-2 glass-card p-8 rounded-3xl border border-red-500/20 shadow-2xl bg-red-500/5">
+                            <h3 class="text-2xl font-black uppercase tracking-tighter mb-4 text-red-500">Danger Zone</h3>
+                            <p class="text-xs text-red-400/60 font-bold uppercase tracking-widest mb-6">Irreversible actions. Use with extreme caution.</p>
+                            <button onclick="bulkDeleteMatches()" class="w-full py-4 bg-red-800 text-white font-black rounded-xl uppercase shadow-lg shadow-red-900/40 active:scale-95 transition-all">Delete All Completed Matches</button>
                         </div>
                     </div>
                 `;
         } else if (sectionId === "notifications") {
           contentArea.innerHTML = `
-                    <div class="bg-gray-700 p-6 rounded-3xl">
-                        <h3 class="text-xl font-bold mb-6">Send Notification</h3>
-                        <div class="space-y-4">
+                    <div class="glass-card p-8 rounded-3xl border border-white/5 shadow-2xl relative overflow-hidden">
+                        <div class="absolute top-0 right-0 w-64 h-64 bg-blue-600/5 rounded-full blur-3xl -mr-32 -mt-32"></div>
+                        <h3 class="text-2xl font-black uppercase tracking-tighter mb-8 relative z-10">Send Notification</h3>
+                        <div class="space-y-6 relative z-10">
                             <div>
-                                <label class="block text-sm text-gray-400 mb-2">Notification Message</label>
-                                <textarea id="notif-message" class="w-full p-4 bg-gray-600 rounded-xl text-white outline-none border border-gray-500" rows="4"></textarea>
+                                <label class="text-[10px] font-black text-slate-500 uppercase tracking-widest mb-2 block">Notification Message</label>
+                                <textarea id="notif-message" class="w-full p-4 bg-white/5 border border-white/10 rounded-xl text-white outline-none focus:border-blue-500 transition-all font-bold min-h-[100px]"></textarea>
                             </div>
                             <div>
-                                <label class="block text-sm text-gray-400 mb-2">Image URL (Optional)</label>
-                                <input type="text" id="notif-image" placeholder="https://example.com/image.jpg" class="w-full p-4 bg-gray-600 rounded-xl text-white outline-none border border-gray-500 mb-2">
-                                <p class="text-center text-gray-400 mb-2 text-sm">OR Upload Image</p>
-                                <input type="file" id="notif-image-upload" accept="image/*" class="w-full text-gray-400 mb-4 text-sm">
+                                <label class="text-[10px] font-black text-slate-500 uppercase tracking-widest mb-2 block">Image URL (Optional)</label>
+                                <input type="text" id="notif-image" placeholder="https://..." class="w-full p-4 bg-white/5 border border-white/10 rounded-xl text-white outline-none focus:border-blue-500 transition-all font-bold">
+                                <p class="text-center text-slate-500 my-4 font-black text-[10px] uppercase tracking-widest">OR UPLOAD IMAGE</p>
+                                <input type="file" id="notif-image-upload" accept="image/*" class="w-full text-slate-500 text-[10px] font-bold file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-[10px] file:font-black file:bg-blue-600/20 file:text-blue-400 hover:file:bg-blue-600/30 cursor-pointer">
                             </div>
                             <div>
-                                <label class="block text-sm text-gray-400 mb-2">Action Link (Optional)</label>
-                                <input type="text" id="notif-link" placeholder="https://example.com/promo" class="w-full p-4 bg-gray-600 rounded-xl text-white outline-none border border-gray-500">
+                                <label class="text-[10px] font-black text-slate-500 uppercase tracking-widest mb-2 block">Action Link (Optional)</label>
+                                <input type="text" id="notif-link" placeholder="https://..." class="w-full p-4 bg-white/5 border border-white/10 rounded-xl text-white outline-none focus:border-blue-500 transition-all font-bold">
                             </div>
                             <div>
-                                <label class="block text-sm text-gray-400 mb-2">Target</label>
-                                <select id="notif-target" class="w-full p-4 bg-gray-600 rounded-xl text-white outline-none border border-gray-500" onchange="toggleTargetInput()">
+                                <label class="text-[10px] font-black text-slate-500 uppercase tracking-widest mb-2 block">Target Audience</label>
+                                <select id="notif-target" class="w-full p-4 bg-white/5 border border-white/10 rounded-xl text-white outline-none focus:border-blue-500 transition-all font-bold" onchange="toggleTargetInput()">
                                     <option value="bulk">All Users (Bulk)</option>
                                     <option value="specific">Specific User (by App ID)</option>
                                 </select>
                             </div>
                             <div id="notif-appid-container" class="hidden">
-                                <label class="block text-sm text-gray-400 mb-2">User App ID (6 digits)</label>
-                                <input type="text" id="notif-appid" class="w-full p-4 bg-gray-600 rounded-xl text-white outline-none border border-gray-500" maxlength="6">
+                                <label class="text-[10px] font-black text-slate-500 uppercase tracking-widest mb-2 block">User App ID (6 digits)</label>
+                                <input type="text" id="notif-appid" class="w-full p-4 bg-white/5 border border-white/10 rounded-xl text-white outline-none focus:border-blue-500 transition-all font-bold" maxlength="6">
                             </div>
-                            <button onclick="sendNotification()" class="w-full py-4 bg-blue-600 rounded-xl font-bold uppercase hover:bg-blue-700 transition">Send Notification</button>
+                            <button onclick="sendNotification()" class="w-full py-4 bg-blue-600 text-white font-black rounded-xl uppercase shadow-lg shadow-blue-600/20 active:scale-95 transition-all">Send Notification</button>
                         </div>
                     </div>
                 `;
         } else if (sectionId === "modes") {
           contentArea.innerHTML = `
-                    <div class="bg-gray-700 p-6 rounded-3xl">
-                        <h3 class="text-xl font-bold mb-4">Add New Game Mode</h3>
-                        <div class="flex flex-col space-y-2 mb-4">
-                            <div class="flex space-x-2">
-                                <input type="text" id="new-mode-name" placeholder="Mode Name (e.g., TDM, Classic)" class="flex-1 p-3 bg-gray-600 rounded-xl text-white">
-                                <input type="text" id="new-mode-url" placeholder="Banner Image URL" class="flex-1 p-3 bg-gray-600 rounded-xl text-white">
+                    <div class="glass-card p-8 rounded-3xl border border-white/5 shadow-2xl">
+                        <h3 class="text-2xl font-black uppercase tracking-tighter mb-8">Add New Game Mode</h3>
+                        <div class="space-y-6 mb-8">
+                            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                <input type="text" id="new-mode-name" placeholder="Mode Name (e.g., TDM, Classic)" class="w-full p-4 bg-white/5 border border-white/10 rounded-xl text-white outline-none focus:border-blue-500 transition-all font-bold text-sm">
+                                <input type="text" id="new-mode-url" placeholder="Banner Image URL" class="w-full p-4 bg-white/5 border border-white/10 rounded-xl text-white outline-none focus:border-blue-500 transition-all font-bold text-sm">
                             </div>
-                            <div class="flex items-center space-x-2">
-                                <span class="text-gray-400 text-sm">OR Upload:</span>
-                                <input type="file" id="new-mode-upload" accept="image/*" class="flex-1 text-gray-400 text-sm">
-                                <button onclick="addGameMode()" class="bg-green-600 px-4 py-2 rounded-xl font-bold">Add Mode</button>
+                            <div class="flex flex-col md:flex-row items-center gap-4">
+                                <div class="flex-1 w-full">
+                                    <p class="text-[10px] font-black text-slate-500 uppercase tracking-widest mb-2">OR UPLOAD BANNER</p>
+                                    <input type="file" id="new-mode-upload" accept="image/*" class="w-full text-slate-500 text-[10px] font-bold file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-[10px] file:font-black file:bg-blue-600/20 file:text-blue-400 hover:file:bg-blue-600/30 cursor-pointer">
+                                </div>
+                                <button onclick="addGameMode()" class="w-full md:w-auto px-8 py-4 bg-green-600 text-white font-black rounded-xl uppercase shadow-lg shadow-green-600/20 active:scale-95 transition-all">Add Mode</button>
                             </div>
                         </div>
-                        <div class="space-y-4" id="category-images-list">
+                        <div class="space-y-4 custom-scrollbar max-h-[400px] overflow-y-auto pr-2" id="category-images-list">
                             <!-- Loaded dynamically -->
                         </div>
                     </div>
                 `;
           loadSettings();
         } else {
-          contentArea.innerHTML = `<p class="text-gray-400">Content for ${sectionId} goes here.</p>`;
+          contentArea.innerHTML = `<div class="glass-card p-8 rounded-3xl border border-white/5 shadow-2xl text-center"><p class="text-slate-500 font-bold uppercase tracking-widest text-xs">Content for ${sectionId} goes here.</p></div>`;
         }
       }
 
@@ -1184,12 +1316,15 @@
       // Dashboard Logic
       function createStatCard(title, id, icon, color) {
         return `
-                <div class="bg-gray-700 p-6 rounded-3xl border border-gray-600">
-                    <div class="flex justify-between items-center mb-4">
-                        <h4 class="text-gray-400 font-bold uppercase text-sm">${title}</h4>
-                        <i class="fas ${icon} ${color}"></i>
+                <div class="glass-card p-6 rounded-3xl border border-white/5 shadow-xl relative overflow-hidden group">
+                    <div class="absolute top-0 right-0 w-24 h-24 bg-blue-500/5 rounded-full blur-2xl -mr-10 -mt-10 group-hover:bg-blue-500/10 transition-colors"></div>
+                    <div class="flex justify-between items-center mb-4 relative z-10">
+                        <h4 class="text-slate-500 font-black uppercase text-[10px] tracking-widest">${title}</h4>
+                        <div class="w-10 h-10 rounded-xl bg-white/5 flex items-center justify-center border border-white/5">
+                            <i class="fas ${icon} ${color}"></i>
+                        </div>
                     </div>
-                    <div id="stat-${id}" class="text-3xl font-black">0</div>
+                    <div id="stat-${id}" class="text-3xl font-black tracking-tighter relative z-10">0</div>
                 </div>
             `;
       }
@@ -1871,7 +2006,13 @@
               loadReports();
             })
             .catch(e => showToast(e.message, "error"))
-            .finally(() => showLoading(false));
+            .finally(() => {
+                showLoading(false);
+                if (resetBtn) {
+                    resetBtn.disabled = false;
+                    resetBtn.innerHTML = 'Reset Leaderboard';
+                }
+            });
         }
       }
 
@@ -2220,25 +2361,34 @@
           const mode = match.category || "OTHER";
           const matchCodeStr = match.matchCode ? `<span class="text-blue-400 font-black ml-2 text-sm">#${match.matchCode}</span>` : '';
           return `
-            <div class="bg-gray-700 p-6 rounded-3xl border border-gray-600 hover:border-blue-500/50 transition-colors relative">
-                <div class="absolute top-0 right-0 bg-gray-800 px-3 py-1 rounded-bl-xl rounded-tr-3xl border-b border-l border-gray-600">
-                    <p class="text-[8px] font-black text-gray-400 uppercase tracking-widest">Mode: ${mode}</p>
+            <div class="glass-card p-6 rounded-3xl border border-white/5 hover:border-blue-500/30 transition-all relative group">
+                <div class="absolute top-0 right-0 bg-white/5 px-3 py-1 rounded-bl-xl rounded-tr-3xl border-b border-l border-white/10">
+                    <p class="text-[8px] font-black text-slate-500 uppercase tracking-widest">Mode: ${mode}</p>
                 </div>
                 <div class="flex justify-between items-start mb-4 mt-2">
                     <div>
-                        <h3 class="font-black text-xl text-white">${match.title}${matchCodeStr}</h3>
-                        <p class="text-sm text-gray-400">${match.matchTime}</p>
+                        <h3 class="font-black text-xl text-white tracking-tighter">${match.title}${matchCodeStr}</h3>
+                        <p class="text-[10px] font-bold text-slate-500 uppercase tracking-widest">${match.matchTime}</p>
                     </div>
-                    <span class="px-3 py-1 rounded-full text-[10px] font-black uppercase ${match.status === "Live" ? "bg-red-600 text-white" : match.status === "Completed" ? "bg-gray-600 text-gray-300" : "bg-blue-600 text-white"}">${match.status}</span>
+                    <span class="px-3 py-1 rounded-full text-[10px] font-black uppercase ${match.status === "Live" ? "bg-red-500/20 text-red-400 border border-red-500/30" : match.status === "Completed" ? "bg-white/5 text-slate-500 border border-white/10" : "bg-blue-500/20 text-blue-400 border border-blue-500/30"} font-black">${match.status}</span>
                 </div>
-                <div class="grid grid-cols-3 gap-4 text-[10px] font-bold uppercase text-gray-400 mb-4">
-                    <div><p class="text-gray-500">Fee</p><p class="text-white">₹${match.entryFee}</p></div>
-                    <div><p class="text-gray-500">Prize</p><p class="text-white">₹${match.prizePool}</p></div>
-                    <div><p class="text-gray-500">Players</p><p class="text-white">${Object.keys(match.participants || {}).length}/${match.maxPlayers}</p></div>
+                <div class="grid grid-cols-3 gap-4 text-[8px] font-black uppercase tracking-widest text-slate-500 mb-6">
+                    <div class="bg-white/5 p-2 rounded-xl border border-white/5 text-center">
+                        <p class="mb-1">Fee</p>
+                        <p class="text-white text-xs">₹${match.entryFee}</p>
+                    </div>
+                    <div class="bg-white/5 p-2 rounded-xl border border-white/5 text-center">
+                        <p class="mb-1">Prize</p>
+                        <p class="text-white text-xs">₹${match.prizePool}</p>
+                    </div>
+                    <div class="bg-white/5 p-2 rounded-xl border border-white/5 text-center">
+                        <p class="mb-1">Players</p>
+                        <p class="text-white text-xs">${Object.keys(match.participants || {}).length}/${match.maxPlayers}</p>
+                    </div>
                 </div>
                 <div class="flex space-x-2">
-                    <button onclick="openMatchDetails('${key}')" class="flex-1 py-3 bg-gray-600 hover:bg-gray-500 text-white rounded-xl font-bold text-xs uppercase transition">Manage</button>
-                    <button onclick="deleteMatch('${key}')" class="p-3 bg-red-600/20 hover:bg-red-600 text-red-400 hover:text-white rounded-xl font-bold transition"><i class="fas fa-trash"></i></button>
+                    <button onclick="openMatchDetails('${key}')" class="flex-1 py-3 bg-blue-600 text-white rounded-xl font-black text-[10px] uppercase tracking-widest shadow-lg shadow-blue-600/20 active:scale-95 transition-all">Manage Match</button>
+                    <button onclick="deleteMatch('${key}')" class="p-3 bg-red-600/10 text-red-400 rounded-xl font-bold border border-red-600/20 hover:bg-red-600 hover:text-white transition-all active:scale-95"><i class="fas fa-trash"></i></button>
                 </div>
             </div>
           `;
@@ -2253,11 +2403,11 @@
               const el = document.getElementById(`admin-filter-${b}`);
               if (el) {
                   if (b === filter) {
-                      el.classList.remove('bg-gray-700');
+                      el.classList.remove('bg-white/5');
                       el.classList.add('bg-blue-600');
                   } else {
                       el.classList.remove('bg-blue-600');
-                      el.classList.add('bg-gray-700');
+                      el.classList.add('bg-white/5');
                   }
               }
           });
@@ -2588,62 +2738,79 @@ Winnings will be credited to the wallet within 1-2 hours after the match ends an
           const modal = document.createElement("div");
           modal.id = "match-detail-modal";
           modal.className =
-            "fixed inset-0 bg-gray-900/90 z-50 flex items-center justify-center p-4";
+            "fixed inset-0 bg-[#0a0a0c]/95 z-50 flex items-center justify-center p-4 backdrop-blur-md";
           modal.innerHTML = `
-                    <div class="bg-gray-800 p-8 rounded-3xl w-full max-w-4xl border border-gray-700 max-h-[90vh] overflow-y-auto">
-                        <h2 class="text-3xl font-black mb-6">${match.title} ${match.matchCode ? `<span class="text-blue-500">#${match.matchCode}</span>` : ''}</h2>
-                        <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
-                            <div>
-                                <h3 class="text-xl font-bold mb-4">Live Control</h3>
-                                <div class="flex space-x-2 mb-6">
-                                    <button onclick="updateMatchStatus('${key}', 'Upcoming')" class="p-3 bg-blue-600 rounded-xl">Upcoming</button>
-                                    <button onclick="updateMatchStatus('${key}', 'Live')" class="p-3 bg-red-600 rounded-xl">Live</button>
-                                    <button onclick="markMatchCompleted('${key}')" class="p-3 bg-gray-600 rounded-xl">Mark Completed</button>
+                    <div class="glass-card p-8 rounded-3xl w-full max-w-4xl border border-white/10 max-h-[90vh] overflow-y-auto custom-scrollbar relative">
+                        <div class="absolute top-0 right-0 w-64 h-64 bg-blue-600/5 rounded-full blur-3xl -mr-32 -mt-32"></div>
+                        <h2 class="text-3xl font-black mb-8 uppercase tracking-tighter relative z-10">${match.title} ${match.matchCode ? `<span class="text-blue-500">#${match.matchCode}</span>` : ''}</h2>
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-8 relative z-10">
+                            <div class="space-y-8">
+                                <div>
+                                    <h3 class="text-[10px] font-black text-slate-500 uppercase tracking-widest mb-4">Live Control</h3>
+                                    <div class="flex flex-wrap gap-2">
+                                        <button onclick="updateMatchStatus('${key}', 'Upcoming')" class="px-4 py-2 bg-blue-600/20 text-blue-400 border border-blue-600/30 rounded-xl font-black text-[10px] uppercase tracking-widest active:scale-95 transition-all">Upcoming</button>
+                                        <button onclick="updateMatchStatus('${key}', 'Live')" class="px-4 py-2 bg-red-600/20 text-red-400 border border-red-600/30 rounded-xl font-black text-[10px] uppercase tracking-widest active:scale-95 transition-all">Live</button>
+                                        <button onclick="markMatchCompleted('${key}')" class="px-4 py-2 bg-white/5 text-slate-400 border border-white/10 rounded-xl font-black text-[10px] uppercase tracking-widest active:scale-95 transition-all">Mark Completed</button>
+                                    </div>
                                 </div>
-                                <h3 class="text-xl font-bold mb-4">Room Control</h3>
-                                <input type="text" id="room-id" value="${match.roomId || ""}" placeholder="Room ID" class="w-full p-3 bg-gray-700 rounded-xl mb-2 text-white outline-none">
-                                <input type="text" id="room-pass" value="${match.roomPassword || ""}" placeholder="Room Password" class="w-full p-3 bg-gray-700 rounded-xl mb-4 text-white outline-none">
-                                <button onclick="pushRoomDetails('${key}')" class="w-full p-3 bg-blue-600 rounded-xl font-bold mb-6">Push Room Details</button>
+                                <div>
+                                    <h3 class="text-[10px] font-black text-slate-500 uppercase tracking-widest mb-4">Room Control</h3>
+                                    <div class="space-y-3">
+                                        <input type="text" id="room-id" value="${match.roomId || ""}" placeholder="Room ID" class="w-full p-4 bg-white/5 border border-white/10 rounded-xl text-white outline-none focus:border-blue-500 transition-all font-bold text-sm">
+                                        <input type="text" id="room-pass" value="${match.roomPassword || ""}" placeholder="Room Password" class="w-full p-4 bg-white/5 border border-white/10 rounded-xl text-white outline-none focus:border-blue-500 transition-all font-bold text-sm">
+                                        <button onclick="pushRoomDetails('${key}')" class="w-full py-4 bg-blue-600 text-white font-black rounded-xl uppercase shadow-lg shadow-blue-600/20 active:scale-95 transition-all">Push Room Details</button>
+                                    </div>
+                                </div>
                                 
-                                <h3 class="text-xl font-bold mb-4">Match Info</h3>
-                                <textarea id="update-rules" placeholder="Rules" class="w-full p-3 bg-gray-700 rounded-xl mb-2 text-white outline-none">${match.rules || ""}</textarea>
-                                <textarea id="update-notes" placeholder="Admin Notes" class="w-full p-3 bg-gray-700 rounded-xl mb-2 text-white outline-none">${match.adminNotes || ""}</textarea>
-                                <textarea id="update-announcement" placeholder="Announcement" class="w-full p-3 bg-gray-700 rounded-xl mb-2 text-white outline-none">${match.announcement || ""}</textarea>
-                                <div class="mb-4">
-                                    <p class="text-xs text-gray-400 mb-1">Match Result Image (Required for Completion)</p>
-                                    <input type="text" id="update-result-image" value="${match.resultImageUrl || ""}" placeholder="Result Image URL" class="w-full p-3 bg-gray-700 rounded-xl mb-2 text-white outline-none">
-                                    <input type="file" id="update-result-image-upload" accept="image/*" class="w-full text-gray-400 text-xs">
+                                <div>
+                                    <h3 class="text-[10px] font-black text-slate-500 uppercase tracking-widest mb-4">Match Information</h3>
+                                    <div class="space-y-3">
+                                        <textarea id="update-rules" placeholder="Rules" class="w-full p-4 bg-white/5 border border-white/10 rounded-xl text-white outline-none focus:border-blue-500 transition-all font-bold text-sm min-h-[80px]">${match.rules || ""}</textarea>
+                                        <textarea id="update-notes" placeholder="Admin Notes" class="w-full p-4 bg-white/5 border border-white/10 rounded-xl text-white outline-none focus:border-blue-500 transition-all font-bold text-sm min-h-[80px]">${match.adminNotes || ""}</textarea>
+                                        <textarea id="update-announcement" placeholder="Announcement" class="w-full p-4 bg-white/5 border border-white/10 rounded-xl text-white outline-none focus:border-blue-500 transition-all font-bold text-sm min-h-[80px]">${match.announcement || ""}</textarea>
+                                        <div class="p-4 bg-white/5 border border-white/10 rounded-xl">
+                                            <p class="text-[10px] font-black text-slate-500 uppercase tracking-widest mb-3">Result Image (Required for Completion)</p>
+                                            <input type="text" id="update-result-image" value="${match.resultImageUrl || ""}" placeholder="https://..." class="w-full p-3 bg-white/5 border border-white/10 rounded-lg text-white outline-none focus:border-blue-500 transition-all font-bold text-xs mb-3">
+                                            <input type="file" id="update-result-image-upload" accept="image/*" class="w-full text-slate-500 text-[10px] font-bold file:mr-4 file:py-1 file:px-3 file:rounded-full file:border-0 file:text-[10px] file:font-black file:bg-blue-600/20 file:text-blue-400 hover:file:bg-blue-600/30 cursor-pointer">
+                                        </div>
+                                        <button onclick="updateMatchInfo('${key}')" class="w-full py-4 bg-green-600 text-white font-black rounded-xl uppercase shadow-lg shadow-green-600/20 active:scale-95 transition-all">Save Match Info</button>
+                                    </div>
                                 </div>
-                                <button onclick="updateMatchInfo('${key}')" class="w-full p-3 bg-green-600 rounded-xl font-bold">Save Info</button>
                             </div>
                             <div>
-                                <h3 class="text-xl font-bold mb-4">Participants (${Object.keys(match.participants || {}).length})</h3>
-                                <div class="h-96 overflow-y-auto bg-gray-700 p-4 rounded-xl mb-4">
+                                <h3 class="text-[10px] font-black text-slate-500 uppercase tracking-widest mb-4">Participants (${Object.keys(match.participants || {}).length})</h3>
+                                <div class="h-[600px] overflow-y-auto bg-white/5 p-4 rounded-2xl border border-white/10 custom-scrollbar">
                                     ${Object.keys(match.participants || {})
                                       .map((uid) => {
                                         const p = match.participants[uid];
-                                        return `<div class="p-3 border-b border-gray-600 space-y-2">
-                                            <div class="flex justify-between items-center">
+                                        return `<div class="p-4 border-b border-white/5 space-y-4 last:border-0 hover:bg-white/5 transition-colors rounded-xl">
+                                            <div class="flex justify-between items-start">
                                                 <div>
-                                                    <p class="text-sm font-bold">${p.username || p.gameUsername || "Unknown"}</p>
-                                                    <p class="text-[10px] text-gray-400">${uid}</p>
+                                                    <p class="text-xs font-black text-white uppercase tracking-tight">${p.username || p.gameUsername || "Unknown"}</p>
+                                                    <p class="text-[8px] font-bold text-slate-500 uppercase tracking-widest mt-1">${uid}</p>
                                                 </div>
                                                 <div class="text-right">
-                                                    <p class="text-[10px] font-black text-indigo-400">${p.appId || ""}</p>
+                                                    <p class="text-[10px] font-black text-blue-400 uppercase tracking-widest">${p.appId || ""}</p>
                                                 </div>
                                             </div>
-                                            <div class="flex gap-2">
-                                                <input type="number" id="kills-${uid}" value="${p.kills || 0}" placeholder="Kills" class="w-20 p-1 bg-gray-600 rounded text-xs text-white outline-none">
-                                                <input type="number" id="prize-${uid}" value="${p.prize || 0}" placeholder="Prize" class="w-24 p-1 bg-gray-600 rounded text-xs text-white outline-none">
-                                                <button onclick="saveParticipantResult('${key}', '${uid}')" class="bg-blue-600 px-2 py-1 rounded text-[10px] font-bold">Save</button>
+                                            <div class="grid grid-cols-2 gap-3">
+                                                <div>
+                                                    <label class="text-[8px] font-black text-slate-500 uppercase tracking-widest mb-1 block">Kills</label>
+                                                    <input type="number" id="kills-${uid}" value="${p.kills || 0}" class="w-full p-2 bg-white/5 border border-white/10 rounded-lg text-xs text-white outline-none focus:border-blue-500 transition-all font-bold">
+                                                </div>
+                                                <div>
+                                                    <label class="text-[8px] font-black text-slate-500 uppercase tracking-widest mb-1 block">Prize (₹)</label>
+                                                    <input type="number" id="prize-${uid}" value="${p.prize || 0}" class="w-full p-2 bg-white/5 border border-white/10 rounded-lg text-xs text-white outline-none focus:border-blue-500 transition-all font-bold">
+                                                </div>
                                             </div>
+                                            <button onclick="saveParticipantResult('${key}', '${uid}')" class="w-full py-2 bg-blue-600/20 text-blue-400 border border-blue-600/30 rounded-lg font-black text-[10px] uppercase tracking-widest hover:bg-blue-600 hover:text-white transition-all active:scale-95">Update Player</button>
                                         </div>`;
                                       })
                                       .join("")}
                                 </div>
                             </div>
                         </div>
-                        <button onclick="document.getElementById('match-detail-modal').remove()" class="mt-6 w-full p-3 bg-gray-600 rounded-xl">Close</button>
+                        <button onclick="document.getElementById('match-detail-modal').remove()" class="mt-8 w-full py-4 bg-white/5 text-slate-400 border border-white/10 rounded-xl font-black uppercase text-xs tracking-widest hover:bg-white/10 transition-all active:scale-95">Close Details</button>
                     </div>
                 `;
           document.body.appendChild(modal);
@@ -3433,9 +3600,17 @@ Winnings will be credited to the wallet within 1-2 hours after the match ends an
             }
           }
         }
+      });
+
       let leaderboardTimerInterval = null;
+      let leaderboardUsersListener = null;
 
       function loadAdminLeaderboard() {
+        // Clear existing listener if any
+        if (leaderboardUsersListener) {
+          db.ref("users").off("value", leaderboardUsersListener);
+        }
+
         db.ref("settings/leaderboardLastReset").on("value", (snap) => {
           const lastReset = snap.val() || 0;
           if (lastReset) {
@@ -3489,54 +3664,103 @@ Winnings will be credited to the wallet within 1-2 hours after the match ends an
           }, 1000);
         });
 
-        db.ref("users").on("value", (snap) => {
-          const data = snap.val() || {};
-          const allUsers = Object.keys(data).map(uid => ({ uid, ...data[uid] })).filter(u => u.username && u.username.trim().toLowerCase() !== "error" && u.username.trim().toLowerCase() !== "top winners" && u.username.trim().toLowerCase() !== "undefined");
+        // Use a debounced or throttled approach for leaderboard to avoid lag
+        let updateTimeout = null;
+        leaderboardUsersListener = db.ref("users").on("value", (snap) => {
+          if (updateTimeout) clearTimeout(updateTimeout);
           
-          const clean = (val) => parseFloat(String(val).replace(/[^\d.-]/g, "")) || 0;
-          
-          const processedUsers = allUsers.map(u => {
-            const winnings = clean(u.totalWinnings !== undefined ? u.totalWinnings : (u.wallet && u.wallet.winnings ? u.wallet.winnings : 0));
-            return { ...u, winnings };
-          });
-
-          const sortedUsers = [...processedUsers].sort((a, b) => b.winnings - a.winnings).slice(0, 10);
-          
+          // Show loading if list is empty
           const list = document.getElementById("admin-leaderboard-list");
-          if (!list) return;
-          
-          list.innerHTML = sortedUsers.map((u, i) => `
-            <div class="flex justify-between items-center bg-gray-800 p-3 rounded-xl border border-gray-700">
-              <div class="flex items-center space-x-3">
-                <span class="text-gray-400 font-bold w-6">#${i + 1}</span>
-                <span class="text-white font-bold">${u.username}</span>
+          if (list && list.innerHTML === "") {
+            list.innerHTML = `<div class="text-center py-8"><i class="fas fa-spinner fa-spin text-2xl text-blue-500 mb-2"></i><p class="text-gray-400">Calculating rankings...</p></div>`;
+          }
+
+          updateTimeout = setTimeout(() => {
+            const data = snap.val() || {};
+            const allUsers = Object.keys(data).map(uid => ({ uid, ...data[uid] }))
+              .filter(u => u.username && !["error", "top winners", "undefined", "null"].includes(String(u.username).toLowerCase()));
+            
+            const clean = (val) => parseFloat(String(val).replace(/[^\d.-]/g, "")) || 0;
+            
+            const processedUsers = allUsers.map(u => {
+              const winnings = clean(u.totalWinnings !== undefined ? u.totalWinnings : (u.wallet && u.wallet.winnings ? u.wallet.winnings : 0));
+              return { username: u.username, winnings };
+            });
+
+            const sortedUsers = processedUsers.sort((a, b) => b.winnings - a.winnings).slice(0, 10);
+            
+            if (!list) return;
+            
+            if (sortedUsers.length === 0) {
+              list.innerHTML = `<p class="text-gray-400 text-center py-8">No data available yet.</p>`;
+              return;
+            }
+
+            list.innerHTML = sortedUsers.map((u, i) => `
+              <div class="flex justify-between items-center glass-card p-5 rounded-2xl border border-white/5 hover:border-blue-500/30 transition-all group">
+                <div class="flex items-center space-x-5">
+                  <div class="w-10 h-10 flex items-center justify-center rounded-xl ${i < 3 ? 'bg-blue-600 text-white shadow-lg shadow-blue-600/20' : 'bg-white/5 text-slate-500 border border-white/5'} font-black text-sm">
+                    ${i + 1}
+                  </div>
+                  <div>
+                    <span class="text-white font-bold block">${u.username}</span>
+                    <span class="text-[9px] text-slate-500 font-black uppercase tracking-widest">Ranked Player</span>
+                  </div>
+                </div>
+                <div class="text-right">
+                  <span class="text-blue-400 font-black text-xl tracking-tighter">₹${u.winnings.toLocaleString('en-IN', {minimumFractionDigits: 2})}</span>
+                  <p class="text-[8px] text-slate-500 font-bold uppercase tracking-wider">Monthly Winnings</p>
+                </div>
               </div>
-              <span class="text-green-400 font-bold">₹${u.winnings.toFixed(2)}</span>
-            </div>
-          `).join("");
+            `).join("");
+          }, 500); // 500ms debounce
         });
       }
 
       window.resetLeaderboard = function(isAuto = false) {
         if (!isAuto && !confirm("Are you sure you want to reset the leaderboard? This will set all users' monthly winnings to 0. Their actual wallet balances will NOT be affected.")) return;
         
+        const resetBtn = document.querySelector('button[onclick="resetLeaderboard()"]');
+        if (resetBtn) {
+            resetBtn.disabled = true;
+            resetBtn.innerHTML = '<i class="fas fa-spinner fa-spin mr-2"></i> Resetting...';
+        }
+
+        showLoading(true, "Resetting Leaderboard...");
+        
         db.ref("users").once("value", (snap) => {
           const data = snap.val() || {};
           const updates = {};
+          let resetCount = 0;
+          
           Object.keys(data).forEach(uid => {
-            updates[`users/${uid}/totalWinnings`] = 0;
+            // Only reset if they have winnings to reduce update size
+            if (data[uid].totalWinnings && data[uid].totalWinnings > 0) {
+              updates[`users/${uid}/totalWinnings`] = 0;
+              resetCount++;
+            }
           });
+          
           updates["settings/leaderboardLastReset"] = Date.now();
           
+          if (resetCount === 0) {
+            db.ref("settings/leaderboardLastReset").set(Date.now()).then(() => {
+              showLoading(false);
+              showToast("Leaderboard reset (no active winnings found).");
+            });
+            return;
+          }
+
           db.ref().update(updates).then(() => {
-            showToast(isAuto ? "Leaderboard auto-reset successfully!" : "Leaderboard reset successfully!");
+            showLoading(false);
+            showToast(isAuto ? "Leaderboard auto-reset successfully!" : `Leaderboard reset successfully! (${resetCount} users updated)`);
           }).catch(err => {
+            showLoading(false);
             showToast("Error resetting leaderboard: " + err.message, "error");
           });
         });
       };
 
-      });
     </script>
   </body>
 </html>

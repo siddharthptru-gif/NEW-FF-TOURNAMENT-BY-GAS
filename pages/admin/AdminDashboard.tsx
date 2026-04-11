@@ -2,6 +2,17 @@
 import React, { useState, useEffect } from 'react';
 import { db } from '../../firebase';
 import { UserData } from '../../types';
+import { 
+  Users, 
+  Trophy, 
+  ShieldCheck, 
+  Search, 
+  Ban, 
+  Unlock, 
+  PlusCircle, 
+  MinusCircle,
+  ArrowUpRight
+} from 'lucide-react';
 
 const AdminDashboard: React.FC = () => {
   const [users, setUsers] = useState<UserData[]>([]);
@@ -12,7 +23,6 @@ const AdminDashboard: React.FC = () => {
   });
 
   const [searchQuery, setSearchQuery] = useState('');
-  const [selectedUser, setSelectedUser] = useState<UserData | null>(null);
 
   useEffect(() => {
     const usersRef = db.ref('users');
@@ -93,22 +103,29 @@ const AdminDashboard: React.FC = () => {
   return (
     <div className="space-y-6">
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-        <div className="bg-white p-6 rounded-3xl border shadow-sm">
-          <p className="text-3xl font-black text-blue-600">{stats.totalUsers}</p>
+        <div className="bg-white p-6 rounded-3xl border shadow-sm relative overflow-hidden group">
+          <div className="absolute top-0 right-0 p-4 opacity-10 group-hover:opacity-20 transition-opacity">
+            <Users size={48} />
+          </div>
+          <p className="text-3xl font-black text-indigo-600">{stats.totalUsers}</p>
           <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest">Total Players</p>
         </div>
-        <div className="bg-white p-6 rounded-3xl border shadow-sm">
+        <div className="bg-white p-6 rounded-3xl border shadow-sm relative overflow-hidden group">
+          <div className="absolute top-0 right-0 p-4 opacity-10 group-hover:opacity-20 transition-opacity">
+            <Trophy size={48} />
+          </div>
           <p className="text-3xl font-black text-green-600">₹{stats.totalPrize}</p>
           <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest">Prize Paid</p>
         </div>
         <a 
           href="/admin.html" 
           target="_blank" 
-          className="bg-slate-900 p-6 rounded-3xl border shadow-xl flex flex-col justify-center items-center text-center hover:bg-black transition-all group"
+          className="bg-gray-900 p-6 rounded-3xl border border-gray-800 shadow-xl flex flex-col justify-center items-center text-center hover:bg-black transition-all group relative overflow-hidden"
         >
-          <i className="fas fa-shield-halved text-2xl text-indigo-400 mb-2 group-hover:scale-110 transition-transform"></i>
-          <p className="text-xs font-black text-white uppercase tracking-tighter">Advanced Authority Panel</p>
+          <ShieldCheck className="text-indigo-400 mb-2 group-hover:scale-110 transition-transform" size={32} />
+          <p className="text-xs font-black text-white uppercase tracking-tighter">Authority Panel</p>
           <p className="text-[8px] font-bold text-white/40 uppercase mt-1 tracking-widest">Full CRUD Control</p>
+          <ArrowUpRight className="absolute top-4 right-4 text-white/20 group-hover:text-white/40 transition-colors" size={16} />
         </a>
       </div>
 
@@ -116,33 +133,37 @@ const AdminDashboard: React.FC = () => {
         <div className="flex flex-col gap-4 mb-6">
           <div className="flex justify-between items-center">
             <h3 className="text-sm font-black uppercase tracking-tighter">Registered Users</h3>
-            <span className="text-[9px] font-black bg-blue-50 text-blue-600 px-2 py-1 rounded uppercase">Real-time Feed</span>
+            <span className="text-[9px] font-black bg-indigo-50 text-indigo-600 px-2 py-1 rounded uppercase">Real-time Feed</span>
           </div>
           <div className="relative">
-            <i className="fas fa-search absolute left-4 top-1/2 -translate-y-1/2 text-gray-400 text-xs"></i>
+            <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400" size={16} />
             <input 
               type="text" 
               placeholder="Search by Username, App ID or Email..." 
-              className="w-full pl-10 pr-4 py-3 bg-gray-50 border border-gray-100 rounded-2xl text-[11px] font-bold outline-none focus:ring-2 focus:ring-blue-500"
+              className="w-full pl-11 pr-4 py-3 bg-gray-50 border border-gray-100 rounded-2xl text-[11px] font-bold outline-none focus:ring-2 focus:ring-indigo-500 transition-all"
               value={searchQuery}
               onChange={e => setSearchQuery(e.target.value)}
             />
           </div>
         </div>
         
-        <div className="space-y-4 max-h-[500px] overflow-y-auto pr-2 hide-scrollbar">
+        <div className="space-y-4 max-h-[500px] overflow-y-auto pr-2 custom-scrollbar">
           {filteredUsers.map(u => (
-            <div key={u.uid} className="bg-gray-50 p-4 rounded-2xl border border-gray-100">
+            <div key={u.uid} className="bg-gray-50 p-4 rounded-2xl border border-gray-100 hover:border-indigo-100 transition-colors">
               <div className="flex justify-between items-start mb-3">
                 <div className="flex-1">
                   <div className="flex items-center gap-2 mb-0.5">
                     <p className="text-[11px] font-black text-gray-900 uppercase">{u.username}</p>
-                    <span className="text-[8px] font-black bg-blue-600 text-white px-1.5 py-0.5 rounded tracking-widest">{u.appId}</span>
+                    <span className="text-[8px] font-black bg-indigo-600 text-white px-1.5 py-0.5 rounded tracking-widest">{u.appId}</span>
                   </div>
                   <p className="text-[8px] text-gray-400 font-bold uppercase">{u.email}</p>
                 </div>
                 <div className="flex gap-2">
-                  <button onClick={() => banUser(u.uid, !!u.banUntil)} className={`text-[8px] font-black px-3 py-1.5 rounded-xl uppercase ${u.banUntil ? 'bg-green-100 text-green-600' : 'bg-red-50 text-red-600'}`}>
+                  <button 
+                    onClick={() => banUser(u.uid, !!u.banUntil)} 
+                    className={`flex items-center gap-1.5 text-[8px] font-black px-3 py-1.5 rounded-xl uppercase transition-all ${u.banUntil ? 'bg-green-100 text-green-600 hover:bg-green-200' : 'bg-red-50 text-red-600 hover:bg-red-100'}`}
+                  >
+                    {u.banUntil ? <Unlock size={10} /> : <Ban size={10} />}
                     {u.banUntil ? 'Unban' : 'Ban'}
                   </button>
                 </div>
@@ -151,22 +172,32 @@ const AdminDashboard: React.FC = () => {
               <div className="grid grid-cols-2 gap-2">
                 <button 
                   onClick={() => updateBalance(u.uid, 'wallet_deposit')}
-                  className="bg-white border border-gray-200 p-2 rounded-xl text-left hover:bg-gray-100 transition-colors"
+                  className="bg-white border border-gray-200 p-3 rounded-xl text-left hover:border-indigo-200 hover:bg-indigo-50/30 transition-all group"
                 >
-                  <p className="text-[7px] font-black text-gray-400 uppercase">Deposit Bal</p>
-                  <p className="text-[10px] font-black text-blue-700">₹{u.wallet_deposit?.toFixed(2)}</p>
+                  <div className="flex justify-between items-center mb-1">
+                    <p className="text-[7px] font-black text-gray-400 uppercase tracking-widest">Deposit Bal</p>
+                    <PlusCircle size={10} className="text-gray-300 group-hover:text-indigo-400" />
+                  </div>
+                  <p className="text-[11px] font-black text-indigo-700">₹{u.wallet_deposit?.toFixed(2)}</p>
                 </button>
                 <button 
                   onClick={() => updateBalance(u.uid, 'wallet_winnings')}
-                  className="bg-white border border-gray-200 p-2 rounded-xl text-left hover:bg-gray-100 transition-colors"
+                  className="bg-white border border-gray-200 p-3 rounded-xl text-left hover:border-green-200 hover:bg-green-50/30 transition-all group"
                 >
-                  <p className="text-[7px] font-black text-gray-400 uppercase">Winning Bal</p>
-                  <p className="text-[10px] font-black text-green-700">₹{u.wallet_winnings?.toFixed(2)}</p>
+                  <div className="flex justify-between items-center mb-1">
+                    <p className="text-[7px] font-black text-gray-400 uppercase tracking-widest">Winning Bal</p>
+                    <PlusCircle size={10} className="text-gray-300 group-hover:text-green-400" />
+                  </div>
+                  <p className="text-[11px] font-black text-green-700">₹{u.wallet_winnings?.toFixed(2)}</p>
                 </button>
               </div>
             </div>
           ))}
-          {filteredUsers.length === 0 && <p className="text-center text-gray-400 py-10 text-xs uppercase font-black">No matching users found</p>}
+          {filteredUsers.length === 0 && (
+            <div className="text-center py-10">
+              <p className="text-gray-400 text-xs uppercase font-black">No matching users found</p>
+            </div>
+          )}
         </div>
       </div>
     </div>
