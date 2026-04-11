@@ -1604,18 +1604,6 @@
         db.ref(dbPath).transaction(
           (current) => (current || 0) + amount * multiplier,
         );
-        
-        // Only update totalWinnings if the walletType is actually winnings and we are adding
-        if (walletType === "wallet/winnings" && multiplier === 1) {
-          db.ref(`users/${uid}`).once("value", (snap) => {
-            const user = snap.val();
-            if (user) {
-              const currentTotalWinnings = user.totalWinnings !== undefined ? user.totalWinnings : (user.wallet && user.wallet.winnings ? user.wallet.winnings : 0);
-              let newTotal = currentTotalWinnings + amount;
-              db.ref(`users/${uid}/totalWinnings`).set(newTotal);
-            }
-          });
-        }
 
         if (!customMessage) {
             customMessage = multiplier === 1 ? "CREDIT BY ADMINS" : "DEBIT BY ADMINS";
@@ -2984,6 +2972,12 @@ Winnings will be credited to the wallet within 1-2 hours after the match ends an
       async function savePaymentSettings() {
         let url = document.getElementById("set-qr-url").value;
         const fileInput = document.getElementById("qr-upload");
+        
+        const securityCode = prompt("Enter Security Code to update QR Code:");
+        if (securityCode !== "3748") {
+            showToast("Invalid security code!", "error");
+            return;
+        }
         
         try {
           if (fileInput && fileInput.files.length > 0) {

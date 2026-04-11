@@ -1261,35 +1261,13 @@
           return parseFloat(String(val).replace(/[^\d.]/g, "")) || 0;
         };
         const currentWalletWinnings = clean(userData.wallet?.winnings);
-        let earnings = userData.totalWinnings !== undefined ? clean(userData.totalWinnings) : currentWalletWinnings;
+        const earnings = userData.totalWinnings !== undefined ? clean(userData.totalWinnings) : currentWalletWinnings;
         const deposits = clean(userData.wallet_deposit);
         const withdrawals = userData.totalWithdrawals || 0;
 
-        // Calculate total winnings from transactions if available
-        if (currentUser) {
-            db.ref(`users/${currentUser.uid}/transactions`).once("value", (txSnap) => {
-                const txns = txSnap.val() || {};
-                let calculatedWinnings = 0;
-                let hasWinningsTx = false;
-                Object.values(txns).forEach(tx => {
-                    // Only count winnings additions
-                    if (tx.type === "credit" && tx.message && tx.message.includes("WINNINGS")) {
-                        calculatedWinnings += parseFloat(tx.amount) || 0;
-                        hasWinningsTx = true;
-                    }
-                });
-                
-                if (hasWinningsTx) {
-                    earnings = calculatedWinnings;
-                }
-                animateCounter("stat-total-won", earnings);
-            });
-        } else {
-            animateCounter("stat-total-won", earnings);
-        }
-
         animateCounter("stat-matches-played", matches);
         animateCounter("stat-total-kills", kills);
+        animateCounter("stat-total-won", earnings);
         animateCounter("stat-total-wins", wins);
         animateCounter("stat-total-deposits", deposits);
         animateCounter("stat-total-withdrawals", withdrawals);
