@@ -12,10 +12,28 @@
     <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
     <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-auth.js"></script>
     <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-database.js"></script>
+    <script>
+      tailwind.config = {
+        theme: {
+          extend: {
+            colors: {
+              'premium-bg': 'var(--premium-bg)',
+              'premium-surface': 'var(--premium-surface)',
+              'premium-surface-2': 'var(--premium-surface-2)',
+              'premium-accent': 'var(--premium-accent)',
+              'premium-text': 'var(--premium-text)',
+              'premium-text-muted': 'var(--premium-text-muted)',
+              'premium-border': 'var(--premium-border)',
+            }
+          }
+        }
+      }
+    </script>
     <style>
       :root {
         --premium-bg: #0D1117;
         --premium-surface: #161D29;
+        --premium-surface-2: #1E293B;
         --premium-border: rgba(255, 255, 255, 0.06);
         --premium-accent: #2563EB;
         --premium-text: #F8FAFC;
@@ -33,8 +51,8 @@
         border: 1px solid var(--premium-border);
       }
       .glass-card {
-        background: #161D29;
-        border: 1px solid rgba(255, 255, 255, 0.06);
+        background: var(--premium-surface);
+        border: 1px solid var(--premium-border);
         transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
       }
       .sidebar-item {
@@ -42,12 +60,12 @@
         border: 1px solid transparent;
       }
       .sidebar-item:hover {
-        background: #1E293B !important;
-        border-color: rgba(255, 255, 255, 0.06);
-        color: #F8FAFC;
+        background: var(--premium-surface-2) !important;
+        border-color: var(--premium-border);
+        color: var(--premium-text);
       }
       .sidebar-item.active {
-        background: #2563EB !important;
+        background: var(--premium-accent) !important;
         color: #ffffff !important;
         box-shadow: 0 4px 12px rgba(37, 99, 235, 0.3);
         border-color: transparent;
@@ -74,19 +92,19 @@
       }
     </style>
   </head>
-  <body class="bg-[#0D1117] text-[#F8FAFC]">
+  <body class="bg-premium-bg text-premium-text">
     <div class="cinematic-overlay"></div>
     <!-- Loading Overlay -->
     <div
       id="loading-overlay"
       class="fixed inset-0 bg-black/80 backdrop-blur-md z-[9999] flex flex-col items-center justify-center hidden"
     >
-      <div class="bg-[#161D29]-card p-10 rounded-3xl border border-[#2A3441] shadow-2xl flex flex-col items-center space-y-6 max-w-xs w-full mx-4">
+      <div class="bg-premium-surface-card p-10 rounded-3xl border border-premium-border shadow-2xl flex flex-col items-center space-y-6 max-w-xs w-full mx-4">
         <div class="relative">
             <div class="w-16 h-16 border-4 border-[#3B82F6]/20 border-t-blue-500 rounded-full animate-spin"></div>
             <i class="fas fa-shield-alt absolute inset-0 flex items-center justify-center text-[#3B82F6] text-xl"></i>
         </div>
-        <p class="text-[#F8FAFC] font-bold text-center tracking-tight" id="loading-text">Processing...</p>
+        <p class="text-premium-text font-bold text-center tracking-tight" id="loading-text">Processing...</p>
         <button 
           onclick="forceCancelLoading()" 
           class="mt-4 px-6 py-2.5 bg-red-500/10 hover:bg-red-500/20 text-[#F87171] text-[10px] font-black uppercase tracking-widest rounded-xl border border-red-500/20 transition-all active:scale-95"
@@ -102,17 +120,17 @@
     <!-- Login Screen -->
     <div
       id="login-screen"
-      class="fixed inset-0 flex items-center justify-center bg-[#0D1117] z-40"
+      class="fixed inset-0 flex items-center justify-center bg-premium-bg z-40"
     >
       <div
-        class="bg-[#161D29] p-8 rounded-3xl shadow-xl w-full max-w-sm border border-[#2A3441]"
+        class="bg-premium-surface p-8 rounded-3xl shadow-xl w-full max-w-sm border border-premium-border"
       >
-        <h2 class="text-2xl font-black text-[#F8FAFC] mb-6 uppercase text-center tracking-tighter">Admin Login</h2>
+        <h2 class="text-2xl font-black text-premium-text mb-6 uppercase text-center tracking-tighter">Admin Login</h2>
         <div id="login-error" class="text-[#EF4444] mb-4 text-sm hidden text-center font-bold"></div>
         <div class="space-y-4">
-          <input type="text" id="login-email" placeholder="Email Address" class="w-full p-4 bg-[#161D29] border border-[#2A3441] rounded-2xl text-[#F8FAFC] outline-none focus:border-[#3B82F6] transition-all" />
-          <input type="password" id="login-password" placeholder="Password" class="w-full p-4 bg-[#161D29] border border-[#2A3441] rounded-2xl text-[#F8FAFC] outline-none focus:border-[#3B82F6] transition-all" />
-          <button id="login-btn" onclick="handleLogin()" class="w-full py-4 bg-[#2563EB] text-[#F8FAFC] font-black rounded-2xl uppercase active:scale-95 transition-all cursor-pointer hover:bg-[#1D4ED8] shadow-lg shadow-blue-900/20">
+          <input type="text" id="login-email" placeholder="Email Address" class="w-full p-4 bg-premium-surface border border-premium-border rounded-2xl text-premium-text outline-none focus:border-[#3B82F6] transition-all" />
+          <input type="password" id="login-password" placeholder="Password" class="w-full p-4 bg-premium-surface border border-premium-border rounded-2xl text-premium-text outline-none focus:border-[#3B82F6] transition-all" />
+          <button id="login-btn" onclick="handleLogin()" class="w-full py-4 bg-[#2563EB] text-premium-text font-black rounded-2xl uppercase active:scale-95 transition-all cursor-pointer hover:bg-[#1D4ED8] shadow-lg shadow-blue-900/20">
             Login
           </button>
         </div>
@@ -122,22 +140,22 @@
     <!-- Admin Layout -->
     <div id="admin-layout" class="hidden flex h-screen">
       <!-- Sidebar -->
-      <aside class="w-64 bg-[#11161F] border-r border-[#2A3441] p-6 flex flex-col relative z-20">
+      <aside class="w-64 bg-premium-bg border-r border-premium-border p-6 flex flex-col relative z-20">
         <div class="mb-10">
-          <h1 class="text-2xl font-black text-[#F8FAFC] uppercase tracking-tighter flex items-center gap-2">
+          <h1 class="text-2xl font-black text-premium-text uppercase tracking-tighter flex items-center gap-2">
             <img id="admin-sidebar-logo" src="" alt="Logo" class="w-8 h-8 object-contain hidden" />
             <span id="admin-sidebar-icon" class="w-8 h-8 bg-[#2563EB] rounded-lg flex items-center justify-center shadow-lg shadow-[#2563EB]/20">
                 <i class="fas fa-shield-alt text-sm"></i>
             </span>
             <span id="admin-sidebar-name">AddaClashX</span>
           </h1>
-          <p class="text-[9px] text-[#94A3B8] font-black uppercase tracking-[0.2em] mt-2 pl-1">Admin Console</p>
+          <p class="text-[9px] text-premium-text-muted font-black uppercase tracking-[0.2em] mt-2 pl-1">Admin Console</p>
         </div>
         
         <nav class="space-y-6 flex-1 overflow-y-auto pr-2 custom-scrollbar">
           <!-- Main Group -->
           <div>
-            <p class="text-[10px] font-black text-[#94A3B8] uppercase tracking-widest mb-3 px-3">Overview</p>
+            <p class="text-[10px] font-black text-premium-text-muted uppercase tracking-widest mb-3 px-3">Overview</p>
             <div class="space-y-1">
                 <button onclick="showSection('dashboard')" class="sidebar-item w-full text-left p-3 rounded-xl font-bold text-sm flex items-center gap-3" data-section="dashboard">
                   <i class="fas fa-th-large w-5 opacity-70"></i> Dashboard
@@ -150,7 +168,7 @@
 
           <!-- Management Group -->
           <div>
-            <p class="text-[10px] font-black text-[#94A3B8] uppercase tracking-widest mb-3 px-3">Management</p>
+            <p class="text-[10px] font-black text-premium-text-muted uppercase tracking-widest mb-3 px-3">Management</p>
             <div class="space-y-1">
                 <button onclick="showSection('users')" class="sidebar-item w-full text-left p-3 rounded-xl font-bold text-sm flex items-center gap-3" data-section="users">
                   <i class="fas fa-users w-5 opacity-70"></i> Users
@@ -166,7 +184,7 @@
 
           <!-- Content Group -->
           <div>
-            <p class="text-[10px] font-black text-[#94A3B8] uppercase tracking-widest mb-3 px-3">Content</p>
+            <p class="text-[10px] font-black text-premium-text-muted uppercase tracking-widest mb-3 px-3">Content</p>
             <div class="space-y-1">
                 <button onclick="showSection('tournaments')" class="sidebar-item w-full text-left p-3 rounded-xl font-bold text-sm flex items-center gap-3" data-section="tournaments">
                   <i class="fas fa-trophy w-5 opacity-70"></i> Tournaments
@@ -210,7 +228,7 @@
           </div>
         </nav>
 
-        <div class="mt-auto pt-6 border-t border-[#2A3441]">
+        <div class="mt-auto pt-6 border-t border-premium-border">
           <button onclick="handleLogout()" class="w-full flex items-center gap-3 p-3 text-[#F87171] font-bold hover:bg-red-500/10 rounded-xl transition-all active:scale-95 text-sm">
             <i class="fas fa-sign-out-alt w-5"></i> Logout
           </button>
@@ -224,22 +242,22 @@
             <h2 id="section-title" class="text-4xl font-black uppercase tracking-tighter">
                 Dashboard
             </h2>
-            <p id="section-subtitle" class="text-[#94A3B8] text-xs font-bold uppercase tracking-widest mt-1">System Overview & Live Stats</p>
+            <p id="section-subtitle" class="text-premium-text-muted text-xs font-bold uppercase tracking-widest mt-1">System Overview & Live Stats</p>
           </div>
           <div class="flex items-center gap-4">
             <div class="relative">
               <button
                 onclick="document.getElementById('theme-dropdown').classList.toggle('hidden')"
-                class="flex items-center justify-center w-12 h-12 bg-[#161D29] border border-[#2A3441] rounded-2xl hover:bg-[#1E293B] transition-all active:scale-95 shadow-lg"
+                class="flex items-center justify-center w-12 h-12 bg-premium-surface border border-premium-border rounded-2xl hover:bg-premium-surface-2 transition-all active:scale-95 shadow-lg"
                 title="Change Theme"
               >
                 <i class="fas fa-palette text-[#60A5FA]"></i>
               </button>
               <div
                 id="theme-dropdown"
-                class="hidden absolute right-0 mt-3 w-64 bg-[#161D29] rounded-2xl border border-[#2A3441] shadow-2xl z-50 p-5"
+                class="hidden absolute right-0 mt-3 w-64 bg-premium-surface rounded-2xl border border-premium-border shadow-2xl z-50 p-5"
               >
-                <h3 class="text-[10px] font-black text-[#94A3B8] mb-4 uppercase tracking-[0.2em]">Interface Color</h3>
+                <h3 class="text-[10px] font-black text-premium-text-muted mb-4 uppercase tracking-[0.2em]">Interface Color</h3>
                 <div class="grid grid-cols-5 gap-3" id="color-swatches">
                   <!-- Swatches injected via JS -->
                 </div>
@@ -290,17 +308,17 @@
     <!-- Create Match Modal -->
     <div
       id="create-match-modal"
-      class="fixed inset-0 bg-[#0D1117]/90 z-50 flex items-center justify-center hidden backdrop-blur-sm"
+      class="fixed inset-0 bg-premium-bg/90 z-50 flex items-center justify-center hidden backdrop-blur-sm"
     >
       <div
-        class="bg-[#161D29] p-0 rounded-[2rem] shadow-2xl w-full max-w-2xl border border-[#2A3441] max-h-[90vh] overflow-hidden flex flex-col"
+        class="bg-premium-surface p-0 rounded-[2rem] shadow-2xl w-full max-w-2xl border border-premium-border max-h-[90vh] overflow-hidden flex flex-col"
       >
-        <div class="p-8 border-b border-[#2A3441] flex justify-between items-center bg-[#11161F]">
+        <div class="p-8 border-b border-premium-border flex justify-between items-center bg-premium-bg">
             <div>
-                <h2 class="text-2xl font-black text-[#F8FAFC] uppercase tracking-tighter">Create New Tournament</h2>
-                <p class="text-[#94A3B8] text-[10px] font-black uppercase tracking-[0.2em] mt-1">Configure match settings and rules</p>
+                <h2 class="text-2xl font-black text-premium-text uppercase tracking-tighter">Create New Tournament</h2>
+                <p class="text-premium-text-muted text-[10px] font-black uppercase tracking-[0.2em] mt-1">Configure match settings and rules</p>
             </div>
-            <button onclick="closeModal('create-match-modal')" class="w-10 h-10 rounded-full bg-[#161D29] border border-[#2A3441] flex items-center justify-center text-[#94A3B8] hover:text-[#F8FAFC] transition-colors">
+            <button onclick="closeModal('create-match-modal')" class="w-10 h-10 rounded-full bg-premium-surface border border-premium-border flex items-center justify-center text-premium-text-muted hover:text-premium-text transition-colors">
                 <i class="fas fa-times"></i>
             </button>
         </div>
@@ -313,12 +331,12 @@
                 </h3>
                 <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <div class="space-y-1.5">
-                        <label class="text-[10px] font-black text-[#94A3B8] uppercase tracking-widest ml-1">Tournament Title</label>
-                        <input type="text" id="match-name" placeholder="e.g. Pro League Season 1" class="w-full p-4 bg-[#0D1117] border border-[#2A3441] rounded-2xl text-[#F8FAFC] outline-none focus:border-[#3B82F6] transition-all font-bold">
+                        <label class="text-[10px] font-black text-premium-text-muted uppercase tracking-widest ml-1">Tournament Title</label>
+                        <input type="text" id="match-name" placeholder="e.g. Pro League Season 1" class="w-full p-4 bg-premium-bg border border-premium-border rounded-2xl text-premium-text outline-none focus:border-[#3B82F6] transition-all font-bold">
                     </div>
                     <div class="space-y-1.5">
-                        <label class="text-[10px] font-black text-[#94A3B8] uppercase tracking-widest ml-1">Game Mode</label>
-                        <select id="match-category" class="w-full p-4 bg-[#0D1117] border border-[#2A3441] rounded-2xl text-[#F8FAFC] outline-none focus:border-[#3B82F6] transition-all font-bold">
+                        <label class="text-[10px] font-black text-premium-text-muted uppercase tracking-widest ml-1">Game Mode</label>
+                        <select id="match-category" class="w-full p-4 bg-premium-bg border border-premium-border rounded-2xl text-premium-text outline-none focus:border-[#3B82F6] transition-all font-bold">
                             <option value="">Select Mode</option>
                         </select>
                     </div>
@@ -485,20 +503,19 @@
       ];
 
       function applyTheme(color) {
-        document.documentElement.style.setProperty('--theme-bg', color);
-        // Calculate surface colors (slightly lighter than bg for dark themes)
-        // For very light colors like #EBF4F6, we might need a different approach,
-        // but color-mix with black/white works well generally.
+        document.documentElement.style.setProperty('--premium-bg', color);
         if (color === '#EBF4F6') {
-          document.documentElement.style.setProperty('--theme-surface', `color-mix(in srgb, ${color} 90%, black)`);
-          document.documentElement.style.setProperty('--theme-surface-2', `color-mix(in srgb, ${color} 80%, black)`);
-          document.documentElement.style.setProperty('--theme-text', '#1f2937');
-          document.documentElement.style.setProperty('--theme-text-muted', '#4b5563');
+          document.documentElement.style.setProperty('--premium-surface', `color-mix(in srgb, ${color} 90%, black)`);
+          document.documentElement.style.setProperty('--premium-surface-2', `color-mix(in srgb, ${color} 80%, black)`);
+          document.documentElement.style.setProperty('--premium-text', '#1f2937');
+          document.documentElement.style.setProperty('--premium-text-muted', '#4b5563');
+          document.documentElement.style.setProperty('--premium-border', 'rgba(0, 0, 0, 0.1)');
         } else {
-          document.documentElement.style.setProperty('--theme-surface', `color-mix(in srgb, ${color} 85%, white)`);
-          document.documentElement.style.setProperty('--theme-surface-2', `color-mix(in srgb, ${color} 70%, white)`);
-          document.documentElement.style.setProperty('--theme-text', '#f8fafc');
-          document.documentElement.style.setProperty('--theme-text-muted', '#9ca3af');
+          document.documentElement.style.setProperty('--premium-surface', `color-mix(in srgb, ${color} 85%, white)`);
+          document.documentElement.style.setProperty('--premium-surface-2', `color-mix(in srgb, ${color} 70%, white)`);
+          document.documentElement.style.setProperty('--premium-text', '#f8fafc');
+          document.documentElement.style.setProperty('--premium-text-muted', '#9ca3af');
+          document.documentElement.style.setProperty('--premium-border', 'rgba(255, 255, 255, 0.06)');
         }
         localStorage.setItem('adminThemeColor', color);
       }
