@@ -125,10 +125,11 @@
       <aside class="w-64 glass border-r border-white/5 p-6 flex flex-col relative z-20">
         <div class="mb-10">
           <h1 class="text-2xl font-black text-white uppercase tracking-tighter flex items-center gap-2">
-            <span class="w-8 h-8 bg-blue-600 rounded-lg flex items-center justify-center shadow-lg shadow-blue-600/20">
+            <img id="admin-sidebar-logo" src="" alt="Logo" class="w-8 h-8 object-contain hidden" />
+            <span id="admin-sidebar-icon" class="w-8 h-8 bg-blue-600 rounded-lg flex items-center justify-center shadow-lg shadow-blue-600/20">
                 <i class="fas fa-shield-alt text-sm"></i>
             </span>
-            AddaClashX
+            <span id="admin-sidebar-name">AddaClashX</span>
           </h1>
           <p class="text-[9px] text-slate-500 font-black uppercase tracking-[0.2em] mt-2 pl-1">Admin Console</p>
         </div>
@@ -327,12 +328,21 @@
           placeholder="Per Kill Prize"
           class="w-full p-4 bg-white/5 border border-white/10 rounded-xl mb-4 text-white outline-none focus:border-blue-500 transition-all"
         />
-        <input
-          type="number"
-          id="match-maxplayers"
-          placeholder="Max Players"
-          class="w-full p-4 bg-white/5 border border-white/10 rounded-xl mb-4 text-white outline-none focus:border-blue-500 transition-all"
-        />
+        <div class="grid grid-cols-2 gap-4 mb-4">
+          <input
+            type="number"
+            id="match-maxplayers"
+            placeholder="Max Players"
+            class="w-full p-4 bg-white/5 border border-white/10 rounded-xl text-white outline-none focus:border-blue-500 transition-all"
+          />
+          <input
+            type="number"
+            id="match-teamsize"
+            placeholder="Team Size (1 for Solo)"
+            value="1"
+            class="w-full p-4 bg-white/5 border border-white/10 rounded-xl text-white outline-none focus:border-blue-500 transition-all"
+          />
+        </div>
         <input
           type="datetime-local"
           id="match-time"
@@ -1042,6 +1052,12 @@
                                     <input type="text" id="set-app-name" placeholder="App Name" class="w-full p-4 bg-white/5 border border-white/10 rounded-xl text-white outline-none focus:border-blue-500 transition-all font-bold">
                                 </div>
                                 <div>
+                                    <label class="text-[10px] font-black text-slate-500 uppercase tracking-widest mb-2 block">App Logo URL</label>
+                                    <input type="text" id="set-app-logo" placeholder="Image URL (e.g., https://example.com/logo.png)" class="w-full p-4 bg-white/5 border border-white/10 rounded-xl text-white outline-none focus:border-blue-500 transition-all font-bold mb-2">
+                                    <input type="file" id="set-app-logo-file" accept="image/*" class="w-full p-4 bg-white/5 border border-white/10 rounded-xl text-white outline-none focus:border-blue-500 transition-all font-bold text-xs" onchange="uploadAppLogo(this)">
+                                    <p id="app-logo-upload-status" class="text-[10px] font-bold text-blue-400 mt-2 hidden">Uploading...</p>
+                                </div>
+                                <div>
                                     <label class="text-[10px] font-black text-slate-500 uppercase tracking-widest mb-2 block">Min Withdrawal (₹)</label>
                                     <input type="number" id="set-min-withdrawal" placeholder="Min Withdrawal" class="w-full p-4 bg-white/5 border border-white/10 rounded-xl text-white outline-none focus:border-blue-500 transition-all font-bold">
                                 </div>
@@ -1553,7 +1569,7 @@
               <img src="${user.profilePic || `https://ui-avatars.com/api/?name=${user.username || 'U'}`}" class="w-10 h-10 rounded-full object-cover">
               <div class="flex-1 min-w-0">
                 <p class="font-bold text-white truncate">${user.username || "Unknown"}</p>
-                <p class="text-[10px] text-gray-400 truncate">${user.email || "No Email"}</p>
+                <p class="text-[10px] text-gray-400 truncate">${user.email || "No Email"} | ${user.phone || "No Phone"}</p>
               </div>
               <div class="text-right">
                 <p class="text-xs font-black text-blue-400">₹${(
@@ -1576,6 +1592,7 @@
           console.log("FULL USER DATA:", user);
 
           const email = user.email || user.userEmail || user.loginEmail || "No Email";
+          const phone = user.phone || "No Phone";
           const appId = user.appId || user.uidShort || uid.slice(0, 6);
           const deposit = parseFloat(user.wallet_deposit || user.deposit || (user.wallet && user.wallet.deposit) || 0);
           const winnings = parseFloat(user.wallet?.winnings || 0);
@@ -1610,6 +1627,10 @@
                         <div class="flex justify-between items-center">
                             <span class="text-gray-400 text-xs">Email</span>
                             <span class="text-white font-medium text-xs">${email}</span>
+                        </div>
+                        <div class="flex justify-between items-center">
+                            <span class="text-gray-400 text-xs">Phone</span>
+                            <span class="text-white font-medium text-xs">${phone}</span>
                         </div>
                         <div class="flex justify-between items-center">
                             <span class="text-gray-400 text-xs">App ID</span>
@@ -2689,6 +2710,7 @@ Winnings will be credited to the wallet within 1-2 hours after the match ends an
             prizePool: parseFloat(document.getElementById("match-prize").value) || 0,
             perKillPrize: parseFloat(document.getElementById("match-perkill").value) || 0,
             maxPlayers: parseInt(document.getElementById("match-maxplayers").value) || 0,
+            teamSize: parseInt(document.getElementById("match-teamsize").value) || 1,
             matchTime: document.getElementById("match-time").value,
             rules: document.getElementById("match-rules").value,
             announcement: document.getElementById("match-announcement").value,
@@ -2719,6 +2741,7 @@ Winnings will be credited to the wallet within 1-2 hours after the match ends an
           document.getElementById("match-prize").value = "";
           document.getElementById("match-perkill").value = "";
           document.getElementById("match-maxplayers").value = "";
+          document.getElementById("match-teamsize").value = "1";
           document.getElementById("match-time").value = "";
           document.getElementById("match-announcement").value = "";
           document.getElementById("match-admin-notes").value = "";
@@ -2777,8 +2800,10 @@ Winnings will be credited to the wallet within 1-2 hours after the match ends an
                                     </div>
                                 </div>
                             </div>
-                            <div>
-                                <h3 class="text-[10px] font-black text-slate-500 uppercase tracking-widest mb-4">Participants (${Object.keys(match.participants || {}).length})</h3>
+                        <div class="flex justify-between items-center mb-4">
+                            <h3 class="text-[10px] font-black text-slate-500 uppercase tracking-widest">Participants (${Object.keys(match.participants || {}).length})</h3>
+                            <button onclick="openMatchDetails('${key}')" class="text-[8px] font-black text-blue-500 uppercase tracking-widest hover:underline"><i class="fas fa-sync-alt mr-1"></i> Refresh List</button>
+                        </div>
                                 <div class="h-[600px] overflow-y-auto bg-white/5 p-4 rounded-2xl border border-white/10 custom-scrollbar">
                                     ${Object.keys(match.participants || {})
                                       .map((uid) => {
@@ -2786,14 +2811,16 @@ Winnings will be credited to the wallet within 1-2 hours after the match ends an
                                         return `<div class="p-4 border-b border-white/5 space-y-4 last:border-0 hover:bg-white/5 transition-colors rounded-xl">
                                             <div class="flex justify-between items-start">
                                                 <div>
-                                                    <p class="text-xs font-black text-white uppercase tracking-tight">${p.username || p.gameUsername || "Unknown"}</p>
-                                                    <p class="text-[8px] font-bold text-slate-500 uppercase tracking-widest mt-1">${uid}</p>
+                                                    <p class="text-xs font-black text-white uppercase tracking-tight">${p.username || "Unknown"}</p>
+                                                    <p class="text-[8px] font-bold text-slate-500 uppercase tracking-widest mt-1">IGN: ${p.ign || "N/A"} | UID: ${p.uid || "N/A"}</p>
+                                                    <p class="text-[8px] font-bold text-blue-500 uppercase tracking-widest mt-1">Slot/Team: ${p.team || "Not Selected"}</p>
+                                                    <p class="text-[7px] font-medium text-slate-600 uppercase tracking-widest mt-1">FB ID: ${uid}</p>
                                                 </div>
                                                 <div class="text-right">
                                                     <p class="text-[10px] font-black text-blue-400 uppercase tracking-widest">${p.appId || ""}</p>
                                                 </div>
                                             </div>
-                                            <div class="grid grid-cols-2 gap-3">
+                                            <div class="grid grid-cols-3 gap-3">
                                                 <div>
                                                     <label class="text-[8px] font-black text-slate-500 uppercase tracking-widest mb-1 block">Kills</label>
                                                     <input type="number" id="kills-${uid}" value="${p.kills || 0}" class="w-full p-2 bg-white/5 border border-white/10 rounded-lg text-xs text-white outline-none focus:border-blue-500 transition-all font-bold">
@@ -2801,6 +2828,12 @@ Winnings will be credited to the wallet within 1-2 hours after the match ends an
                                                 <div>
                                                     <label class="text-[8px] font-black text-slate-500 uppercase tracking-widest mb-1 block">Prize (₹)</label>
                                                     <input type="number" id="prize-${uid}" value="${p.prize || 0}" class="w-full p-2 bg-white/5 border border-white/10 rounded-lg text-xs text-white outline-none focus:border-blue-500 transition-all font-bold">
+                                                </div>
+                                                <div class="flex flex-col justify-end pb-1">
+                                                    <label class="flex items-center space-x-2 cursor-pointer">
+                                                        <input type="checkbox" id="winner-${uid}" ${p.isWinner ? 'checked' : ''} class="w-4 h-4 rounded border-white/10 bg-white/5 text-blue-500 focus:ring-blue-500 focus:ring-offset-gray-900">
+                                                        <span class="text-[10px] font-black text-slate-400 uppercase tracking-widest">Winner</span>
+                                                    </label>
                                                 </div>
                                             </div>
                                             <button onclick="saveParticipantResult('${key}', '${uid}')" class="w-full py-2 bg-blue-600/20 text-blue-400 border border-blue-600/30 rounded-lg font-black text-[10px] uppercase tracking-widest hover:bg-blue-600 hover:text-white transition-all active:scale-95">Update Player</button>
@@ -2820,129 +2853,96 @@ Winnings will be credited to the wallet within 1-2 hours after the match ends an
       function saveParticipantResult(matchKey, uid) {
         const newKills = parseInt(document.getElementById(`kills-${uid}`).value);
         const newPrize = parseFloat(document.getElementById(`prize-${uid}`).value);
+        const isWinner = document.getElementById(`winner-${uid}`).checked;
 
         if (isNaN(newKills) || isNaN(newPrize))
           return showToast("Invalid input", "error");
 
+        showLoading(true, "Saving player result...");
         db.ref(`tournaments/${matchKey}/participants/${uid}`).once("value", snap => {
           const p = snap.val();
-          if (!p) return showToast("Participant not found", "error");
+          if (!p) {
+            showLoading(false);
+            return showToast("Participant not found", "error");
+          }
 
           const oldKills = p.kills || 0;
           const oldPrize = p.prize || 0;
+          const oldIsWinner = p.isWinner || false;
           const wasProcessed = p.statsProcessed || false;
 
           const killDiff = newKills - oldKills;
           const prizeDiff = newPrize - oldPrize;
 
+          // 1. Update tournament participant record
           db.ref(`tournaments/${matchKey}/participants/${uid}`)
             .update({
               kills: newKills,
               prize: newPrize,
+              isWinner: isWinner,
               statsProcessed: true,
             })
             .then(() => {
-              showToast("Result saved!");
-              
-              // Update user stats
-              db.ref(`users/${uid}`).once("value", userSnap => {
-                const user = userSnap.val();
-                if (!user) return;
+              // 2. Update user stats using a transaction for safety
+              db.ref(`users/${uid}`).transaction((user) => {
+                if (user) {
+                  user.totalKills = (user.totalKills || 0) + killDiff;
+                  
+                  // Handle wallet/winnings safely
+                  const currentWinnings = parseFloat(user.totalWinnings || (user.wallet && user.wallet.winnings) || 0);
+                  user.totalWinnings = currentWinnings + prizeDiff;
+                  
+                  if (isWinner && !oldIsWinner) {
+                    user.totalWins = (user.totalWins || 0) + 1;
+                  } else if (!isWinner && oldIsWinner) {
+                    user.totalWins = Math.max(0, (user.totalWins || 0) - 1);
+                  }
+                  
+                  if (!wasProcessed) {
+                    user.matchesPlayed = (user.matchesPlayed || 0) + 1;
+                  }
 
-                const updates = {};
-                updates.totalKills = (user.totalKills || 0) + killDiff;
-                const currentTotalWinnings = user.totalWinnings !== undefined ? user.totalWinnings : (user.wallet && user.wallet.winnings ? user.wallet.winnings : 0);
-                updates.totalWinnings = currentTotalWinnings + prizeDiff;
-                
-                if (!wasProcessed) {
-                  updates.matchesPlayed = (user.matchesPlayed || 0) + 1;
+                  // Update wallet winnings if prize changed
+                  if (prizeDiff !== 0) {
+                    if (!user.wallet) user.wallet = {};
+                    user.wallet.winnings = (user.wallet.winnings || 0) + prizeDiff;
+                  }
                 }
-                
-                // Level progression logic (100 xp per kill, 1000 xp per match)
-                const xpGained = (killDiff * 100) + (!wasProcessed ? 1000 : 0);
-                let newXp = (user.xp || 0) + xpGained;
-                let newLevel = user.level || 1;
-                
-                // Simple level formula: every 1000 xp is a level
-                while (newXp >= newLevel * 1000) {
-                  newLevel++;
-                }
-                
-                updates.xp = newXp;
-                updates.level = newLevel;
-
-                // Monthly Rank Logic
-                const currentMonth = new Date().toISOString().slice(0, 7); // "YYYY-MM"
-                let monthlyXp = user.currentMonth === currentMonth ? (user.monthlyXp || 0) : 0;
-                monthlyXp += xpGained;
-                
-                updates.monthlyXp = monthlyXp;
-                updates.currentMonth = currentMonth;
-                
-                let autoRank = "Bronze";
-                if (monthlyXp >= 120000) autoRank = "Grandmaster";
-                else if (monthlyXp >= 80000) autoRank = "Master";
-                else if (monthlyXp >= 50000) autoRank = "Diamond";
-                else if (monthlyXp >= 30000) autoRank = "Platinum";
-                else if (monthlyXp >= 15000) autoRank = "Gold";
-                else if (monthlyXp >= 5000) autoRank = "Silver";
-                
-                updates.autoRank = autoRank;
-                
-                if (!user.manualRank) {
-                    updates.rank = autoRank;
-                }
-
-                db.ref(`users/${uid}`).update(updates);
-              });
-
-              // Optionally credit/deduct user wallet if prize changed
-              if (prizeDiff !== 0) {
-                const actionText = prizeDiff > 0 ? `Credit ₹${prizeDiff}` : `Deduct ₹${Math.abs(prizeDiff)}`;
-                confirmAction(
-                  `${actionText} to user's winnings wallet?`,
-                  () => {
-                    db.ref(`users/${uid}`).once("value", (userSnap) => {
-                      const user = userSnap.val();
-                      if (!user) return showToast("User not found", "error");
-
-                      const amount = Math.abs(prizeDiff);
-                      const type = prizeDiff > 0 ? "credit" : "debit";
-                      const desc = `Prize Adjustment for Match: ${matchKey}`;
-
-                      db.ref(`users/${uid}/wallet/winnings`).transaction(
-                        (current) => (current || 0) + prizeDiff,
-                      );
-
-                      // User local log
-                      db.ref(`users/${uid}/transactions`).push({
-                        amount,
-                        description: desc,
-                        type,
-                        timestamp: Date.now(),
-                      });
-
-                      // Global admin log
-                      db.ref("transactions").push({
-                        uid,
-                        username: user.username || user.name || "Unknown",
-                        appId: user.appId || "No ID",
-                        amount,
-                        description: desc,
-                        type: `prize_${type}`,
-                        timestamp: Date.now(),
-                      });
-
-                      showToast(`Prize ${type}ed!`);
+                return user;
+              }, (error, committed, snapshot) => {
+                if (error) {
+                  showLoading(false);
+                  showToast("Stats update failed: " + error.message, "error");
+                } else if (!committed) {
+                  showLoading(false);
+                  showToast("Stats update aborted.", "warning");
+                } else {
+                  // 3. Log transaction if prize changed
+                  if (prizeDiff !== 0) {
+                    db.ref(`users/${uid}/transactions`).push({
+                      amount: Math.abs(prizeDiff),
+                      type: prizeDiff > 0 ? "credit" : "debit",
+                      description: `Match Prize: ${matchKey}`,
+                      timestamp: firebase.database.ServerValue.TIMESTAMP,
+                      status: "Success"
                     });
-                  },
-                );
-              }
+                  }
+                  showLoading(false);
+                  showToast("Player result and stats updated!");
+                }
+              });
+            }).catch(err => {
+              showLoading(false);
+              showToast("Failed to save result: " + err.message, "error");
             });
         });
       }
 
-      function updateMatchStatus(key, status) {
+      function updateMatchStatus(key, status, force = false) {
+        if (status === 'Completed' && !force) {
+            markMatchCompleted(key);
+            return;
+        }
         db.ref(`tournaments/${key}/status`)
           .set(status)
           .then(() => showToast("Status updated!"));
@@ -2951,11 +2951,46 @@ Winnings will be credited to the wallet within 1-2 hours after the match ends an
       function markMatchCompleted(key) {
         db.ref(`tournaments/${key}`).once("value", snap => {
           const match = snap.val();
+          if (!match) return;
+
           if (!match.resultImageUrl) {
-            showToast("Anti-Cheat: You MUST upload a Result Image before marking the match as completed.", "error");
+            showToast("Required: You MUST upload a Result Image before marking the match as completed.", "error");
             return;
           }
-          updateMatchStatus(key, 'Completed');
+
+          const participants = match.participants || {};
+          const participantIds = Object.keys(participants);
+          
+          if (participantIds.length === 0) {
+            // No players joined, can just complete
+            updateMatchStatus(key, 'Completed', true);
+            return;
+          }
+
+          let hasWinner = false;
+          let allProcessed = true;
+          let unprocessedPlayers = [];
+
+          participantIds.forEach(uid => {
+            const p = participants[uid];
+            if (p.isWinner) hasWinner = true;
+            if (!p.statsProcessed) {
+              allProcessed = false;
+              unprocessedPlayers.push(p.username || uid);
+            }
+          });
+
+          if (!hasWinner) {
+            showToast("Required: You must specify at least one winner.", "error");
+            return;
+          }
+
+          if (!allProcessed) {
+            showToast(`Required: Results not saved for: ${unprocessedPlayers.join(", ")}`, "error");
+            return;
+          }
+
+          updateMatchStatus(key, 'Completed', true);
         });
       }
 
@@ -3086,12 +3121,32 @@ Winnings will be credited to the wallet within 1-2 hours after the match ends an
           const settings = snap.val() || {};
           document.getElementById("set-app-name").value =
             settings.appName || "";
+          document.getElementById("set-app-logo").value =
+            settings.appLogo || "";
           document.getElementById("set-min-withdrawal").value =
             settings.minWithdrawal || 0;
           document.getElementById("set-maintenance").checked =
             settings.maintenance || false;
           document.getElementById("set-qr-url").value = settings.qrCodeUrl || "";
           document.getElementById("qr-preview").src = settings.qrCodeUrl || "";
+          
+          const adminSidebarName = document.getElementById("admin-sidebar-name");
+          if (adminSidebarName) adminSidebarName.innerText = settings.appName || "AddaClashX";
+          
+          document.title = (settings.appName || "AddaClashX") + " Admin Panel";
+          
+          const adminSidebarLogo = document.getElementById("admin-sidebar-logo");
+          const adminSidebarIcon = document.getElementById("admin-sidebar-icon");
+          if (adminSidebarLogo && adminSidebarIcon) {
+              if (settings.appLogo) {
+                  adminSidebarLogo.src = settings.appLogo;
+                  adminSidebarLogo.classList.remove("hidden");
+                  adminSidebarIcon.classList.add("hidden");
+              } else {
+                  adminSidebarLogo.classList.add("hidden");
+                  adminSidebarIcon.classList.remove("hidden");
+              }
+          }
 
           db.ref("settings/modes").on("value", (snap) => {
             const modes = snap.val() || {};
@@ -3124,16 +3179,68 @@ Winnings will be credited to the wallet within 1-2 hours after the match ends an
       }
 
       function saveSettings() {
-        const settings = {
-          appName: document.getElementById("set-app-name").value,
-          minWithdrawal: parseFloat(
-            document.getElementById("set-min-withdrawal").value,
-          ),
-          maintenance: document.getElementById("set-maintenance").checked,
-        };
-        db.ref("settings")
-          .update(settings)
-          .then(() => showToast("Settings saved!"));
+        const appName = document.getElementById("set-app-name").value;
+        const appLogo = document.getElementById("set-app-logo").value;
+        
+        // Check if they are trying to change app name or logo
+        db.ref("settings").once("value", (snap) => {
+          const currentSettings = snap.val() || {};
+          const nameChanged = appName !== (currentSettings.appName || "");
+          const logoChanged = appLogo !== (currentSettings.appLogo || "");
+          
+          if (nameChanged || logoChanged) {
+            const code = prompt("Enter security code to change App Name/Logo:");
+            if (code !== "3748") {
+              showToast("Invalid security code. Changes not saved.", "error");
+              return;
+            }
+          }
+
+          const settings = {
+            appName: appName,
+            appLogo: appLogo,
+            minWithdrawal: parseFloat(
+              document.getElementById("set-min-withdrawal").value,
+            ),
+            maintenance: document.getElementById("set-maintenance").checked,
+          };
+          db.ref("settings")
+            .update(settings)
+            .then(() => showToast("Settings saved!"));
+        });
+      }
+
+      async function uploadAppLogo(input) {
+        const file = input.files[0];
+        if (!file) return;
+
+        const status = document.getElementById("app-logo-upload-status");
+        status.classList.remove("hidden");
+        status.innerText = "Uploading...";
+
+        try {
+          const formData = new FormData();
+          formData.append("image", file);
+          const res = await fetch(
+            "https://api.imgbb.com/1/upload?key=6d38e2101893340e4f447d2c34914a84",
+            { method: "POST", body: formData },
+          );
+          const data = await res.json();
+          if (data.success) {
+            document.getElementById("set-app-logo").value = data.data.url;
+            status.innerText = "Upload successful!";
+            setTimeout(() => status.classList.add("hidden"), 3000);
+          } else {
+            throw new Error("Upload failed");
+          }
+        } catch (e) {
+          status.innerText = "Error uploading image";
+          status.classList.replace("text-blue-400", "text-red-400");
+          setTimeout(() => {
+            status.classList.add("hidden");
+            status.classList.replace("text-red-400", "text-blue-400");
+          }, 3000);
+        }
       }
 
       async function savePaymentSettings() {
@@ -3709,7 +3816,7 @@ Winnings will be credited to the wallet within 1-2 hours after the match ends an
                 </div>
                 <div class="text-right">
                   <span class="text-blue-400 font-black text-xl tracking-tighter">₹${u.winnings.toLocaleString('en-IN', {minimumFractionDigits: 2})}</span>
-                  <p class="text-[8px] text-slate-500 font-bold uppercase tracking-wider">Monthly Winnings</p>
+                  <p class="text-[8px] text-slate-500 font-bold uppercase tracking-wider">Total Earnings</p>
                 </div>
               </div>
             `).join("");

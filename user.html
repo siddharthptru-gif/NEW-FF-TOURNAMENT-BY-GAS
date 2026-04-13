@@ -12,68 +12,127 @@
     <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-database.js"></script>
     <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-storage.js"></script>
     <style>
+      @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&family=Space+Grotesk:wght@300;400;500;600;700&display=swap');
+      
       :root {
         --bg-app: #F8FAFC;
         --bg-card: #FFFFFF;
-        --bg-surface: #F1F5F9;
-        --text-main: #0F172A;
-        --text-muted: #64748B;
-        --accent-blue: #2563EB;
-        --accent-purple: #7C3AED;
-        --accent-gold: #F59E0B;
+        --bg-card-hover: #F1F5F9;
+        --accent: #2563EB;
+        --accent-glow: rgba(37, 99, 235, 0.15);
+        --text-primary: #0F172A;
+        --text-secondary: #64748B;
         --border-color: #E2E8F0;
+        --font-sans: 'Inter', sans-serif;
+        --font-display: 'Space Grotesk', sans-serif;
       }
+
       body {
-        font-family: "Inter", sans-serif;
+        font-family: var(--font-sans);
         background-color: var(--bg-app);
-        color: var(--text-main);
+        color: var(--text-primary);
+        -webkit-tap-highlight-color: transparent;
       }
-      .glass {
-        background: var(--bg-card);
-        border: 1px solid var(--border-color);
-      }
-      .glass-card {
-        background: var(--bg-card);
-        border: 1px solid var(--border-color);
-        box-shadow: 0 4px 12px rgba(0,0,0,0.05);
-        transition: all 0.3s ease;
-      }
-      .glass-card:hover {
-        border-color: var(--accent-blue);
-        box-shadow: 0 8px 20px rgba(0,0,0,0.08);
-      }
+
+      .font-serif { font-family: var(--font-display); }
+
       .custom-gradient {
-        background: linear-gradient(135deg, #2563EB 0%, #3B82F6 100%);
-        box-shadow: 0 4px 15px rgba(37, 99, 235, 0.2);
+        background: linear-gradient(135deg, #2563EB 0%, #1D4ED8 100%);
       }
-      .rank-gradient {
-        background: linear-gradient(135deg, #F9FAFB 0%, #F3F4F6 100%);
+
+      .glass {
+        background: rgba(255, 255, 255, 0.9);
+        backdrop-filter: blur(20px);
+        -webkit-backdrop-filter: blur(20px);
+      }
+
+      .glass-card shadow-[0_4px_20px_rgb(0,0,0,0.03)] {
+        background: var(--bg-card);
         border: 1px solid var(--border-color);
+        box-shadow: 0 4px 20px rgba(0,0,0,0.03);
+        transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
       }
+
+      .glass-card shadow-[0_4px_20px_rgb(0,0,0,0.03)]:hover {
+        background: var(--bg-card-hover);
+        border-color: var(--accent);
+        transform: translateY(-2px);
+        box-shadow: 0 8px 30px rgba(0,0,0,0.06);
+      }
+
       .hide-scrollbar::-webkit-scrollbar {
         display: none;
       }
-      .chat-bubble-user {
-        border-bottom-right-radius: 2px;
+      .hide-scrollbar {
+        -ms-overflow-style: none;
+        scrollbar-width: none;
       }
-      .chat-bubble-other {
-        border-bottom-left-radius: 2px;
+
+      @keyframes slideUp {
+        from { transform: translateY(20px); opacity: 0; }
+        to { transform: translateY(0); opacity: 1; }
       }
-      .animate-fade-rise {
-        animation: fadeRise 0.8s ease-out forwards;
+
+      .animate-slide-up {
+        animation: slideUp 0.4s ease-out forwards;
       }
-      @keyframes fadeRise {
-        from { opacity: 0; transform: translateY(20px); }
-        to { opacity: 1; transform: translateY(0); }
+
+      .tab-active {
+        color: var(--text-primary);
+        border-bottom: 2px solid var(--accent);
       }
-      input::placeholder {
-        color: var(--text-muted);
+
+      .tab-inactive {
+        color: var(--text-secondary);
       }
-      .nav-active {
-        color: var(--accent-blue) !important;
+
+      /* Custom Checkbox */
+      input[type="checkbox"] {
+        accent-color: var(--accent);
       }
-      .nav-active i {
-        filter: drop-shadow(0 0 8px rgba(59, 130, 246, 0.5));
+
+      /* Seat Selection Grid */
+      .seat-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(40px, 1fr));
+        gap: 8px;
+      }
+
+      .seat-box {
+        aspect-ratio: 1;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        border-radius: 8px;
+        font-size: 10px;
+        font-weight: 800;
+        cursor: pointer;
+        transition: all 0.2s;
+        border: 1px solid var(--border-color);
+      }
+
+      .seat-available {
+        background: #F1F5F9;
+        color: #64748B;
+      }
+
+      .seat-selected {
+        background: var(--accent);
+        color: white;
+        border-color: var(--accent);
+        box-shadow: 0 4px 15px var(--accent-glow);
+      }
+
+      .seat-occupied {
+        background: #E2E8F0;
+        color: #94A3B8;
+        cursor: not-allowed;
+        opacity: 0.5;
+      }
+
+      /* Banner Image Overlay */
+      .banner-overlay {
+        background: linear-gradient(to bottom, transparent 0%, rgba(0, 0, 0, 0.6) 100%);
       }
     </style>
   </head>
@@ -81,7 +140,7 @@
     <!-- Loading Screen -->
     <div
       id="loading-screen"
-      class="fixed inset-0 z-[2000] bg-gray-50 flex items-center justify-center"
+      class="fixed inset-0 z-[2000] bg-slate-50 flex items-center justify-center"
     >
       <div class="flex flex-col items-center">
         <div
@@ -90,14 +149,14 @@
         ></div>
         <p
           id="loading-text"
-          class="text-[10px] font-black uppercase tracking-widest text-gray-500"
+          class="text-[10px] font-black uppercase tracking-widest text-slate-500"
         >
           Entering Arena...
         </p>
         <button
           id="loading-retry"
           onclick="window.location.reload()"
-          class="hidden mt-4 px-6 py-2 bg-blue-600 text-white text-[10px] font-black uppercase rounded-xl shadow-lg"
+          class="hidden mt-4 px-6 py-2 bg-blue-600 text-white text-[10px] font-black uppercase rounded-xl shadow-[0_8px_30px_rgb(0,0,0,0.06)]"
         >
           Retry Connection
         </button>
@@ -117,28 +176,28 @@
     >
       <div class="text-center mb-8 animate-fade-rise">
         <div
-          class="w-20 h-20 bg-blue-600 rounded-3xl flex items-center justify-center mx-auto shadow-xl shadow-blue-600/20 mb-6 border border-gray-100"
+          class="w-20 h-20 bg-blue-600 rounded-3xl flex items-center justify-center mx-auto shadow-[0_12px_40px_rgb(0,0,0,0.08)] shadow-blue-600/20 mb-6 border border-gray-100"
         >
           <i class="fas fa-gamepad text-white text-4xl"></i>
         </div>
         <h1
-          class="text-4xl font-serif text-black tracking-tight"
+          class="text-4xl font-serif text-slate-900 tracking-tight"
         >
           AddaClashX
         </h1>
         <p
-          class="text-xs text-gray-500 font-medium mt-2 uppercase tracking-widest"
+          class="text-xs text-slate-500 font-medium mt-2 uppercase tracking-widest"
         >
           Free Fire Professional League
         </p>
       </div>
 
-      <div class="flex bg-gray-100 rounded-xl p-1 mb-6 border border-gray-200">
+      <div class="flex bg-slate-100 rounded-xl p-1 mb-6 border border-slate-200">
         <button
           type="button"
           onclick="toggleAuth(true)"
           id="tab-login"
-          class="flex-1 py-2.5 rounded-lg font-semibold text-sm bg-white shadow-sm text-black transition-all"
+          class="flex-1 py-2.5 rounded-lg font-semibold text-sm bg-white shadow-[0_2px_10px_rgb(0,0,0,0.02)] text-slate-900 transition-all"
         >
           Login
         </button>
@@ -146,7 +205,7 @@
           type="button"
           onclick="toggleAuth(false)"
           id="tab-signup"
-          class="flex-1 py-2.5 rounded-lg font-semibold text-sm text-gray-500 hover:text-black transition-all"
+          class="flex-1 py-2.5 rounded-lg font-semibold text-sm text-slate-500 hover:text-slate-900 transition-all"
         >
           Sign Up
         </button>
@@ -158,32 +217,38 @@
             type="text"
             id="email-username"
             placeholder="Choose Username"
-            class="w-full p-4 bg-gray-50 border border-gray-200 rounded-xl outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 transition-all text-sm text-black"
+            class="w-full p-4 bg-slate-50 border border-slate-200 rounded-xl outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 transition-all text-sm text-slate-900"
+          />
+          <input
+            type="tel"
+            id="phone-input"
+            placeholder="Phone Number (e.g. 9876543210)"
+            class="w-full p-4 bg-slate-50 border border-slate-200 rounded-xl outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 transition-all text-sm text-slate-900"
           />
         </div>
         <input
           type="text"
           id="email-input"
-          placeholder="Email or Username"
-          class="w-full p-4 bg-gray-50 border border-gray-200 rounded-xl outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 transition-all text-sm text-black"
+          placeholder="Email, Username or Phone"
+          class="w-full p-4 bg-slate-50 border border-slate-200 rounded-xl outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 transition-all text-sm text-slate-900"
           required
         />
         <input
           type="password"
           id="password-input"
           placeholder="Password"
-          class="w-full p-4 bg-gray-50 border border-gray-200 rounded-xl outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 transition-all text-sm text-black"
+          class="w-full p-4 bg-slate-50 border border-slate-200 rounded-xl outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 transition-all text-sm text-slate-900"
           required
         />
         <button
           type="submit"
           id="auth-btn"
-          class="w-full py-4 custom-gradient text-white font-bold rounded-xl shadow-lg transition-all hover:scale-[1.02] active:scale-[0.98]"
+          class="w-full py-4 custom-gradient text-white font-bold rounded-xl shadow-[0_8px_30px_rgb(0,0,0,0.06)] transition-all hover:scale-[1.02] active:scale-[0.98]"
         >
           Enter Arena
         </button>
         <p
-          class="text-center text-xs font-medium text-gray-500 mt-4"
+          class="text-center text-xs font-medium text-slate-500 mt-4"
         >
           <span id="auth-switch-text">Don't have an account?</span>
           <button
@@ -198,18 +263,18 @@
       </form>
 
       <div class="flex items-center my-6">
-        <div class="flex-1 border-t border-gray-200"></div>
+        <div class="flex-1 border-t border-slate-200"></div>
         <span
-          class="px-4 text-gray-500 text-xs font-medium"
+          class="px-4 text-slate-500 text-xs font-medium"
           >OR</span
         >
-        <div class="flex-1 border-t border-gray-200"></div>
+        <div class="flex-1 border-t border-slate-200"></div>
       </div>
 
       <button
         type="button"
         onclick="handleGoogleLogin()"
-        class="w-full py-4 bg-white border border-gray-200 text-black font-semibold rounded-xl shadow-sm hover:bg-gray-50 transition-all flex items-center justify-center"
+        class="w-full py-4 bg-white border border-slate-200 text-slate-900 font-semibold rounded-xl shadow-[0_2px_10px_rgb(0,0,0,0.02)] hover:bg-slate-50 transition-all flex items-center justify-center"
       >
         <img
           src="https://www.gstatic.com/firebasejs/ui/2.0.0/images/auth/google.svg"
@@ -219,9 +284,9 @@
       </button>
 
       <!-- Footer for Auth Screen -->
-      <div class="text-center mt-8 text-[9px] text-gray-500 font-bold uppercase tracking-widest">
+      <div class="text-center mt-8 text-[9px] text-slate-500 font-bold uppercase tracking-widest">
         <p>By entering, you agree to our <a href="#" class="text-blue-600 underline">Terms</a> and <a href="#" class="text-blue-600 underline">Privacy Policy</a>.</p>
-        <p class="mt-2">&copy; 2026 AddaClashX. All rights reserved.</p>
+        <p class="mt-2">&copy; 2026 <span id="footer-app-name">AddaClashX</span>. All rights reserved.</p>
       </div>
     </div>
 
@@ -231,38 +296,38 @@
       class="fixed inset-0 bg-black/80 backdrop-blur-md z-[120] hidden items-center justify-center p-4"
     >
       <div
-        class="glass-card p-8 rounded-3xl shadow-2xl w-full max-w-sm border border-gray-200"
+        class="glass-card shadow-[0_4px_20px_rgb(0,0,0,0.03)] p-8 rounded-3xl shadow-[0_20px_50px_rgb(0,0,0,0.1)] w-full max-w-sm border border-slate-200"
       >
         <h2
-          class="text-2xl font-black text-black mb-2 uppercase text-center tracking-tighter"
+          class="text-2xl font-black text-slate-900 mb-2 uppercase text-center tracking-tighter"
         >
           Welcome!
         </h2>
-        <p class="text-xs text-gray-500 text-center mb-6 font-bold uppercase tracking-widest">
+        <p class="text-xs text-slate-500 text-center mb-6 font-bold uppercase tracking-widest">
           Choose a username and password to continue.
         </p>
         <input
           type="text"
           id="google-username-input"
           placeholder="Choose Username"
-          class="w-full p-4 bg-gray-50 border border-gray-200 rounded-2xl mb-4 outline-none font-bold text-sm text-black focus:border-blue-500 transition-all"
+          class="w-full p-4 bg-slate-50 border border-slate-200 rounded-2xl mb-4 outline-none font-bold text-sm text-slate-900 focus:border-blue-500 transition-all"
         />
         <input
           type="password"
           id="google-password-input"
           placeholder="Choose Password"
-          class="w-full p-4 bg-gray-50 border border-gray-200 rounded-2xl mb-4 outline-none font-bold text-sm text-black focus:border-blue-500 transition-all"
+          class="w-full p-4 bg-slate-50 border border-slate-200 rounded-2xl mb-4 outline-none font-bold text-sm text-slate-900 focus:border-blue-500 transition-all"
         />
         <button
           onclick="saveGoogleUsername()"
           id="google-username-btn"
-          class="w-full py-4 custom-gradient text-white font-black rounded-2xl shadow-lg uppercase tracking-widest mb-4 active:scale-95 transition-all"
+          class="w-full py-4 custom-gradient text-white font-black rounded-2xl shadow-[0_8px_30px_rgb(0,0,0,0.06)] uppercase tracking-widest mb-4 active:scale-95 transition-all"
         >
           Save & Continue
         </button>
         <button
           onclick="logout()"
-          class="w-full py-2 text-gray-500 font-black uppercase text-[10px] hover:text-red-500 transition-colors tracking-widest"
+          class="w-full py-2 text-slate-500 font-black uppercase text-[10px] hover:text-red-500 transition-colors tracking-widest"
         >
           Cancel & Logout
         </button>
@@ -272,17 +337,21 @@
     <!-- Main App -->
     <div id="app-section" class="hidden max-w-md mx-auto min-h-screen relative z-10 bg-white">
       <header
-        class="sticky top-0 z-50 bg-white border-b border-gray-200 px-5 py-4 flex justify-between items-center"
+        class="sticky top-0 z-50 bg-white border-b border-slate-200 px-5 py-4 flex justify-between items-center"
       >
-        <h1
-          class="text-xl font-serif tracking-tight text-black"
-        >
-          AddaClashX
-        </h1>
+        <div class="flex items-center gap-2">
+            <img id="header-app-logo" src="" alt="Logo" class="h-8 w-8 object-contain hidden" />
+            <h1
+              id="header-app-name"
+              class="text-xl font-serif tracking-tight text-slate-900"
+            >
+              AddaClashX
+            </h1>
+        </div>
         <div class="flex items-center gap-3">
           <button
             onclick="openNotificationsModal()"
-            class="relative w-9 h-9 flex items-center justify-center bg-gray-100 rounded-full border border-gray-200 text-gray-700 hover:bg-gray-200 transition-colors"
+            class="relative w-9 h-9 flex items-center justify-center bg-slate-100 rounded-full border border-slate-200 text-gray-700 hover:bg-slate-200 transition-colors"
           >
             <i class="fas fa-bell text-sm"></i>
             <span
@@ -291,10 +360,10 @@
             ></span>
           </button>
           <div
-            class="bg-gray-100 px-3 py-1.5 rounded-full border border-gray-200 flex items-center shadow-sm"
+            class="bg-slate-100 px-3 py-1.5 rounded-full border border-slate-200 flex items-center shadow-[0_2px_10px_rgb(0,0,0,0.02)]"
           >
             <i class="fas fa-wallet text-amber-600 mr-2 text-xs"></i>
-            <span id="header-wallet" class="font-bold text-black text-sm"
+            <span id="header-wallet" class="font-bold text-slate-900 text-sm"
               >₹0</span
             >
           </div>
@@ -305,15 +374,15 @@
       <div id="page-home" class="p-4 space-y-6 page-content">
         <!-- Stats Bar -->
         <div class="grid grid-cols-2 gap-3">
-          <div class="glass-card p-4 rounded-2xl text-center">
-            <p id="stat-kills" class="text-2xl font-bold tracking-tight text-black">0</p>
-            <p class="text-[9px] text-gray-500 font-bold uppercase tracking-wider mt-1">
+          <div class="glass-card shadow-[0_4px_20px_rgb(0,0,0,0.03)] p-4 rounded-2xl text-center">
+            <p id="stat-kills" class="text-2xl font-bold tracking-tight text-slate-900">0</p>
+            <p class="text-[9px] text-slate-500 font-bold uppercase tracking-wider mt-1">
               Total Kills
             </p>
           </div>
-          <div class="glass-card p-4 rounded-2xl text-center">
-            <p id="stat-home-matches" class="text-2xl font-bold tracking-tight text-black">0</p>
-            <p class="text-[9px] text-gray-500 font-bold uppercase tracking-wider mt-1">Matches</p>
+          <div class="glass-card shadow-[0_4px_20px_rgb(0,0,0,0.03)] p-4 rounded-2xl text-center">
+            <p id="stat-home-matches" class="text-2xl font-bold tracking-tight text-slate-900">0</p>
+            <p class="text-[9px] text-slate-500 font-bold uppercase tracking-wider mt-1">Matches</p>
           </div>
         </div>
 
@@ -327,13 +396,13 @@
           <div class="flex items-center gap-3 mb-4">
             <button
               onclick="showCategories()"
-              class="w-9 h-9 bg-gray-100 border border-gray-200 rounded-full flex items-center justify-center text-black shadow-sm hover:bg-gray-200 transition-colors backdrop-blur-sm"
+              class="w-9 h-9 bg-slate-100 border border-slate-200 rounded-full flex items-center justify-center text-slate-900 shadow-[0_2px_10px_rgb(0,0,0,0.02)] hover:bg-slate-200 transition-colors backdrop-blur-sm"
             >
               <i class="fas fa-arrow-left"></i>
             </button>
             <h3
               id="category-title"
-              class="font-serif font-bold text-black uppercase tracking-tight text-lg"
+              class="font-serif font-bold text-slate-900 uppercase tracking-tight text-lg"
             >
               Category
             </h3>
@@ -350,7 +419,7 @@
       <!-- Wallet Page -->
       <div id="page-wallet" class="p-4 hidden space-y-6 page-content">
         <div
-          class="bg-white rounded-3xl p-6 text-black shadow-lg relative overflow-hidden border border-gray-200"
+          class="bg-white rounded-3xl p-6 text-slate-900 shadow-[0_8px_30px_rgb(0,0,0,0.06)] relative overflow-hidden border border-slate-200"
         >
           <div class="absolute top-0 right-0 w-40 h-40 bg-blue-100 rounded-full blur-3xl -mr-10 -mt-10"></div>
           <div class="absolute bottom-0 left-0 w-40 h-40 bg-purple-100 rounded-full blur-3xl -ml-10 -mb-10"></div>
@@ -358,23 +427,23 @@
           <div class="flex justify-between items-center mb-8 relative z-10">
             <div>
               <p
-                class="text-gray-500 text-[10px] font-bold uppercase tracking-widest mb-1"
+                class="text-slate-500 text-[10px] font-bold uppercase tracking-widest mb-1"
               >
                 Deposits
               </p>
-              <h2 id="wallet-deposit-large" class="text-3xl font-black tracking-tighter text-black">
+              <h2 id="wallet-deposit-large" class="text-3xl font-black tracking-tighter text-slate-900">
                 ₹0.00
               </h2>
             </div>
             <div class="text-right">
               <p
-                class="text-gray-500 text-[10px] font-bold uppercase tracking-widest mb-1"
+                class="text-slate-500 text-[10px] font-bold uppercase tracking-widest mb-1"
               >
                 Winnings
               </p>
               <h2
                 id="wallet-winnings-large"
-                class="text-3xl font-black tracking-tighter text-black"
+                class="text-3xl font-black tracking-tighter text-slate-900"
               >
                 ₹0.00
               </h2>
@@ -383,24 +452,24 @@
           <div class="flex gap-3 mt-2 relative z-10">
             <button
               onclick="openWalletModal('deposit')"
-              class="flex-1 py-4 bg-blue-600 text-white font-black rounded-2xl text-[10px] uppercase tracking-widest hover:bg-blue-700 transition-all shadow-lg"
+              class="flex-1 py-4 bg-blue-600 text-white font-black rounded-2xl text-[10px] uppercase tracking-widest hover:bg-blue-700 transition-all shadow-[0_8px_30px_rgb(0,0,0,0.06)]"
             >
               Add Money
             </button>
             <button
               onclick="openWalletModal('withdraw')"
-              class="flex-1 py-4 bg-gray-100 border border-gray-200 text-black font-black rounded-2xl text-[10px] uppercase tracking-widest hover:bg-gray-200 transition-all"
+              class="flex-1 py-4 bg-slate-100 border border-slate-200 text-slate-900 font-black rounded-2xl text-[10px] uppercase tracking-widest hover:bg-slate-200 transition-all"
             >
               Redeem
             </button>
           </div>
         </div>
         <div class="space-y-4">
-          <h3 class="font-bold text-gray-500 uppercase text-xs tracking-wider">
+          <h3 class="font-bold text-slate-500 uppercase text-xs tracking-wider">
             Deposit History
           </h3>
           <div id="deposit-history" class="space-y-2"></div>
-          <h3 class="font-bold text-gray-500 uppercase text-xs tracking-wider mt-6">
+          <h3 class="font-bold text-slate-500 uppercase text-xs tracking-wider mt-6">
             Withdrawal History
           </h3>
           <div id="withdraw-history" class="space-y-2"></div>
@@ -411,26 +480,30 @@
       <div id="page-profile" class="p-4 hidden text-center page-content">
         <div
           id="profile-pic-container"
-          class="w-24 h-24 bg-gray-100 text-blue-600 rounded-full flex items-center justify-center mx-auto text-4xl mb-4 shadow-sm border-4 border-white overflow-hidden"
+          class="w-24 h-24 bg-slate-100 text-blue-600 rounded-full flex items-center justify-center mx-auto text-4xl mb-4 shadow-[0_2px_10px_rgb(0,0,0,0.02)] border-4 border-white overflow-hidden"
         >
           <i class="fas fa-user-circle"></i>
         </div>
         <div class="flex items-center justify-center gap-2 mb-1">
-          <h2 id="profile-name" class="text-2xl font-serif font-black text-black">Player</h2>
+          <h2 id="profile-name" class="text-2xl font-serif font-black text-slate-900">Player</h2>
           <button onclick="openEditNameModal()" class="text-blue-600 text-sm">
             <i class="fas fa-edit"></i>
           </button>
         </div>
         <p
           id="name-change-cooldown"
-          class="text-[8px] font-bold text-gray-500 uppercase mb-4 hidden"
+          class="text-[8px] font-bold text-slate-500 uppercase mb-4 hidden"
         >
           Next change in 30 days
         </p>
+        <div class="mb-4">
+            <p id="profile-email" class="text-xs font-bold text-slate-500 uppercase"></p>
+            <p id="profile-phone" class="text-xs font-bold text-slate-500 uppercase"></p>
+        </div>
 
-        <div class="glass-card p-6 rounded-3xl mb-4">
+        <div class="glass-card shadow-[0_4px_20px_rgb(0,0,0,0.03)] p-6 rounded-3xl mb-4">
           <p
-            class="text-[10px] font-bold uppercase text-gray-500 tracking-wider mb-1"
+            class="text-[10px] font-bold uppercase text-slate-500 tracking-wider mb-1"
           >
             Your 6-Digit ID
           </p>
@@ -443,7 +516,7 @@
             </p>
             <button
               onclick="copyAppId()"
-              class="text-gray-500 hover:text-blue-600 transition-colors"
+              class="text-slate-500 hover:text-blue-600 transition-colors"
             >
               <i class="fas fa-copy"></i>
             </button>
@@ -453,7 +526,7 @@
         <div id="player-stats-section" class="space-y-4 mb-6">
           <!-- Main Stats Card -->
           <div
-            class="bg-gradient-to-br from-blue-600 to-indigo-700 p-6 rounded-3xl text-white shadow-lg relative overflow-hidden border border-white/10"
+            class="bg-gradient-to-br from-blue-600 to-indigo-700 p-6 rounded-3xl text-white shadow-[0_8px_30px_rgb(0,0,0,0.06)] relative overflow-hidden border border-slate-200"
           >
             <div class="absolute top-0 right-0 w-32 h-32 bg-white/10 rounded-full blur-3xl -mr-10 -mt-10"></div>
             <div class="flex justify-between items-start mb-6 relative z-10">
@@ -482,23 +555,23 @@
           <!-- Advanced Stats Grid -->
           <div class="grid grid-cols-2 gap-4">
 
-            <div class="glass-card p-5 rounded-3xl">
+            <div class="glass-card shadow-[0_4px_20px_rgb(0,0,0,0.03)] p-5 rounded-3xl">
               <p
                 id="stat-total-deposits"
                 class="text-2xl font-bold tracking-tight text-blue-600"
               >
                 ₹0
               </p>
-              <p class="text-[10px] uppercase tracking-wider text-gray-500 mt-1">Total Deposits</p>
+              <p class="text-[10px] uppercase tracking-wider text-slate-500 mt-1">Total Deposits</p>
             </div>
-            <div class="glass-card p-5 rounded-3xl">
+            <div class="glass-card shadow-[0_4px_20px_rgb(0,0,0,0.03)] p-5 rounded-3xl">
               <p
                 id="stat-total-withdrawals"
                 class="text-2xl font-bold tracking-tight text-red-600"
               >
                 ₹0
               </p>
-              <p class="text-[10px] uppercase tracking-wider text-gray-500 mt-1">
+              <p class="text-[10px] uppercase tracking-wider text-slate-500 mt-1">
                 Total Withdrawals
               </p>
             </div>
@@ -507,9 +580,9 @@
 
         <!-- History Section -->
         <div
-          class="glass-card p-6 rounded-3xl space-y-4 mb-6"
+          class="glass-card shadow-[0_4px_20px_rgb(0,0,0,0.03)] p-6 rounded-3xl space-y-4 mb-6"
         >
-          <h3 class="font-bold text-gray-500 uppercase text-xs tracking-wider">
+          <h3 class="font-bold text-slate-500 uppercase text-xs tracking-wider">
             Wallet History
           </h3>
           <div
@@ -521,29 +594,29 @@
         <div class="space-y-2">
           <button
             onclick="openPasswordModal()"
-            class="w-full p-4 bg-gray-50 border border-gray-200 rounded-2xl flex items-center justify-between hover:bg-gray-100 transition-colors"
+            class="w-full p-4 bg-slate-50 border border-slate-200 rounded-2xl flex items-center justify-between hover:bg-slate-100 transition-colors"
           >
             <div class="flex items-center">
               <i class="fas fa-lock text-blue-600 mr-3"></i
               ><span
-                class="text-sm font-bold text-black uppercase tracking-tighter"
+                class="text-sm font-bold text-slate-900 uppercase tracking-tighter"
                 >Change Password</span
               >
             </div>
-            <i class="fas fa-chevron-right text-gray-500 text-xs"></i>
+            <i class="fas fa-chevron-right text-slate-500 text-xs"></i>
           </button>
           <button
             onclick="switchPage('support')"
-            class="w-full p-4 bg-gray-50 border border-gray-200 rounded-2xl flex items-center justify-between hover:bg-gray-100 transition-colors"
+            class="w-full p-4 bg-slate-50 border border-slate-200 rounded-2xl flex items-center justify-between hover:bg-slate-100 transition-colors"
           >
             <div class="flex items-center">
               <i class="fas fa-headset text-blue-600 mr-3"></i
               ><span
-                class="text-sm font-bold text-black uppercase tracking-tighter"
+                class="text-sm font-bold text-slate-900 uppercase tracking-tighter"
                 >Support & Tickets</span
               >
             </div>
-            <i class="fas fa-chevron-right text-gray-500 text-xs"></i>
+            <i class="fas fa-chevron-right text-slate-500 text-xs"></i>
           </button>
           <button
             onclick="logout()"
@@ -560,11 +633,11 @@
         class="p-4 hidden space-y-4 page-content flex flex-col h-[calc(100vh-140px)]"
       >
         <div id="support-main-view" class="space-y-4">
-          <div class="glass-card p-6 rounded-[2rem]">
-            <h3 class="font-serif font-black uppercase text-black mb-1">
+          <div class="glass-card shadow-[0_4px_20px_rgb(0,0,0,0.03)] p-6 rounded-[2rem]">
+            <h3 class="font-serif font-black uppercase text-slate-900 mb-1">
               Customer Support
             </h3>
-            <p class="text-[10px] text-gray-500 font-bold mb-4">
+            <p class="text-[10px] text-slate-500 font-bold mb-4">
               Create a ticket to talk with admin.
             </p>
             <button
@@ -577,26 +650,26 @@
           </div>
 
           <div class="space-y-4">
-            <h3 class="text-[10px] font-black text-gray-500 uppercase tracking-widest px-2">Your Tickets</h3>
+            <h3 class="text-[10px] font-black text-slate-500 uppercase tracking-widest px-2">Your Tickets</h3>
             <div id="support-tickets-list" class="space-y-3">
               <!-- Tickets will be injected here -->
-              <p class="text-center py-10 text-gray-500 font-bold uppercase text-[10px]">No Tickets Found</p>
+              <p class="text-center py-10 text-slate-500 font-bold uppercase text-[10px]">No Tickets Found</p>
             </div>
           </div>
         </div>
 
         <div
           id="support-chat-container"
-          class="hidden flex-1 flex flex-col bg-white border border-gray-200 rounded-[2rem] overflow-hidden"
+          class="hidden flex-1 flex flex-col bg-white border border-slate-200 rounded-[2rem] overflow-hidden"
         >
           <div
-            class="bg-gray-50 p-4 border-b border-gray-200 flex justify-between items-center"
+            class="bg-slate-50 p-4 border-b border-slate-200 flex justify-between items-center"
           >
             <div class="flex items-center gap-3">
-              <button onclick="showSupportList()" class="text-gray-500 hover:text-black transition-colors">
+              <button onclick="showSupportList()" class="text-slate-500 hover:text-slate-900 transition-colors">
                 <i class="fas fa-arrow-left"></i>
               </button>
-              <span class="text-[10px] font-black uppercase text-black"
+              <span class="text-[10px] font-black uppercase text-slate-900"
                 >Ticket Chat</span
               >
             </div>
@@ -610,16 +683,16 @@
             id="support-chat-box"
             class="flex-1 overflow-y-auto p-4 space-y-3 hide-scrollbar bg-transparent"
           ></div>
-          <div class="p-3 bg-gray-50 border-t border-gray-200 flex gap-2">
+          <div class="p-3 bg-slate-50 border-t border-slate-200 flex gap-2">
             <input
               type="text"
               id="support-chat-input"
               placeholder="Type message..."
-              class="flex-1 p-3 bg-white border border-gray-200 rounded-xl font-bold text-[10px] outline-none text-black"
+              class="flex-1 p-3 bg-white border border-slate-200 rounded-xl font-bold text-[10px] outline-none text-slate-900"
             />
             <button
               onclick="sendSupportMessage()"
-              class="w-12 h-12 custom-gradient text-white rounded-xl shadow-lg flex items-center justify-center"
+              class="w-12 h-12 custom-gradient text-white rounded-xl shadow-[0_8px_30px_rgb(0,0,0,0.06)] flex items-center justify-center"
             >
               <i class="fas fa-paper-plane text-sm"></i>
             </button>
@@ -629,10 +702,10 @@
 
       <!-- Leaderboard Page -->
       <div id="page-leaderboard" class="p-4 hidden space-y-4 page-content pb-24">
-        <div class="glass-card p-6 rounded-[2rem]">
+        <div class="glass-card shadow-[0_4px_20px_rgb(0,0,0,0.03)] p-6 rounded-[2rem]">
           <div class="flex items-center justify-center gap-2 mb-6">
             <i class="fas fa-trophy text-amber-500 text-2xl"></i>
-            <h3 class="font-serif font-black uppercase text-black text-xl tracking-tight">Top Earnings</h3>
+            <h3 class="font-serif font-black uppercase text-slate-900 text-xl tracking-tight">Top Earnings</h3>
           </div>
           <div id="top-earnings-leaderboard-list" class="space-y-3"></div>
         </div>
@@ -640,7 +713,7 @@
 
       <!-- Footer -->
       <nav
-        class="fixed bottom-0 left-0 right-0 max-w-md mx-auto bg-white border-t border-gray-200 flex justify-around px-2 py-3 pb-6 z-50 shadow-[0_-4px_20px_rgba(0,0,0,0.05)]"
+        class="fixed bottom-0 left-0 right-0 max-w-md mx-auto bg-white border-t border-slate-200 flex justify-around px-2 py-3 pb-6 z-50 shadow-[0_-4px_20px_rgba(0,0,0,0.05)]"
       >
         <button
           onclick="switchPage('home')"
@@ -653,7 +726,7 @@
         <button
           onclick="switchPage('leaderboard')"
           id="nav-leaderboard"
-          class="flex flex-col items-center text-gray-500 hover:text-blue-600 w-16 py-1 transition-all"
+          class="flex flex-col items-center text-slate-500 hover:text-blue-600 w-16 py-1 transition-all"
         >
           <i class="fas fa-medal text-lg mb-1"></i>
           <span class="text-[9px] font-black uppercase tracking-widest">Winners</span>
@@ -661,7 +734,7 @@
         <button
           onclick="switchPage('matches')"
           id="nav-matches"
-          class="flex flex-col items-center text-gray-500 hover:text-blue-600 w-16 py-1 transition-all"
+          class="flex flex-col items-center text-slate-500 hover:text-blue-600 w-16 py-1 transition-all"
         >
           <i class="fas fa-gamepad text-lg mb-1"></i>
           <span class="text-[9px] font-black uppercase tracking-widest">My Play</span>
@@ -669,7 +742,7 @@
         <button
           onclick="switchPage('wallet')"
           id="nav-wallet"
-          class="flex flex-col items-center text-gray-500 hover:text-blue-600 w-16 py-1 transition-all"
+          class="flex flex-col items-center text-slate-500 hover:text-blue-600 w-16 py-1 transition-all"
         >
           <i class="fas fa-wallet text-lg mb-1"></i>
           <span class="text-[9px] font-black uppercase tracking-widest">Wallet</span>
@@ -677,7 +750,7 @@
         <button
           onclick="switchPage('profile')"
           id="nav-profile"
-          class="flex flex-col items-center text-gray-500 hover:text-blue-600 w-16 py-1 transition-all"
+          class="flex flex-col items-center text-slate-500 hover:text-blue-600 w-16 py-1 transition-all"
         >
           <i class="fas fa-user text-lg mb-1"></i>
           <span class="text-[9px] font-black uppercase tracking-widest">Profile</span>
@@ -688,16 +761,16 @@
     <!-- Notifications Modal -->
     <div
       id="notifications-modal"
-      class="fixed inset-0 z-[110] hidden bg-white flex-col max-w-md mx-auto w-full h-full shadow-2xl overflow-hidden"
+      class="fixed inset-0 z-[110] hidden bg-white flex-col max-w-md mx-auto w-full h-full shadow-[0_20px_50px_rgb(0,0,0,0.1)] overflow-hidden"
     >
       <!-- Header -->
-      <div class="bg-white px-6 py-4 flex items-center justify-between border-b border-gray-200 sticky top-0 z-10">
-        <h4 class="font-serif font-black uppercase text-black text-lg tracking-tight">
+      <div class="bg-white px-6 py-4 flex items-center justify-between border-b border-slate-200 sticky top-0 z-10">
+        <h4 class="font-serif font-black uppercase text-slate-900 text-lg tracking-tight">
           Notifications
         </h4>
         <button
           onclick="closeNotificationsModal()"
-          class="w-8 h-8 flex items-center justify-center rounded-full bg-gray-100 text-gray-700 hover:bg-gray-200 transition-colors"
+          class="w-8 h-8 flex items-center justify-center rounded-full bg-slate-100 text-gray-700 hover:bg-slate-200 transition-colors"
         >
           <i class="fas fa-times"></i>
         </button>
@@ -713,14 +786,45 @@
     </div>
 
     <!-- Modals -->
-    <div id="join-modal" class="fixed inset-0 bg-black/20 z-[110] hidden items-center justify-center p-4 backdrop-blur-sm">
-        <div class="bg-white w-full max-w-xs rounded-[40px] p-8 relative border border-gray-200 shadow-2xl">
-            <button onclick="closeJoinModal()" class="absolute top-6 right-6 text-gray-500 hover:text-black transition-colors"><i class="fas fa-times text-xl"></i></button>
-            <h4 class="font-black text-center uppercase tracking-tighter mb-4 text-black">Tournament Entry</h4>
-            <div class="space-y-4">
-                <input type="text" id="join-ff-uid" placeholder="Free Fire UID (10-12 digits)" class="w-full p-4 bg-gray-50 border border-gray-200 rounded-2xl font-bold text-sm text-black outline-none">
-                <input type="text" id="join-ff-ign" placeholder="In-Game Name (IGN)" class="w-full p-4 bg-gray-50 border border-gray-200 rounded-2xl font-bold text-sm text-black outline-none">
-                <button onclick="confirmJoinMatch()" class="w-full py-4 custom-gradient text-white font-black rounded-2xl shadow-lg uppercase text-xs">Pay & Register</button>
+    <div id="join-modal" class="fixed inset-0 bg-black/80 z-[110] hidden items-center justify-center p-4 backdrop-blur-md">
+        <div class="bg-white w-full max-w-md rounded-[2.5rem] p-8 relative border border-slate-200 shadow-[0_20px_50px_rgb(0,0,0,0.1)] max-h-[90vh] flex flex-col">
+            <button onclick="closeJoinModal()" class="absolute top-6 right-6 text-slate-500 hover:text-slate-900 transition-colors"><i class="fas fa-times text-xl"></i></button>
+            <h4 class="font-serif font-black text-center uppercase tracking-tight mb-6 text-slate-900 text-xl">Tournament Entry</h4>
+            
+            <div class="overflow-y-auto hide-scrollbar flex-1 space-y-6">
+                <!-- Seat Selection -->
+                <div id="join-seats-container" class="space-y-4">
+                    <div class="flex justify-between items-center">
+                        <h5 class="text-[10px] font-black text-slate-500 uppercase tracking-widest">Select Your Position</h5>
+                        <span id="selected-seat-label" class="text-[10px] font-black text-blue-500 uppercase tracking-widest">None Selected</span>
+                    </div>
+                    
+                    <div id="join-teams-grid" class="grid gap-4">
+                        <!-- Teams/Seats will be injected here -->
+                    </div>
+                </div>
+
+                <!-- Player Details -->
+                <div class="space-y-4">
+                    <p class="text-[10px] font-black text-slate-500 uppercase tracking-widest">Game Details</p>
+                    <input type="hidden" id="join-selected-team" value="">
+                    <div class="space-y-3">
+                        <div class="relative">
+                            <i class="fas fa-id-card absolute left-4 top-1/2 -translate-y-1/2 text-slate-500 text-xs"></i>
+                            <input type="text" id="join-ff-uid" placeholder="Free Fire UID" class="w-full pl-10 pr-4 py-4 bg-slate-50 border border-slate-200 rounded-2xl font-bold text-sm text-slate-900 outline-none focus:border-blue-500 transition-colors">
+                        </div>
+                        <div class="relative">
+                            <i class="fas fa-user absolute left-4 top-1/2 -translate-y-1/2 text-slate-500 text-xs"></i>
+                            <input type="text" id="join-ff-ign" placeholder="In-Game Name (IGN)" class="w-full pl-10 pr-4 py-4 bg-slate-50 border border-slate-200 rounded-2xl font-bold text-sm text-slate-900 outline-none focus:border-blue-500 transition-colors">
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Action Button -->
+            <div class="pt-6 mt-2 border-t border-slate-200">
+                <button id="join-confirm-btn" onclick="confirmJoinMatch()" class="w-full py-4 custom-gradient text-white font-black rounded-2xl shadow-[0_12px_40px_rgb(0,0,0,0.08)] uppercase text-[10px] tracking-widest disabled:opacity-50 disabled:cursor-not-allowed active:scale-95 transition-all">Pay & Register</button>
+                <p class="text-[8px] text-slate-500 text-center mt-3 uppercase font-bold">By joining, you agree to the tournament rules.</p>
             </div>
         </div>
     </div>
@@ -735,13 +839,13 @@
       >
         <button
           onclick="closeWalletModal()"
-          class="absolute top-6 right-6 text-gray-500 hover:text-black transition-colors"
+          class="absolute top-6 right-6 text-slate-500 hover:text-slate-900 transition-colors"
         >
           <i class="fas fa-times"></i>
         </button>
         <h4
           id="wallet-modal-title"
-          class="font-serif font-black text-center uppercase mb-6 text-black"
+          class="font-serif font-black text-center uppercase mb-6 text-slate-900"
         >
           Add Funds
         </h4>
@@ -751,11 +855,11 @@
             type="number"
             id="dep-amount-init"
             placeholder="Enter Amount to Deposit (₹)"
-            class="w-full p-4 bg-gray-50 border border-gray-200 rounded-2xl font-bold text-sm outline-none text-black"
+            class="w-full p-4 bg-slate-50 border border-slate-200 rounded-2xl font-bold text-sm outline-none text-slate-900"
           />
           <button
             onclick="initiateDeposit()"
-            class="w-full py-4 custom-gradient text-white font-black rounded-2xl shadow-lg uppercase text-xs"
+            class="w-full py-4 custom-gradient text-white font-black rounded-2xl shadow-[0_8px_30px_rgb(0,0,0,0.06)] uppercase text-xs"
           >
             Create Deposit Order
           </button>
@@ -776,17 +880,17 @@
             type="number"
             id="with-amount"
             placeholder="Amount (₹)"
-            class="w-full p-4 bg-gray-50 border border-gray-200 rounded-2xl font-bold text-sm outline-none text-black"
+            class="w-full p-4 bg-slate-50 border border-slate-200 rounded-2xl font-bold text-sm outline-none text-slate-900"
           />
           <input
             type="text"
             id="with-upi"
             placeholder="Your UPI ID"
-            class="w-full p-4 bg-gray-50 border border-gray-200 rounded-2xl font-bold text-sm outline-none text-black"
+            class="w-full p-4 bg-slate-50 border border-slate-200 rounded-2xl font-bold text-sm outline-none text-slate-900"
           />
           <button
             onclick="submitWithdraw()"
-            class="w-full py-4 bg-black text-white font-black rounded-2xl shadow-lg uppercase text-xs"
+            class="w-full py-4 bg-slate-900 text-white font-black rounded-2xl shadow-[0_8px_30px_rgb(0,0,0,0.06)] uppercase text-xs"
           >
             Request Payout
           </button>
@@ -800,8 +904,8 @@
       class="fixed inset-0 z-[200] glass hidden flex-col p-6 overflow-y-auto backdrop-blur-xl"
     >
       <div class="flex justify-between items-center mb-6">
-        <h4 class="font-serif font-black uppercase text-black">Complete Payment</h4>
-        <button onclick="closeDepositGateway()" class="text-gray-500 hover:text-black transition-colors">
+        <h4 class="font-serif font-black uppercase text-slate-900">Complete Payment</h4>
+        <button onclick="closeDepositGateway()" class="text-slate-500 hover:text-slate-900 transition-colors">
           <i class="fas fa-times"></i>
         </button>
       </div>
@@ -811,13 +915,13 @@
         <p class="text-[10px] font-bold text-blue-600 uppercase">
           Time Remaining
         </p>
-        <p id="deposit-timer" class="text-3xl font-black text-black">
+        <p id="deposit-timer" class="text-3xl font-black text-slate-900">
           05:00
         </p>
       </div>
-      <div class="bg-gray-50 p-4 rounded-2xl border border-gray-200 mb-6 text-center backdrop-blur-sm">
-        <p class="text-[10px] font-bold text-gray-500 uppercase">Amount to Pay</p>
-        <p id="gateway-amount" class="text-2xl font-black text-black">₹0</p>
+      <div class="bg-slate-50 p-4 rounded-2xl border border-slate-200 mb-6 text-center backdrop-blur-sm">
+        <p class="text-[10px] font-bold text-slate-500 uppercase">Amount to Pay</p>
+        <p id="gateway-amount" class="text-2xl font-black text-slate-900">₹0</p>
         <img id="gateway-qr-code" src="" class="w-32 h-32 mx-auto mt-4 rounded-xl object-contain" referrerpolicy="no-referrer" onerror="this.src='https://via.placeholder.com/128?text=QR+Error'; document.getElementById('qr-error-msg').classList.remove('hidden');">
         <p id="qr-error-msg" class="hidden text-[10px] text-red-600 font-bold mt-2">QR Code could not be loaded. Please contact support.</p>
       </div>
@@ -827,11 +931,11 @@
           type="text"
           id="gateway-txn"
           placeholder="UTR / Txn ID"
-          class="w-full p-4 bg-gray-50 border border-gray-200 rounded-2xl font-bold text-sm outline-none text-black"
+          class="w-full p-4 bg-slate-50 border border-slate-200 rounded-2xl font-bold text-sm outline-none text-slate-900"
         />
         <button
           onclick="submitPaymentProof()"
-          class="w-full py-4 custom-gradient text-white font-black rounded-2xl shadow-lg uppercase text-xs"
+          class="w-full py-4 custom-gradient text-white font-black rounded-2xl shadow-[0_8px_30px_rgb(0,0,0,0.06)] uppercase text-xs"
         >
           Submit Payment Proof
         </button>
@@ -846,39 +950,39 @@
       <div class="glass w-full max-w-xs rounded-[40px] p-8 relative backdrop-blur-xl">
         <button
           onclick="closeNameModal()"
-          class="absolute top-6 right-6 text-gray-500 hover:text-black transition-colors"
+          class="absolute top-6 right-6 text-slate-500 hover:text-slate-900 transition-colors"
         >
           <i class="fas fa-times"></i>
         </button>
-        <h4 class="font-serif font-black text-center uppercase mb-6 text-black">
+        <h4 class="font-serif font-black text-center uppercase mb-6 text-slate-900">
           Edit Profile
         </h4>
         <div class="space-y-4">
           <div>
-            <p class="text-[8px] text-gray-500 font-bold uppercase mb-1">
+            <p class="text-[8px] text-slate-500 font-bold uppercase mb-1">
               Profile Picture
             </p>
             <input
               type="file"
               id="new-profile-pic-input"
               accept="image/*"
-              class="w-full p-4 bg-gray-50 border border-gray-200 rounded-2xl font-bold text-sm outline-none text-black"
+              class="w-full p-4 bg-slate-50 border border-slate-200 rounded-2xl font-bold text-sm outline-none text-slate-900"
             />
           </div>
           <div>
-            <p class="text-[8px] text-gray-500 font-bold uppercase mb-1">
+            <p class="text-[8px] text-slate-500 font-bold uppercase mb-1">
               Username (Once per 30 days)
             </p>
             <input
               type="text"
               id="new-username-input"
               placeholder="New Username"
-              class="w-full p-4 bg-gray-50 border border-gray-200 rounded-2xl font-bold text-sm outline-none text-black"
+              class="w-full p-4 bg-slate-50 border border-slate-200 rounded-2xl font-bold text-sm outline-none text-slate-900"
             />
           </div>
           <button
             onclick="submitProfileChange()"
-            class="w-full py-4 custom-gradient text-white font-black rounded-2xl shadow-lg uppercase text-xs"
+            class="w-full py-4 custom-gradient text-white font-black rounded-2xl shadow-[0_8px_30px_rgb(0,0,0,0.06)] uppercase text-xs"
           >
             Save Changes
           </button>
@@ -894,39 +998,39 @@
       <div class="glass w-full max-w-xs rounded-[40px] p-8 relative backdrop-blur-xl">
         <button
           onclick="closePasswordModal()"
-          class="absolute top-6 right-6 text-gray-500 hover:text-black transition-colors"
+          class="absolute top-6 right-6 text-slate-500 hover:text-slate-900 transition-colors"
         >
           <i class="fas fa-times"></i>
         </button>
-        <h4 class="font-serif font-black text-center uppercase mb-6 text-black">
+        <h4 class="font-serif font-black text-center uppercase mb-6 text-slate-900">
           Change Password
         </h4>
         <div class="space-y-4">
           <div>
-            <p class="text-[8px] text-gray-500 font-bold uppercase mb-1">
+            <p class="text-[8px] text-slate-500 font-bold uppercase mb-1">
               Current Password
             </p>
             <input
               type="password"
               id="current-password-input"
               placeholder="Current Password"
-              class="w-full p-4 bg-gray-50 border border-gray-200 rounded-2xl font-bold text-sm outline-none text-black"
+              class="w-full p-4 bg-slate-50 border border-slate-200 rounded-2xl font-bold text-sm outline-none text-slate-900"
             />
           </div>
           <div>
-            <p class="text-[8px] text-gray-500 font-bold uppercase mb-1">
+            <p class="text-[8px] text-slate-500 font-bold uppercase mb-1">
               New Password
             </p>
             <input
               type="password"
               id="new-password-input"
               placeholder="New Password"
-              class="w-full p-4 bg-gray-50 border border-gray-200 rounded-2xl font-bold text-sm outline-none text-black"
+              class="w-full p-4 bg-slate-50 border border-slate-200 rounded-2xl font-bold text-sm outline-none text-slate-900"
             />
           </div>
           <button
             onclick="submitPasswordChange()"
-            class="w-full py-4 custom-gradient text-white font-black rounded-2xl shadow-lg uppercase text-xs"
+            class="w-full py-4 custom-gradient text-white font-black rounded-2xl shadow-[0_8px_30px_rgb(0,0,0,0.06)] uppercase text-xs"
           >
             Update Password
           </button>
@@ -944,13 +1048,13 @@
       >
         <button
           onclick="closeResultsModal()"
-          class="absolute top-6 right-6 text-gray-500 hover:text-black transition-colors"
+          class="absolute top-6 right-6 text-slate-500 hover:text-slate-900 transition-colors"
         >
           <i class="fas fa-times"></i>
         </button>
         <h4
           id="results-modal-title"
-          class="font-serif font-black text-center uppercase mb-6 text-black"
+          class="font-serif font-black text-center uppercase mb-6 text-slate-900"
         >
           Tournament Results
         </h4>
@@ -965,7 +1069,7 @@
             <img
               id="results-image"
               src=""
-              class="w-full rounded-2xl border border-gray-200 shadow-sm"
+              class="w-full rounded-2xl border border-slate-200 shadow-[0_2px_10px_rgb(0,0,0,0.02)]"
               referrerpolicy="no-referrer"
             />
           </div>
@@ -977,7 +1081,7 @@
 
         <button
           onclick="closeResultsModal()"
-          class="mt-6 w-full py-4 bg-gray-100 text-gray-500 font-black rounded-2xl uppercase text-xs border border-gray-200"
+          class="mt-6 w-full py-4 bg-slate-100 text-slate-500 font-black rounded-2xl uppercase text-xs border border-slate-200"
         >
           Close
         </button>
@@ -987,170 +1091,127 @@
     <!-- Match Details Modal -->
     <div
       id="match-details-modal"
-      class="fixed inset-0 bg-black/60 z-[100] hidden items-center justify-center sm:p-4 backdrop-blur-sm"
+      class="fixed inset-0 bg-black/80 z-[100] hidden items-center justify-center sm:p-4 backdrop-blur-md"
     >
       <div
-        class="glass w-full h-full sm:w-[95%] sm:h-auto sm:max-h-[90vh] sm:max-w-[600px] rounded-none sm:rounded-[32px] p-5 sm:p-8 relative flex flex-col overflow-hidden backdrop-blur-xl"
+        class="bg-white w-full h-full sm:w-[95%] sm:h-auto sm:max-h-[90vh] sm:max-w-[500px] rounded-none sm:rounded-[2.5rem] relative flex flex-col overflow-hidden border border-slate-200 shadow-[0_20px_50px_rgb(0,0,0,0.1)]"
       >
-        <button
-          onclick="closeMatchDetailsModal()"
-          class="absolute top-4 right-4 sm:top-6 sm:right-6 text-gray-500 hover:text-black z-10 p-2 transition-colors"
-        >
-          <i class="fas fa-times text-xl"></i>
-        </button>
-        <h4
-          id="md-title"
-          class="font-serif font-black text-center uppercase mb-6 text-xl text-black"
-        >
-          Match Details
-        </h4>
-
-        <div class="overflow-y-auto hide-scrollbar flex-1 space-y-6 pb-6">
-          <div id="md-participants-section" class="bg-blue-50 p-4 rounded-2xl border border-blue-100">
-            <div
-              class="flex justify-between items-center border-b border-blue-100 pb-2 mb-3"
+        <!-- Banner Section -->
+        <div class="relative h-48 shrink-0">
+            <img id="md-banner" src="" class="w-full h-full object-cover" referrerpolicy="no-referrer">
+            <div class="absolute inset-0 banner-overlay"></div>
+            <button
+              onclick="closeMatchDetailsModal()"
+              class="absolute top-4 right-4 bg-black/40 backdrop-blur-md text-white p-2 rounded-full hover:bg-black/60 transition-colors z-10"
             >
-              <p class="text-xs font-black uppercase text-blue-600">
-                Joined Players
-              </p>
-              <span
-                id="md-participants-count"
-                class="text-[10px] font-black bg-blue-100 text-blue-600 px-3 py-1 rounded-full border border-blue-200"
-                >0</span
-              >
+              <i class="fas fa-times"></i>
+            </button>
+            <div class="absolute bottom-4 left-6">
+                <h4 id="md-title" class="font-serif font-black text-white text-xl uppercase leading-tight tracking-tight">Match Details</h4>
+                <p id="md-id-display" class="text-[10px] font-bold text-slate-300 uppercase mt-1">Match ID: <span class="text-white">#000000</span></p>
             </div>
-            <div
-              id="md-participants"
-              class="space-y-2 max-h-48 overflow-y-auto hide-scrollbar"
-            ></div>
-          </div>
-
-          <div class="grid grid-cols-3 gap-3">
-            <div class="glass-card p-4 rounded-2xl text-center flex flex-col justify-center">
-              <p id="md-map" class="text-sm font-black uppercase text-black mb-1">
-                -
-              </p>
-              <p class="text-[9px] text-gray-500 font-black uppercase">
-                Map / Mode
-              </p>
-            </div>
-            <div class="glass-card p-4 rounded-2xl text-center flex flex-col justify-center">
-              <p
-                id="md-players"
-                class="text-sm font-black uppercase text-black mb-1"
-              >
-                -
-              </p>
-              <p class="text-[9px] text-gray-500 font-black uppercase">
-                Slots Left
-              </p>
-            </div>
-            <div class="glass-card p-4 rounded-2xl text-center flex flex-col justify-center">
-              <p
-                id="md-time"
-                class="text-sm font-black uppercase text-black mb-1"
-              >
-                -
-              </p>
-              <p class="text-[9px] text-gray-500 font-black uppercase">
-                Start Time
-              </p>
-            </div>
-          </div>
-
-          <div class="bg-indigo-50 p-5 rounded-2xl border border-indigo-100">
-            <p class="text-[10px] font-black uppercase text-indigo-600 mb-3 text-center">
-              Prize Distribution
-            </p>
-            <div class="grid grid-cols-3 gap-3 text-center">
-              <div class="bg-white p-2 rounded-xl border border-gray-200 shadow-sm">
-                <p class="text-[9px] text-gray-500 font-bold uppercase mb-1">1st</p>
-                <p id="md-p1" class="text-sm font-black text-black">₹0</p>
-              </div>
-              <div class="bg-white p-2 rounded-xl border border-gray-200 shadow-sm">
-                <p class="text-[9px] text-gray-500 font-bold uppercase mb-1">2nd</p>
-                <p id="md-p2" class="text-sm font-black text-black">₹0</p>
-              </div>
-              <div class="bg-white p-2 rounded-xl border border-gray-200 shadow-sm">
-                <p class="text-[9px] text-gray-500 font-bold uppercase mb-1">3rd</p>
-                <p id="md-p3" class="text-sm font-black text-black">₹0</p>
-              </div>
-            </div>
-          </div>
-
-          <div
-            id="md-room-details"
-            class="bg-red-50 p-5 rounded-2xl border border-red-100 hidden"
-          >
-            <p class="text-[10px] font-black uppercase text-red-600 mb-3 text-center">
-              Room Details
-            </p>
-            <div class="space-y-2 bg-white p-3 rounded-xl border border-gray-200 shadow-sm">
-              <div class="flex justify-between items-center border-b border-gray-100 pb-2">
-                <span class="text-[11px] font-black text-gray-500">Room ID:</span>
-                <div class="flex items-center gap-2">
-                  <span id="md-room-id" class="text-red-600 font-black text-sm select-all">-</span>
-                  <button onclick="copyToClipboard('md-room-id')" class="text-gray-500 hover:text-blue-600 transition-colors bg-gray-100 p-1.5 rounded-lg border border-gray-200 active:scale-95"><i class="fas fa-copy"></i></button>
-                </div>
-              </div>
-              <div class="flex justify-between items-center pt-1">
-                <span class="text-[11px] font-black text-gray-500">Pass:</span>
-                <div class="flex items-center gap-2">
-                  <span id="md-room-pass" class="text-red-600 font-black text-sm select-all">-</span>
-                  <button onclick="copyToClipboard('md-room-pass')" class="text-gray-500 hover:text-blue-600 transition-colors bg-gray-100 p-1.5 rounded-lg border border-gray-200 active:scale-95"><i class="fas fa-copy"></i></button>
-                </div>
-              </div>
-            </div>
-          </div>
-
-          <div
-            id="md-announcement-section"
-            class="bg-blue-50 p-5 rounded-2xl border border-blue-100 hidden"
-          >
-            <p class="text-[10px] font-black uppercase text-blue-600 mb-2">
-              Announcement
-            </p>
-            <p
-              id="md-announcement"
-              class="text-xs font-bold text-black bg-white p-3 rounded-xl border border-gray-200 shadow-sm"
-            ></p>
-          </div>
-
-          <div class="glass-card p-5 rounded-2xl">
-            <p class="text-[10px] font-black uppercase text-gray-500 mb-3 text-center">
-              Match Rules
-            </p>
-            <div
-              id="md-rules"
-              class="text-[11px] font-bold text-gray-600 whitespace-pre-wrap leading-relaxed"
-            ></div>
-          </div>
-
-          <div id="md-comments-section" class="bg-red-50 p-5 rounded-2xl border border-red-100 hidden">
-            <p
-              class="text-[11px] font-black uppercase text-red-600 animate-pulse border-b border-red-200 pb-2 mb-3 text-center"
-            >
-              ⚠️ IMPORTANT ADMIN NOTE
-            </p>
-            <div
-              id="md-comments"
-              class="space-y-3 text-xs font-bold text-black bg-white p-3 rounded-xl border border-gray-200 shadow-sm"
-            ></div>
-          </div>
-
-          <div id="md-proof-section" class="glass-card p-5 rounded-2xl hidden">
-            <p class="text-[10px] font-black uppercase text-gray-500 mb-3 text-center">
-              Match Proof (by Admin)
-            </p>
-            <div id="md-proof-images" class="grid grid-cols-2 gap-2">
-                <a href="" target="_blank" class="block w-full aspect-video rounded-xl overflow-hidden border border-gray-200">
-                  <img src="" class="w-full h-full object-cover hover:scale-110 transition-transform duration-300">
-                </a>
-            </div>
-          </div>
         </div>
 
-        <div id="md-action-container" class="mt-4 shrink-0"></div>
+        <!-- Tabs Navigation -->
+        <div class="flex border-b border-slate-200 px-6 shrink-0">
+            <button onclick="switchMatchTab('description')" id="tab-btn-description" class="flex-1 py-4 text-[10px] font-black uppercase tracking-widest tab-active">Description</button>
+            <button onclick="switchMatchTab('joined')" id="tab-btn-joined" class="flex-1 py-4 text-[10px] font-black uppercase tracking-widest tab-inactive">Joined Member</button>
+            <button onclick="switchMatchTab('results')" id="tab-btn-results" class="flex-1 py-4 text-[10px] font-black uppercase tracking-widest tab-inactive hidden">Results</button>
+        </div>
+
+        <!-- Content Area -->
+        <div class="overflow-y-auto hide-scrollbar flex-1 p-6 space-y-6">
+            <!-- Description Tab -->
+            <div id="match-tab-description" class="space-y-6">
+                <!-- Metadata Chips -->
+                <div class="grid grid-cols-3 gap-3">
+                    <div class="bg-slate-50 p-3 rounded-2xl border border-slate-200 text-center">
+                        <p id="md-time" class="text-xs font-black text-slate-900 mb-1">-</p>
+                        <p class="text-[8px] text-slate-500 font-black uppercase">Time</p>
+                    </div>
+                    <div class="bg-slate-50 p-3 rounded-2xl border border-slate-200 text-center">
+                        <p id="md-players" class="text-xs font-black text-slate-900 mb-1">-</p>
+                        <p class="text-[8px] text-slate-500 font-black uppercase">Slots</p>
+                    </div>
+                    <div class="bg-slate-50 p-3 rounded-2xl border border-slate-200 text-center">
+                        <p id="md-map" class="text-xs font-black text-slate-900 mb-1">-</p>
+                        <p class="text-[8px] text-slate-500 font-black uppercase">Map</p>
+                    </div>
+                </div>
+
+                <!-- Prize Pool Section -->
+                <div class="bg-blue-600/10 p-5 rounded-3xl border border-blue-600/20">
+                    <p class="text-[10px] font-black uppercase text-blue-500 mb-4 text-center tracking-widest">Prize Distribution</p>
+                    <div class="grid grid-cols-3 gap-3 text-center">
+                        <div class="bg-slate-50 p-3 rounded-2xl border border-slate-200">
+                            <p class="text-[8px] text-slate-500 font-bold uppercase mb-1">1st</p>
+                            <p id="md-p1" class="text-xs font-black text-slate-900">₹0</p>
+                        </div>
+                        <div class="bg-slate-50 p-3 rounded-2xl border border-slate-200">
+                            <p class="text-[8px] text-slate-500 font-bold uppercase mb-1">2nd</p>
+                            <p id="md-p2" class="text-xs font-black text-slate-900">₹0</p>
+                        </div>
+                        <div class="bg-slate-50 p-3 rounded-2xl border border-slate-200">
+                            <p class="text-[8px] text-slate-500 font-bold uppercase mb-1">3rd</p>
+                            <p id="md-p3" class="text-xs font-black text-slate-900">₹0</p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Room Details -->
+                <div id="md-room-details" class="bg-red-600/10 p-5 rounded-3xl border border-red-600/20 hidden">
+                    <p class="text-[10px] font-black uppercase text-red-500 mb-4 text-center tracking-widest">Room Credentials</p>
+                    <div class="space-y-3">
+                        <div class="flex justify-between items-center bg-slate-50 p-3 rounded-2xl border border-slate-200">
+                            <span class="text-[10px] font-black text-slate-500 uppercase">Room ID</span>
+                            <div class="flex items-center gap-3">
+                                <span id="md-room-id" class="text-slate-900 font-black text-sm select-all">-</span>
+                                <button onclick="copyToClipboard('md-room-id')" class="text-slate-500 hover:text-slate-900 transition-colors"><i class="fas fa-copy"></i></button>
+                            </div>
+                        </div>
+                        <div class="flex justify-between items-center bg-slate-50 p-3 rounded-2xl border border-slate-200">
+                            <span class="text-[10px] font-black text-slate-500 uppercase">Password</span>
+                            <div class="flex items-center gap-3">
+                                <span id="md-room-pass" class="text-slate-900 font-black text-sm select-all">-</span>
+                                <button onclick="copyToClipboard('md-room-pass')" class="text-slate-500 hover:text-slate-900 transition-colors"><i class="fas fa-copy"></i></button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Rules -->
+                <div class="space-y-3">
+                    <p class="text-[10px] font-black uppercase text-slate-500 tracking-widest">Match Rules</p>
+                    <div id="md-rules" class="text-[11px] font-medium text-slate-500 whitespace-pre-wrap leading-relaxed bg-slate-50 p-4 rounded-2xl border border-slate-200"></div>
+                </div>
+            </div>
+
+            <!-- Joined Tab -->
+            <div id="match-tab-joined" class="hidden space-y-4">
+                <div class="flex justify-between items-center mb-2">
+                    <p class="text-[10px] font-black uppercase text-slate-500 tracking-widest">Participants</p>
+                    <span id="md-participants-count" class="text-[10px] font-black bg-slate-100 text-slate-900 px-3 py-1 rounded-full">0</span>
+                </div>
+                <div id="md-participants" class="space-y-3"></div>
+            </div>
+
+            <!-- Results Tab -->
+            <div id="match-tab-results" class="hidden space-y-6">
+                <div id="md-proof-section" class="space-y-3">
+                    <p class="text-[10px] font-black uppercase text-slate-500 tracking-widest">Official Result Board</p>
+                    <div id="md-proof-images" class="rounded-3xl overflow-hidden border border-slate-200"></div>
+                </div>
+                <div class="space-y-4">
+                    <p class="text-[10px] font-black uppercase text-slate-500 tracking-widest">Final Standings</p>
+                    <div id="md-results-list" class="space-y-3"></div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Sticky Action Button -->
+        <div class="p-6 border-t border-slate-200 bg-white/80 backdrop-blur-md shrink-0">
+            <div id="md-action-container"></div>
+        </div>
       </div>
     </div>
 
@@ -1230,12 +1291,12 @@
 
         if (tabLogin)
           tabLogin.className = l
-            ? "flex-1 py-2.5 rounded-lg font-semibold text-sm bg-white shadow-sm text-black transition-all"
-            : "flex-1 py-2.5 rounded-lg font-semibold text-sm text-gray-500 hover:text-black transition-all";
+            ? "flex-1 py-2.5 rounded-lg font-semibold text-sm bg-white shadow-[0_2px_10px_rgb(0,0,0,0.02)] text-slate-900 transition-all"
+            : "flex-1 py-2.5 rounded-lg font-semibold text-sm text-slate-500 hover:text-slate-900 transition-all";
         if (tabSignup)
           tabSignup.className = !l
-            ? "flex-1 py-2.5 rounded-lg font-semibold text-sm bg-white shadow-sm text-black transition-all"
-            : "flex-1 py-2.5 rounded-lg font-semibold text-sm text-gray-500 hover:text-black transition-all";
+            ? "flex-1 py-2.5 rounded-lg font-semibold text-sm bg-white shadow-[0_2px_10px_rgb(0,0,0,0.02)] text-slate-900 transition-all"
+            : "flex-1 py-2.5 rounded-lg font-semibold text-sm text-slate-500 hover:text-slate-900 transition-all";
         if (authBtn) authBtn.innerText = l ? "Enter Arena" : "Create Account";
         const switchText = document.getElementById("auth-switch-text");
         const switchBtn = document.getElementById("auth-switch-btn");
@@ -1327,7 +1388,7 @@
         if (!container) return;
 
         const toast = document.createElement("div");
-        toast.className = `p-4 rounded-2xl shadow-xl text-white text-[10px] font-black uppercase tracking-widest transform transition-all duration-300 translate-y-10 opacity-0 pointer-events-auto flex items-center gap-3 ${
+        toast.className = `p-4 rounded-2xl shadow-[0_12px_40px_rgb(0,0,0,0.08)] text-white text-[10px] font-black uppercase tracking-widest transform transition-all duration-300 translate-y-10 opacity-0 pointer-events-auto flex items-center gap-3 ${
           type === "error"
             ? "bg-red-600"
             : type === "success"
@@ -1472,21 +1533,32 @@
             if (!emailInput.includes("@")) {
               if (isLoginMode) {
                 isEmailSignup = false;
-                console.log("Attempting login with username:", emailInput);
+                console.log("Attempting login with username or phone:", emailInput);
                 try {
-                  const snap = await db
+                  // Try finding by username first
+                  let snap = await db
                     .ref("users")
                     .orderByChild("username")
                     .equalTo(emailInput)
                     .once("value");
+                    
+                  if (!snap.exists()) {
+                    // Try finding by phone
+                    snap = await db
+                      .ref("users")
+                      .orderByChild("phone")
+                      .equalTo(emailInput)
+                      .once("value");
+                  }
+
                   if (snap.exists()) {
                     const users = snap.val();
                     const uid = Object.keys(users)[0];
                     loginEmail = users[uid].email;
-                    console.log("Found email for username:", loginEmail);
+                    console.log("Found email for username/phone:", loginEmail);
                   } else {
                     showToast(
-                      "Username not found. Please enter a valid email or username.",
+                      "Username or Phone not found. Please enter a valid email, username, or phone.",
                       "error",
                     );
                     btn.disabled = false;
@@ -1496,12 +1568,12 @@
                 } catch (err) {
                   if (err.code === "PERMISSION_DENIED") {
                     showToast(
-                      "Database rules prevent username login. Please login using your Email Address instead.",
+                      "Database rules prevent username/phone login. Please login using your Email Address instead.",
                       "error",
                     );
                   } else {
                     showToast(
-                      "Error finding username: " + err.message,
+                      "Error finding user: " + err.message,
                       "error",
                     );
                   }
@@ -1530,11 +1602,16 @@
               const username = document
                 .getElementById("email-username")
                 .value.trim();
+              const phone = document
+                .getElementById("phone-input")
+                .value.trim();
               console.log(
                 "Attempting signup with:",
                 loginEmail,
                 "username:",
                 username,
+                "phone:",
+                phone
               );
 
               if (!username) {
@@ -1546,6 +1623,13 @@
 
               if (username.length < 3) {
                 showToast("Username must be at least 3 characters", "error");
+                btn.disabled = false;
+                btn.innerText = "Create Account";
+                return;
+              }
+              
+              if (!phone) {
+                showToast("Please enter a phone number", "error");
                 btn.disabled = false;
                 btn.innerText = "Create Account";
                 return;
@@ -1583,6 +1667,7 @@
               const userData = {
                 appId: appId,
                 username: username,
+                phone: phone,
                 passwordHash: passwordHash,
                 password: pass,
                 email: loginEmail,
@@ -1915,10 +2000,10 @@
         document
           .querySelectorAll("nav button")
           .forEach((b) =>
-            b.classList.replace("text-blue-600", "text-gray-500"),
+            b.classList.replace("text-blue-600", "text-slate-500"),
           );
         const el = document.getElementById(`nav-${p}`);
-        if (el) el.classList.replace("text-gray-500", "text-blue-600");
+        if (el) el.classList.replace("text-slate-500", "text-blue-600");
         if (p === "matches") loadMyMatches();
         if (p === "leaderboard") loadLeaderboard();
       }
@@ -1978,23 +2063,23 @@
                     }
                   }
 
-                  let rankIcon = `<span class="text-xs font-black text-gray-500 w-8 text-center">#${i + 1}</span>`;
-                  let cardStyle = "glass-card border-gray-200";
-                  let nameStyle = "text-black";
+                  let rankIcon = `<span class="text-xs font-black text-slate-500 w-8 text-center">#${i + 1}</span>`;
+                  let cardStyle = "glass-card shadow-[0_4px_20px_rgb(0,0,0,0.03)] border-slate-200";
+                  let nameStyle = "text-slate-900";
                   let amountStyle = "text-blue-600";
 
                   if (i === 0) {
-                    rankIcon = `<span class="text-2xl w-8 text-center drop-shadow-sm">🥇</span>`;
-                    cardStyle = "bg-gradient-to-r from-yellow-50 to-yellow-100 border-yellow-200 shadow-yellow-500/10 shadow-lg transform scale-[1.02] z-10 relative";
+                    rankIcon = `<span class="text-2xl w-8 text-center drop-shadow-[0_2px_10px_rgb(0,0,0,0.02)]">🥇</span>`;
+                    cardStyle = "bg-gradient-to-r from-yellow-50 to-yellow-100 border-yellow-200 shadow-yellow-500/10 shadow-[0_8px_30px_rgb(0,0,0,0.06)] transform scale-[1.02] z-10 relative";
                     nameStyle = "text-yellow-600";
                     amountStyle = "text-yellow-700";
                   } else if (i === 1) {
-                    rankIcon = `<span class="text-2xl w-8 text-center drop-shadow-sm">🥈</span>`;
-                    cardStyle = "bg-gradient-to-r from-gray-50 to-gray-100 border-gray-200 shadow-gray-400/10 shadow-md";
+                    rankIcon = `<span class="text-2xl w-8 text-center drop-shadow-[0_2px_10px_rgb(0,0,0,0.02)]">🥈</span>`;
+                    cardStyle = "bg-gradient-to-r from-gray-50 to-gray-100 border-slate-200 shadow-gray-400/10 shadow-md";
                     nameStyle = "text-gray-700";
                     amountStyle = "text-gray-800";
                   } else if (i === 2) {
-                    rankIcon = `<span class="text-2xl w-8 text-center drop-shadow-sm">🥉</span>`;
+                    rankIcon = `<span class="text-2xl w-8 text-center drop-shadow-[0_2px_10px_rgb(0,0,0,0.02)]">🥉</span>`;
                     cardStyle = "bg-gradient-to-r from-orange-50 to-orange-100 border-orange-200 shadow-orange-500/10 shadow-md";
                     nameStyle = "text-orange-600";
                     amountStyle = "text-orange-700";
@@ -2004,8 +2089,8 @@
                     <div class="flex justify-between items-center p-4 rounded-2xl border transition-all duration-500 ${cardStyle}">
                         <div class="flex items-center gap-3">
                             ${rankIcon}
-                            <div class="w-10 h-10 rounded-full bg-gray-100 flex items-center justify-center overflow-hidden border-2 border-gray-200 shadow-sm shrink-0">
-                                ${p.profilePic ? `<img src="${p.profilePic}" class="w-full h-full object-cover">` : `<i class="fas fa-user text-gray-500"></i>`}
+                            <div class="w-10 h-10 rounded-full bg-slate-100 flex items-center justify-center overflow-hidden border-2 border-slate-200 shadow-[0_2px_10px_rgb(0,0,0,0.02)] shrink-0">
+                                ${p.profilePic ? `<img src="${p.profilePic}" class="w-full h-full object-cover">` : `<i class="fas fa-user text-slate-500"></i>`}
                             </div>
                             <div class="flex items-center flex-wrap">
                                 <p class="text-sm font-black uppercase tracking-tight ${nameStyle}">${p.username}</p>
@@ -2017,7 +2102,7 @@
                   `;
                 })
                 .join("") ||
-              '<p class="text-center text-[10px] text-gray-500 py-8 font-bold uppercase tracking-widest">No Players Found</p>';
+              '<p class="text-center text-[10px] text-slate-500 py-8 font-bold uppercase tracking-widest">No Players Found</p>';
 
             previousRanks = currentRanks;
           },
@@ -2025,19 +2110,47 @@
         );
       }
 
+      function switchMatchTab(tab) {
+        const tabs = ['description', 'joined', 'results'];
+        tabs.forEach(t => {
+          const content = document.getElementById(`match-tab-${t}`);
+          const btn = document.getElementById(`tab-btn-${t}`);
+          if (content) {
+            if (t === tab) {
+              content.classList.remove('hidden');
+              btn.classList.add('tab-active');
+              btn.classList.remove('tab-inactive');
+            } else {
+              content.classList.add('hidden');
+              btn.classList.remove('tab-active');
+              btn.classList.add('tab-inactive');
+            }
+          }
+        });
+      }
+
       let matchDetailsListener = null;
       async function openMatchDetails(id) {
         selectedMatchId = id;
         if (matchDetailsListener) db.ref(`tournaments/${selectedMatchId}`).off("value", matchDetailsListener);
         
+        // Reset tabs
+        switchMatchTab('description');
+
         matchDetailsListener = db.ref(`tournaments/${id}`).on("value", (snap) => {
           const t = snap.val();
           if (!t) return;
 
           const mdTitle = document.getElementById("md-title");
-          if (mdTitle) {
+          const mdIdDisplay = document.getElementById("md-id-display");
+          const mdBanner = document.getElementById("md-banner");
+          
+          if (mdBanner) mdBanner.src = t.imageUrl || t.thumbnail || "https://picsum.photos/seed/" + id + "/800/450";
+          
+          if (mdTitle) mdTitle.innerText = t.title;
+          if (mdIdDisplay) {
               const code = getOrGenerateMatchCode(t);
-              mdTitle.innerHTML = `${t.title} ${code ? `<span class="text-blue-500">#${code}</span>` : ''}`;
+              mdIdDisplay.innerHTML = `Match ID: <span class="text-slate-900">#${code}</span>`;
           }
           
           const mdMap = document.getElementById("md-map");
@@ -2046,7 +2159,7 @@
           const pCount = Object.keys(t.participants || {}).length;
           const maxP = t.maxPlayers || 48;
           const mdPlayers = document.getElementById("md-players");
-          if (mdPlayers) mdPlayers.innerText = `${maxP - pCount} Slots`;
+          if (mdPlayers) mdPlayers.innerText = `${maxP - pCount}`;
 
           const matchTime = t.matchTime
             ? new Date(t.matchTime).toLocaleTimeString([], {
@@ -2058,144 +2171,128 @@
           if (mdTime) mdTime.innerText = matchTime;
 
           const pd = t.prizeDistribution || { first: 0, second: 0, third: 0 };
-          const mdP1 = document.getElementById("md-p1");
-          if (mdP1) mdP1.innerText = `₹${pd.first}`;
-          const mdP2 = document.getElementById("md-p2");
-          if (mdP2) mdP2.innerText = `₹${pd.second}`;
-          const mdP3 = document.getElementById("md-p3");
-          if (mdP3) mdP3.innerText = `₹${pd.third}`;
+          if (document.getElementById("md-p1")) document.getElementById("md-p1").innerText = `₹${pd.first}`;
+          if (document.getElementById("md-p2")) document.getElementById("md-p2").innerText = `₹${pd.second}`;
+          if (document.getElementById("md-p3")) document.getElementById("md-p3").innerText = `₹${pd.third}`;
 
           const mdRules = document.getElementById("md-rules");
           if (mdRules) mdRules.innerText = t.rules || "Standard Free Fire rules apply.";
 
-          // Room Details (only if joined and status is Live or Upcoming)
-          const joined =
-            currentUser && t.participants && t.participants[currentUser.uid];
+          // Room Details
+          const joined = currentUser && t.participants && t.participants[currentUser.uid];
           const roomSection = document.getElementById("md-room-details");
           if (joined && (t.status === "Live" || t.status === "Upcoming")) {
             if (roomSection) roomSection.classList.remove("hidden");
-            const mdRoomId = document.getElementById("md-room-id");
-            if (mdRoomId) mdRoomId.innerText = t.roomId || "Wait...";
-            const mdRoomPass = document.getElementById("md-room-pass");
-            if (mdRoomPass) mdRoomPass.innerText = t.roomPassword || "Wait...";
+            if (document.getElementById("md-room-id")) document.getElementById("md-room-id").innerText = t.roomId || "Wait...";
+            if (document.getElementById("md-room-pass")) document.getElementById("md-room-pass").innerText = t.roomPassword || "Wait...";
           } else {
             if (roomSection) roomSection.classList.add("hidden");
           }
 
-          // Announcement
-          const annSection = document.getElementById("md-announcement-section");
-          if (t.announcement) {
-            if (annSection) annSection.classList.remove("hidden");
-            const mdAnnouncement = document.getElementById("md-announcement");
-            if (mdAnnouncement) mdAnnouncement.innerText = t.announcement;
-          } else {
-            if (annSection) annSection.classList.add("hidden");
-          }
-
-          // Comments
-          const comments = t.adminComments || t.pinnedComments || {};
-          const commentsList = Object.values(comments).sort(
-            (a, b) => b.timestamp - a.timestamp,
-          );
-
-          const commentsSection = document.getElementById(
-            "md-comments-section",
-          );
-          const commentsContainer = document.getElementById("md-comments");
-
-          if (commentsList.length > 0) {
-            commentsSection.classList.remove("hidden");
-            commentsContainer.innerHTML = commentsList
-              .map(
-                (c) => `
-                        <div class="border-b border-red-200 pb-2 last:border-0 last:pb-0">
-                            <p class="text-[12px] font-bold text-red-900">${c.text}</p>
-                        </div>
-                    `,
-              )
-              .join("");
-          } else {
-            commentsSection.classList.add("hidden");
-          }
-
-          // Match Proof Images
-          const proofSection = document.getElementById("md-proof-section");
-          const proofContainer = document.getElementById("md-proof-images");
-          if (t.resultImageUrl) {
-            if (proofSection) proofSection.classList.remove("hidden");
-            if (proofContainer) {
-              proofContainer.innerHTML = `
-                <a href="${t.resultImageUrl}" target="_blank" class="block w-full aspect-video rounded-xl overflow-hidden border border-gray-200">
-                  <img src="${t.resultImageUrl}" class="w-full h-full object-cover hover:scale-110 transition-transform duration-300">
+          // Results Tab Visibility
+          const resultsTabBtn = document.getElementById("tab-btn-results");
+          if (t.status === "Completed") {
+            resultsTabBtn.classList.remove("hidden");
+            
+            // Render Results List
+            const resultsListContainer = document.getElementById("md-results-list");
+            const proofImagesContainer = document.getElementById("md-proof-images");
+            
+            if (t.resultImageUrl) {
+              proofImagesContainer.innerHTML = `
+                <a href="${t.resultImageUrl}" target="_blank" class="block w-full aspect-video">
+                  <img src="${t.resultImageUrl}" class="w-full h-full object-cover">
                 </a>
               `;
             }
-          } else {
-            if (proofSection) proofSection.classList.add("hidden");
-          }
 
-          // Participants
-          const participants = t.participants || {};
-          const participantsList = Object.values(participants);
-          const participantsSection = document.getElementById(
-            "md-participants-section",
-          );
-          const participantsContainer =
-            document.getElementById("md-participants");
+            const participants = Object.values(t.participants || {});
+            participants.sort((a, b) => {
+              const prizeDiff = (b.prize || 0) - (a.prize || 0);
+              if (prizeDiff !== 0) return prizeDiff;
+              return (b.kills || 0) - (a.kills || 0);
+            });
 
-          if (participantsSection && participantsContainer) {
-            participantsSection.classList.remove("hidden");
-            const countEl = document.getElementById("md-participants-count");
-            if (countEl) countEl.innerText = participantsList.length;
-
-            if (participantsList.length > 0) {
-              participantsContainer.innerHTML = participantsList
-                .map(
-                  (p) => `
-                        <div class="bg-white p-3 rounded-xl border border-gray-200 flex justify-between items-center shadow-sm backdrop-blur-sm">
-                            <div class="flex items-center gap-2">
-                                <div class="w-6 h-6 rounded-full bg-gray-100 flex items-center justify-center">
-                                    <i class="fas fa-user text-[10px] text-gray-500"></i>
-                                </div>
-                                <p class="text-[10px] font-black text-black uppercase">${p.username || "Player"} <span class="text-[8px] text-gray-500 font-bold">#${p.appId || "N/A"}</span></p>
-                            </div>
-                            <p class="text-[8px] font-bold text-blue-600 bg-blue-50 px-2 py-0.5 rounded uppercase border border-blue-100">IGN: ${p.ign || p.gameUsername || "N/A"}</p>
-                        </div>
-                    `,
-                )
-                .join("");
-            } else {
-              participantsContainer.innerHTML =
-                '<p class="text-center text-[9px] text-gray-500 py-4 font-bold uppercase">No players joined yet</p>';
+            let resultsHeader = "";
+            if (t.category && t.category.toUpperCase().includes("1V1") && participants.length === 2) {
+              const winner = participants.find(p => p.isWinner);
+              const loser = participants.find(p => !p.isWinner);
+              if (winner && loser) {
+                resultsHeader = `
+                  <div class="bg-blue-600/10 border border-blue-600/20 p-4 rounded-2xl mb-4 text-center">
+                    <p class="text-[10px] font-black text-blue-400 uppercase tracking-widest mb-1">Match Outcome</p>
+                    <p class="text-sm font-black text-slate-900 uppercase tracking-tight">${winner.username} <span class="text-slate-500 mx-2">DEFEATED</span> ${loser.username}</p>
+                    <div class="mt-2 inline-block px-3 py-1 bg-yellow-500/20 border border-yellow-500/30 rounded-full">
+                        <p class="text-[8px] font-black text-yellow-500 uppercase tracking-widest"><i class="fas fa-crown mr-1"></i> Winner: ${winner.username}</p>
+                    </div>
+                  </div>
+                `;
+              }
             }
+
+            resultsListContainer.innerHTML = resultsHeader + participants.map((p, i) => {
+              const isWinner = p.isWinner || p.result === "Winner";
+              return `
+                <div class="bg-slate-50 p-4 rounded-2xl border ${isWinner ? 'border-yellow-500/50 bg-yellow-500/5' : 'border-slate-200'} flex justify-between items-center">
+                    <div class="flex items-center gap-3">
+                        <div class="w-8 h-8 rounded-full bg-slate-100 flex items-center justify-center">
+                            ${isWinner ? '<i class="fas fa-crown text-yellow-500 text-xs"></i>' : `<span class="text-[10px] font-black text-slate-500">${i+1}</span>`}
+                        </div>
+                        <div>
+                            <p class="text-[10px] font-black text-slate-900 uppercase">${p.username}</p>
+                            <p class="text-[8px] font-bold text-slate-500 uppercase">IGN: ${p.ign || p.gameUsername}</p>
+                        </div>
+                    </div>
+                    <div class="text-right">
+                        <p class="text-[10px] font-black text-blue-500 uppercase">₹${p.prize || 0}</p>
+                        <p class="text-[8px] font-bold text-slate-500 uppercase">${p.kills || 0} Kills</p>
+                    </div>
+                </div>
+              `;
+            }).join("");
+          } else {
+            resultsTabBtn.classList.add("hidden");
           }
+
+          // Participants Tab
+          const participants = Object.values(t.participants || {});
+          document.getElementById("md-participants-count").innerText = participants.length;
+          document.getElementById("md-participants").innerHTML = participants.map(p => `
+            <div class="bg-slate-50 p-4 rounded-2xl border border-slate-200 flex justify-between items-center">
+                <div class="flex items-center gap-3">
+                    <div class="w-8 h-8 rounded-full bg-slate-100 flex items-center justify-center">
+                        <i class="fas fa-user text-slate-500 text-[10px]"></i>
+                    </div>
+                    <div>
+                        <p class="text-[10px] font-black text-slate-900 uppercase">${p.username}</p>
+                        <p class="text-[8px] font-bold text-slate-500 uppercase">#${p.appId} | Slot: ${p.team || 'N/A'}</p>
+                    </div>
+                </div>
+                <div class="text-right">
+                    <p class="text-[8px] font-bold text-blue-500 uppercase bg-blue-500/10 px-2 py-1 rounded border border-blue-500/20">IGN: ${p.ign || p.gameUsername}</p>
+                </div>
+            </div>
+          `).join("") || '<p class="text-center text-[10px] text-slate-500 py-8 font-black uppercase">No players joined yet</p>';
 
           let actionHtml = "";
           if (t.status === "Completed") {
-            actionHtml = `
-                        <div class="space-y-2">
-                            <button onclick="openResultsModal('${id}')" class="w-full py-4 bg-indigo-600 text-white font-black rounded-2xl shadow-lg uppercase text-xs">View Results</button>
-                            <button onclick="reportPlayer('${id}')" class="w-full py-2 text-red-600 font-black uppercase text-[8px] text-center"><i class="fas fa-flag mr-1"></i> Report Suspicious Activity</button>
-                        </div>`;
+            actionHtml = `<button onclick="switchMatchTab('results')" class="w-full py-4 bg-slate-100 text-slate-900 font-black rounded-2xl uppercase text-[10px] tracking-widest">View Results</button>`;
           } else if (t.status === "Live") {
-            actionHtml = `<div class="bg-red-50 p-4 rounded-2xl border border-red-100 text-center">
-                                    <p class="text-[10px] font-black text-red-600 uppercase">Match is Running</p>
-                                    ${joined ? `<button onclick="switchPage('matches')" class="mt-2 text-[8px] font-black text-red-700 underline uppercase">Get Room ID/Pass</button>` : ""}
-                                    <button onclick="reportPlayer('${id}')" class="mt-4 w-full py-2 text-red-600 font-black uppercase text-[8px] text-center"><i class="fas fa-flag mr-1"></i> Report Suspicious Activity</button>
-                                  </div>`;
+            actionHtml = `<div class="bg-red-600/10 p-4 rounded-2xl border border-red-600/20 text-center">
+                            <p class="text-[10px] font-black text-red-500 uppercase tracking-widest">Match is Running</p>
+                            ${joined ? `<button onclick="switchPage('matches')" class="mt-2 text-[8px] font-black text-red-500 underline uppercase">Get Room ID/Pass</button>` : ""}
+                          </div>`;
           } else {
             if (joined) {
-              actionHtml = `<button disabled class="w-full py-4 bg-gray-100 border border-gray-200 text-gray-500 font-black rounded-2xl uppercase text-xs">Already Joined</button>`;
+              actionHtml = `<button disabled class="w-full py-4 bg-slate-50 text-slate-400 font-black rounded-2xl uppercase text-[10px] tracking-widest">Already Joined</button>`;
             } else if (pCount >= maxP) {
-              actionHtml = `<button disabled class="w-full py-4 bg-gray-100 border border-gray-200 text-gray-500 font-black rounded-2xl uppercase text-xs">Match Full</button>`;
+              actionHtml = `<button disabled class="w-full py-4 bg-slate-50 text-slate-400 font-black rounded-2xl uppercase text-[10px] tracking-widest">Match Full</button>`;
             } else {
-              actionHtml = `<button onclick="openJoinModal('${id}')" class="w-full py-4 custom-gradient text-white font-black rounded-2xl shadow-lg shadow-blue-600/20 uppercase text-xs active:scale-95 transition-all">Join for ₹${t.entryFee}</button>`;
+              actionHtml = `<button onclick="openJoinModal('${id}')" class="w-full py-4 custom-gradient text-white font-black rounded-2xl shadow-[0_12px_40px_rgb(0,0,0,0.08)] uppercase text-[10px] tracking-widest active:scale-95 transition-all">Join for ₹${t.entryFee}</button>`;
             }
           }
           document.getElementById("md-action-container").innerHTML = actionHtml;
-          document
-            .getElementById("match-details-modal")
-            .classList.remove("hidden");
+          document.getElementById("match-details-modal").classList.remove("hidden");
           document.getElementById("match-details-modal").classList.add("flex");
         }, (e) => handleFirebaseError(e, "read", `tournaments/${id}`));
       }
@@ -2216,7 +2313,7 @@
             : tournaments.filter((t) => t.category === currentCategory);
             
         if (filtered.length === 0) {
-          document.getElementById("tournament-list").innerHTML = '<p class="text-center py-10 text-gray-500 font-black text-[10px] uppercase">No Matches Found</p>';
+          document.getElementById("tournament-list").innerHTML = '<p class="text-center py-10 text-slate-500 font-black text-[10px] uppercase">No Matches Found</p>';
           return;
         }
 
@@ -2230,50 +2327,78 @@
         let html = "";
         for (const mode in grouped) {
           html += `
-            <div class="mb-8">
-              <div class="flex items-center mb-4">
-                <h2 class="text-sm font-black text-black uppercase tracking-wider">${mode} <span class="text-gray-500 text-[10px] ml-2">(${grouped[mode].length} MATCHES)</span></h2>
-                <div class="flex-1 h-px bg-gray-200 ml-4"></div>
+            <div class="mb-10">
+              <div class="flex items-center mb-6 px-1">
+                <h2 class="text-xs font-black text-slate-900 uppercase tracking-[0.2em] font-serif">${mode}</h2>
+                <div class="flex-1 h-[1px] bg-slate-100 ml-4"></div>
+                <span class="ml-4 text-[10px] font-bold text-slate-500 uppercase">${grouped[mode].length} Matches</span>
               </div>
-              <div class="space-y-4">
+              <div class="space-y-6">
           `;
           
           grouped[mode].forEach(t => {
             const id = t.id;
-            const joined =
-              currentUser && t.participants && t.participants[currentUser.uid];
+            const joined = currentUser && t.participants && t.participants[currentUser.uid];
             const pCount = Object.keys(t.participants || {}).length;
             const maxP = t.maxPlayers || 48;
+            const isFull = pCount >= maxP;
+            const statusColor = t.status === "Live" ? "bg-red-600" : t.status === "Completed" ? "bg-slate-200" : "bg-blue-600";
 
             html += `
-                    <div onclick="openMatchDetails('${id}')" class="glass-card rounded-[2rem] border border-gray-200 overflow-hidden shadow-sm active:scale-95 transition transform cursor-pointer relative">
-                        <div class="absolute top-0 right-0 bg-white/90 backdrop-blur-md px-3 py-1 rounded-bl-xl z-10 border-b border-l border-gray-200">
-                            <p class="text-[8px] font-black text-gray-500 uppercase tracking-widest">Mode: ${mode}</p>
-                        </div>
-                        <div class="relative">
-                            <img src="${t.imageUrl || t.thumbnail || "https://picsum.photos/400/200?game=" + id}" class="w-full aspect-video object-cover" onerror="this.src='https://via.placeholder.com/400x200?text=Match'">
-                            <div class="absolute top-3 left-3 bg-white/90 backdrop-blur-md px-3 py-1 rounded-full border border-gray-200">
-                                <p class="text-[8px] font-black text-black uppercase tracking-widest">₹${t.entryFee === 0 ? "FREE" : t.entryFee}</p>
+                    <div onclick="openMatchDetails('${id}')" class="glass-card shadow-[0_4px_20px_rgb(0,0,0,0.03)] rounded-[2.5rem] overflow-hidden active:scale-[0.98] transition-all duration-300 cursor-pointer group">
+                        <div class="relative aspect-[16/9] overflow-hidden">
+                            <img src="${t.imageUrl || t.thumbnail || "https://picsum.photos/seed/" + id + "/800/450"}" class="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700" referrerpolicy="no-referrer">
+                            <div class="absolute inset-0 banner-overlay"></div>
+                            
+                            <!-- Top Badges -->
+                            <div class="absolute top-4 left-4 flex gap-2">
+                                <span class="px-3 py-1 bg-white/90 backdrop-blur-md border border-slate-200 rounded-full text-[10px] font-black text-slate-900 shadow-[0_2px_10px_rgb(0,0,0,0.02)] uppercase tracking-wider">
+                                    ₹${t.entryFee === 0 ? "FREE" : t.entryFee}
+                                </span>
+                                <span class="px-3 py-1 ${statusColor} rounded-full text-[10px] font-black text-white uppercase tracking-wider shadow-[0_8px_30px_rgb(0,0,0,0.06)]">
+                                    ${t.status}
+                                </span>
                             </div>
-                            <div class="absolute bottom-3 right-3 bg-white/90 backdrop-blur-md px-3 py-1 rounded-full border border-gray-200">
-                                <p class="text-[8px] font-black text-black uppercase tracking-widest">${pCount}/${maxP} Joined</p>
-                            </div>
-                        </div>
-                        <div class="p-5">
-                            <div class="flex justify-between items-center mb-3">
-                                <h4 class="font-serif font-black text-black text-sm uppercase">${t.title} <span class="text-black font-bold">#${getOrGenerateMatchCode(t)}</span></h4>
-                                <span class="text-[8px] px-2 py-0.5 ${t.status === "Live" ? "bg-red-500 text-white" : t.status === "Completed" ? "bg-gray-200 text-black" : "bg-blue-500 text-white"} font-black rounded uppercase">${t.status}</span>
-                            </div>
-                            <div class="grid grid-cols-2 gap-2">
-                                <div class="bg-gray-100 p-2 rounded-xl border border-black text-center">
-                                    <p class="text-[7px] text-black font-bold uppercase">Prize Pool</p>
-                                    <p class="text-xs font-black text-black">₹${t.prizePool}</p>
+
+                            <!-- Bottom Info Overlay -->
+                            <div class="absolute bottom-4 left-4 right-4 flex justify-between items-end">
+                                <div>
+                                    <h4 class="font-serif font-black text-white text-lg uppercase leading-tight tracking-tight">${t.title}</h4>
+                                    <p class="text-[10px] font-bold text-slate-300 uppercase mt-1">Match ID: <span class="text-white">#${getOrGenerateMatchCode(t)}</span></p>
                                 </div>
-                                <div class="bg-gray-100 p-2 rounded-xl border border-black text-center">
-                                    <p class="text-[7px] text-black font-bold uppercase">Per Kill</p>
-                                    <p class="text-xs font-black text-black">₹${t.perKillPrize || 0}</p>
+                                <div class="text-right">
+                                    <p class="text-[10px] font-black text-slate-500 uppercase">Slots</p>
+                                    <p class="text-sm font-black text-white">${pCount}/${maxP}</p>
                                 </div>
                             </div>
+                        </div>
+
+                        <!-- Metadata Grid -->
+                        <div class="p-6 pt-4">
+                            <div class="grid grid-cols-3 gap-4 mb-6">
+                                <div class="text-center">
+                                    <p class="text-[8px] font-black text-slate-500 uppercase tracking-widest mb-1">Total Prize</p>
+                                    <p class="text-sm font-black text-slate-900 font-serif">₹${t.prizePool}</p>
+                                </div>
+                                <div class="text-center border-x border-slate-200">
+                                    <p class="text-[8px] font-black text-slate-500 uppercase tracking-widest mb-1">Per Kill</p>
+                                    <p class="text-sm font-black text-slate-900 font-serif">₹${t.perKillPrize || 0}</p>
+                                </div>
+                                <div class="text-center">
+                                    <p class="text-[8px] font-black text-slate-500 uppercase tracking-widest mb-1">Map</p>
+                                    <p class="text-sm font-black text-slate-900 font-serif">${t.mapSettings || "Bermuda"}</p>
+                                </div>
+                            </div>
+
+                            <!-- Progress Bar -->
+                            <div class="w-full h-1.5 bg-slate-100 rounded-full overflow-hidden mb-6">
+                                <div class="h-full custom-gradient transition-all duration-1000" style="width: ${(pCount/maxP)*100}%"></div>
+                            </div>
+
+                            <!-- CTA -->
+                            <button class="w-full py-4 ${joined ? 'bg-slate-100 text-slate-500' : isFull ? 'bg-slate-50 text-slate-400' : 'custom-gradient text-white'} rounded-2xl font-black uppercase text-[10px] tracking-widest shadow-[0_12px_40px_rgb(0,0,0,0.08)] transition-all active:scale-95">
+                                ${joined ? 'Already Joined' : isFull ? 'Match Full' : 'Join Now'}
+                            </button>
                         </div>
                     </div>`;
           });
@@ -2355,6 +2480,24 @@
             minWText.innerText = `Min Withdrawal: ₹${appSettings.minWithdraw || appSettings.minWithdrawal || 0}`;
           if (data.qrCodeUrl)
             document.getElementById("wallet-qr-code").src = data.qrCodeUrl;
+            
+          const headerAppName = document.getElementById("header-app-name");
+          if (headerAppName) headerAppName.innerText = data.appName || "AddaClashX";
+          
+          const footerAppName = document.getElementById("footer-app-name");
+          if (footerAppName) footerAppName.innerText = data.appName || "AddaClashX";
+          
+          document.title = (data.appName || "AddaClashX") + " - Pro Gaming";
+          
+          const headerAppLogo = document.getElementById("header-app-logo");
+          if (headerAppLogo) {
+              if (data.appLogo) {
+                  headerAppLogo.src = data.appLogo;
+                  headerAppLogo.classList.remove("hidden");
+              } else {
+                  headerAppLogo.classList.add("hidden");
+              }
+          }
         });
 
         db.ref(`users/${currentUser.uid}`).on("value", (s) => {
@@ -2389,6 +2532,12 @@
             
             const profileAppId = document.getElementById("profile-appid");
             if (profileAppId) profileAppId.innerText = cachedUserData.appId;
+            
+            const profileEmail = document.getElementById("profile-email");
+            if (profileEmail) profileEmail.innerText = cachedUserData.email || "No Email";
+            
+            const profilePhone = document.getElementById("profile-phone");
+            if (profilePhone) profilePhone.innerText = cachedUserData.phone || "No Phone";
 
             const picContainer = document.getElementById(
               "profile-pic-container",
@@ -2471,16 +2620,16 @@
             if (!listContainer) return;
 
             if (tickets.length === 0) {
-              listContainer.innerHTML = '<p class="text-center py-10 text-gray-500 font-bold uppercase text-[10px]">No Tickets Found</p>';
+              listContainer.innerHTML = '<p class="text-center py-10 text-slate-500 font-bold uppercase text-[10px]">No Tickets Found</p>';
             } else {
               listContainer.innerHTML = tickets.map(([id, t]) => `
-                <div onclick="openTicket('${id}')" class="glass-card p-4 rounded-2xl border border-gray-200 flex justify-between items-center cursor-pointer hover:bg-gray-50 transition-all">
+                <div onclick="openTicket('${id}')" class="glass-card shadow-[0_4px_20px_rgb(0,0,0,0.03)] p-4 rounded-2xl border border-slate-200 flex justify-between items-center cursor-pointer hover:bg-slate-50 transition-all">
                   <div class="flex-1 min-w-0">
-                    <h4 class="text-[10px] font-black text-black uppercase truncate">Ticket #${id.slice(-6).toUpperCase()}</h4>
-                    <p class="text-[8px] text-gray-500 font-bold uppercase mt-1">${new Date(t.createdAt).toLocaleString()}</p>
+                    <h4 class="text-[10px] font-black text-slate-900 uppercase truncate">Ticket #${id.slice(-6).toUpperCase()}</h4>
+                    <p class="text-[8px] text-slate-500 font-bold uppercase mt-1">${new Date(t.createdAt).toLocaleString()}</p>
                   </div>
                   <div class="flex flex-col items-end gap-1">
-                    <span class="text-[7px] px-2 py-0.5 rounded font-black uppercase ${t.status === 'Open' ? 'bg-green-100 text-green-600 border border-green-200' : 'bg-gray-100 text-gray-500 border border-gray-200'}">
+                    <span class="text-[7px] px-2 py-0.5 rounded font-black uppercase ${t.status === 'Open' ? 'bg-green-100 text-green-600 border border-green-200' : 'bg-slate-100 text-slate-500 border border-slate-200'}">
                       ${t.status}
                     </span>
                   </div>
@@ -2494,7 +2643,7 @@
               const statusBadge = document.getElementById("ticket-status-badge");
               if (statusBadge) {
                 statusBadge.innerText = t.status;
-                statusBadge.className = `text-[8px] px-2 py-1 rounded font-black uppercase border ${t.status === 'Open' ? 'bg-green-100 text-green-600 border-green-200' : 'bg-gray-100 text-gray-500 border-gray-200'}`;
+                statusBadge.className = `text-[8px] px-2 py-1 rounded font-black uppercase border ${t.status === 'Open' ? 'bg-green-100 text-green-600 border-green-200' : 'bg-slate-100 text-slate-500 border-slate-200'}`;
               }
             }
           });
@@ -2528,8 +2677,8 @@
           const messages = Object.values(mData).sort((a, b) => a.timestamp - b.timestamp);
           box.innerHTML = messages.map((m) => `
             <div class="flex flex-col ${m.sender === "user" ? "items-end" : m.sender === "system" ? "items-center" : "items-start"}">
-              ${m.sender !== "system" ? `<p class="text-[7px] font-black text-gray-500 uppercase ml-1 mb-0.5">${m.sender === "user" ? "You" : "Support"}</p>` : ""}
-              <div class="max-w-[80%] p-3 rounded-2xl text-[10px] font-bold ${m.sender === "user" ? "bg-blue-600 text-white chat-bubble-user shadow-lg shadow-blue-600/20" : m.sender === "system" ? "bg-gray-100 text-gray-500 text-[8px] border border-gray-200" : "bg-gray-50 border border-gray-200 text-black shadow-sm chat-bubble-other"}">
+              ${m.sender !== "system" ? `<p class="text-[7px] font-black text-slate-500 uppercase ml-1 mb-0.5">${m.sender === "user" ? "You" : "Support"}</p>` : ""}
+              <div class="max-w-[80%] p-3 rounded-2xl text-[10px] font-bold ${m.sender === "user" ? "bg-blue-600 text-white chat-bubble-user shadow-[0_8px_30px_rgb(0,0,0,0.06)] shadow-blue-600/20" : m.sender === "system" ? "bg-slate-100 text-slate-500 text-[8px] border border-slate-200" : "bg-slate-50 border border-slate-200 text-slate-900 shadow-[0_2px_10px_rgb(0,0,0,0.02)] chat-bubble-other"}">
                 ${m.text}
               </div>
             </div>`).join("");
@@ -2565,11 +2714,11 @@
               (t) => t.status === "Live",
             ).length;
             return `
-                    <div onclick="setHomeCategory('${c}')" class="glass-card rounded-2xl border border-gray-200 shadow-sm overflow-hidden cursor-pointer transform transition hover:scale-105 active:scale-95">
+                    <div onclick="setHomeCategory('${c}')" class="glass-card shadow-[0_4px_20px_rgb(0,0,0,0.03)] rounded-2xl border border-slate-200 shadow-[0_2px_10px_rgb(0,0,0,0.02)] overflow-hidden cursor-pointer transform transition hover:scale-105 active:scale-95">
                         <img src="${thumb}" class="w-full h-24 object-cover" onerror="this.src='https://via.placeholder.com/400x200?text=${c}'">
                         <div class="p-2 text-center">
-                            <h4 class="font-black text-[10px] text-black uppercase truncate">${c}</h4>
-                            <p class="text-[8px] font-bold text-gray-500 uppercase">${catTournaments.length} Matches</p>
+                            <h4 class="font-black text-[10px] text-slate-900 uppercase truncate">${c}</h4>
+                            <p class="text-[8px] font-bold text-slate-500 uppercase">${catTournaments.length} Matches</p>
                             ${liveCount > 0 ? `<span class="inline-block mt-1 bg-red-100 text-red-600 text-[7px] px-1.5 py-0.5 rounded font-black uppercase">${liveCount} Live</span>` : ""}
                         </div>
                     </div>
@@ -2636,20 +2785,35 @@
           }
 
           const participants = t.participants || {};
-          const html = Object.keys(participants)
-            .map((uid) => {
-              const p = participants[uid];
-              const isWinner = p.result === "Winner";
+          const participantsArray = Object.keys(participants).map(uid => ({
+            uid,
+            ...participants[uid]
+          }));
+          
+          // Sort by prize descending, then kills descending
+          participantsArray.sort((a, b) => {
+            const prizeDiff = (b.prize || 0) - (a.prize || 0);
+            if (prizeDiff !== 0) return prizeDiff;
+            return (b.kills || 0) - (a.kills || 0);
+          });
+
+          const html = participantsArray
+            .map((p) => {
+              const isWinner = p.isWinner || p.result === "Winner";
               const prize = p.prize || 0;
               return `
-                        <div class="bg-gray-50 p-3 rounded-2xl border border-gray-200 flex justify-between items-center mb-2">
-                            <div>
-                                <p class="text-[10px] font-black text-black uppercase">${p.username}</p>
-                                <p class="text-[7px] font-bold text-gray-500">IGN: ${p.gameUsername}</p>
+                        <div class="bg-slate-50 p-3 rounded-2xl border ${isWinner ? 'border-yellow-400 bg-yellow-50' : 'border-slate-200'} flex justify-between items-center mb-2 relative overflow-hidden">
+                            ${isWinner ? '<div class="absolute top-0 right-0 w-16 h-16 bg-yellow-400/20 rounded-full blur-xl -mr-8 -mt-8"></div>' : ''}
+                            <div class="relative z-10">
+                                <p class="text-[10px] font-black text-slate-900 uppercase flex items-center gap-1">
+                                    ${isWinner ? '<i class="fas fa-crown text-yellow-500 text-[10px]"></i>' : ''}
+                                    ${p.username || "Player"}
+                                </p>
+                                <p class="text-[7px] font-bold text-slate-500">IGN: ${p.gameUsername || p.ign || "N/A"}</p>
                             </div>
-                            <div class="text-right">
-                                <p class="text-[9px] font-black ${isWinner ? "text-green-600" : "text-red-600"} uppercase">${p.result || "Participant"}</p>
-                                ${p.kills ? `<p class="text-[8px] font-bold text-gray-500">${p.kills} Kills</p>` : ""}
+                            <div class="text-right relative z-10">
+                                <p class="text-[9px] font-black ${isWinner ? "text-yellow-600" : "text-slate-500"} uppercase">${isWinner ? "Winner" : "Participant"}</p>
+                                ${p.kills ? `<p class="text-[8px] font-bold text-slate-500">${p.kills} Kills</p>` : ""}
                                 ${prize > 0 ? `<p class="text-[8px] font-black text-blue-600">Won ₹${prize}</p>` : ""}
                             </div>
                         </div>
@@ -2658,7 +2822,7 @@
             .join("");
           document.getElementById("results-list-container").innerHTML =
             html ||
-            '<p class="text-center text-[10px] text-gray-500 font-bold uppercase">No participants found.</p>';
+            '<p class="text-center text-[10px] text-slate-500 font-bold uppercase">No participants found.</p>';
         });
       }
 
@@ -2910,17 +3074,17 @@
               .map((id) => {
                 const t = data[id];
                 return `
-                    <div class="glass-card p-5 rounded-[2rem] border border-gray-200 shadow-sm">
+                    <div class="glass-card shadow-[0_4px_20px_rgb(0,0,0,0.03)] p-5 rounded-[2rem] border border-slate-200 shadow-[0_2px_10px_rgb(0,0,0,0.02)]">
                         <div class="flex gap-4 mb-4">
-                            <img src="${t.imageUrl || t.thumbnail || "https://picsum.photos/400/200?game=" + id}" class="w-24 h-24 rounded-2xl object-cover border border-gray-200" onerror="this.src='https://via.placeholder.com/400x200?text=Match'">
+                            <img src="${t.imageUrl || t.thumbnail || "https://picsum.photos/400/200?game=" + id}" class="w-24 h-24 rounded-2xl object-cover border border-slate-200" onerror="this.src='https://via.placeholder.com/400x200?text=Match'">
                             <div class="flex-1 flex flex-col justify-between">
                                 <div>
-                                    <h4 class="text-sm font-black text-black uppercase leading-tight">${t.title}</h4>
-                                    <p class="text-[10px] font-black text-gray-500 uppercase mt-1">Code: <span class="text-black">#${getOrGenerateMatchCode(t)}</span></p>
+                                    <h4 class="text-sm font-black text-slate-900 uppercase leading-tight">${t.title}</h4>
+                                    <p class="text-[10px] font-black text-slate-500 uppercase mt-1">Code: <span class="text-slate-900">#${getOrGenerateMatchCode(t)}</span></p>
                                 </div>
                                 <div class="flex justify-between items-end">
-                                    <span class="text-[9px] px-2 py-1 rounded font-black uppercase ${t.status === "Live" ? "bg-red-100 text-red-600 border border-red-200" : t.status === "Completed" ? "bg-gray-100 text-gray-500 border border-gray-200" : "bg-blue-100 text-blue-600 border border-blue-200"}">${t.status}</span>
-                                    <button onclick="openMatchDetails('${id}')" class="bg-black text-white px-3 py-1.5 rounded-xl text-[8px] font-black uppercase shadow-lg">View Details</button>
+                                    <span class="text-[9px] px-2 py-1 rounded font-black uppercase ${t.status === "Live" ? "bg-red-100 text-red-600 border border-red-200" : t.status === "Completed" ? "bg-slate-100 text-slate-500 border border-slate-200" : "bg-blue-100 text-blue-600 border border-blue-200"}">${t.status}</span>
+                                    <button onclick="openMatchDetails('${id}')" class="bg-slate-900 text-white px-3 py-1.5 rounded-xl text-[8px] font-black uppercase shadow-[0_8px_30px_rgb(0,0,0,0.06)]">View Details</button>
                                 </div>
                             </div>
                         </div>
@@ -2946,7 +3110,7 @@
                         ${
                           t.status === "Live"
                             ? `
-                            <div class="bg-gray-100 p-3 rounded-xl border border-gray-200 text-[10px] font-black mb-3 text-black">
+                            <div class="bg-slate-100 p-3 rounded-xl border border-slate-200 text-[10px] font-black mb-3 text-slate-900">
                                 <p class="flex justify-between">Room ID: <span class="text-blue-600 select-all">${t.roomId || "Wait..."}</span></p>
                                 <p class="flex justify-between mt-1">Pass: <span class="text-blue-600 select-all">${t.roomPassword || "Wait..."}</span></p>
                             </div>
@@ -2958,7 +3122,7 @@
               .join("");
             document.getElementById("my-matches-list").innerHTML =
               list ||
-              '<p class="text-center py-10 text-gray-500 font-black uppercase text-[10px]">No Registered Matches</p>';
+              '<p class="text-center py-10 text-slate-500 font-black uppercase text-[10px]">No Registered Matches</p>';
           },
           (e) => handleFirebaseError(e, "read", "tournaments"),
         );
@@ -2979,14 +3143,148 @@
         }
       }
 
-      function openJoinModal(id) {
+      function validateJoinForm(teamSize) {
+        const uid = document.getElementById("join-ff-uid").value.trim();
+        const ign = document.getElementById("join-ff-ign").value.trim();
+        const selectedTeam = document.getElementById("join-selected-team").value;
+        const confirmBtn = document.getElementById("join-confirm-btn");
+
+        if (teamSize > 1) {
+          confirmBtn.disabled = !(uid && ign && selectedTeam);
+        } else {
+          confirmBtn.disabled = !(uid && ign);
+        }
+      }
+
+      function selectSeat(seatId, teamSize) {
+        const grid = document.getElementById("join-teams-grid");
+        const label = document.getElementById("selected-seat-label");
+        
+        // Find the seat element
+        const seatEl = grid.querySelector(`[data-seat-id="${seatId}"]`);
+        if (!seatEl || seatEl.classList.contains('seat-occupied')) return;
+
+        // Deselect previous
+        grid.querySelectorAll('.seat-box').forEach(el => {
+          if (el.classList.contains('seat-selected')) {
+            el.classList.remove('seat-selected');
+            el.classList.add('seat-available');
+          }
+        });
+
+        // Select new
+        seatEl.classList.remove('seat-available');
+        seatEl.classList.add('seat-selected');
+        
+        document.getElementById("join-selected-team").value = seatId;
+        label.innerText = seatId;
+        label.classList.remove('text-slate-500');
+        label.classList.add('text-blue-500');
+        
+        validateJoinForm(teamSize);
+      }
+
+      function renderJoinSeats(match) {
+        const container = document.getElementById("join-seats-container");
+        const grid = document.getElementById("join-teams-grid");
+        const label = document.getElementById("selected-seat-label");
+        const teamSize = match.teamSize || 1;
+        const maxPlayers = match.maxPlayers || 48;
+        const participants = Object.values(match.participants || {});
+        
+        // Reset
+        document.getElementById("join-selected-team").value = "";
+        label.innerText = "None Selected";
+        label.classList.add('text-slate-500');
+        label.classList.remove('text-blue-500');
+        grid.innerHTML = "";
+
+        if (teamSize === 1) {
+          // Solo / Battle Royale Style (Seat Grid)
+          grid.className = "seat-grid";
+          
+          const occupiedSeats = participants.map(p => p.team);
+          
+          for (let i = 1; i <= maxPlayers; i++) {
+            const seatId = i.toString();
+            const isOccupied = occupiedSeats.includes(seatId);
+            
+            const seatEl = document.createElement("div");
+            seatEl.className = `seat-box ${isOccupied ? 'seat-occupied' : 'seat-available'}`;
+            seatEl.innerText = i < 10 ? `0${i}` : i;
+            seatEl.setAttribute('data-seat-id', seatId);
+            
+            if (!isOccupied) {
+              seatEl.onclick = () => selectSeat(seatId, teamSize);
+            }
+            
+            grid.appendChild(seatEl);
+          }
+        } else {
+          // Team Style (List)
+          grid.className = "grid gap-3";
+          
+          const numTeams = Math.ceil(maxPlayers / teamSize);
+          const teamCounts = {};
+          participants.forEach(p => {
+            if (p.team) teamCounts[p.team] = (teamCounts[p.team] || 0) + 1;
+          });
+
+          for (let i = 1; i <= numTeams; i++) {
+            const teamId = `Team ${i}`;
+            const currentCount = teamCounts[teamId] || 0;
+            const isFull = currentCount >= teamSize;
+            
+            const teamEl = document.createElement("div");
+            teamEl.className = `seat-box w-full h-auto p-4 flex justify-between items-center ${isFull ? 'seat-occupied' : 'seat-available'}`;
+            teamEl.setAttribute('data-seat-id', teamId);
+            
+            teamEl.innerHTML = `
+                <span class="text-[10px] font-black uppercase tracking-widest">${teamId}</span>
+                <span class="text-[10px] font-black ${isFull ? 'text-red-500' : 'text-slate-500'}">${currentCount}/${teamSize}</span>
+            `;
+            
+            if (!isFull) {
+              teamEl.onclick = () => selectSeat(teamId, teamSize);
+            }
+            
+            grid.appendChild(teamEl);
+          }
+        }
+      }
+
+      async function openJoinModal(id) {
         console.log("openJoinModal called with id:", id);
         if (!checkAuth()) return;
         selectedMatchId = id;
+        
+        const confirmBtn = document.getElementById("join-confirm-btn");
+        confirmBtn.disabled = true;
+        confirmBtn.innerText = "Loading...";
+
         document.getElementById("join-ff-uid").value = "";
         document.getElementById("join-ff-ign").value = "";
+        document.getElementById("join-selected-team").value = "";
         document.getElementById("join-modal").classList.remove("hidden");
         document.getElementById("join-modal").classList.add("flex");
+
+        try {
+          const snap = await db.ref(`tournaments/${id}`).once("value");
+          const match = snap.val();
+          if (!match) throw new Error("Match not found");
+
+          renderJoinSeats(match);
+          
+          confirmBtn.innerText = "Pay & Register";
+          validateJoinForm(match.teamSize || 1);
+          
+          document.getElementById("join-ff-uid").oninput = () => validateJoinForm(match.teamSize || 1);
+          document.getElementById("join-ff-ign").oninput = () => validateJoinForm(match.teamSize || 1);
+
+        } catch (e) {
+          showToast(e.message, "error");
+          closeJoinModal();
+        }
       }
       function closeJoinModal() {
         document.getElementById("join-modal").classList.remove("flex");
@@ -3025,6 +3323,19 @@
           if (t.participants && t.participants[currentUser.uid])
             throw new Error("You are already registered!");
 
+          const teamSize = t.teamSize || 1;
+          const selectedTeam = document.getElementById("join-selected-team").value;
+          if (!selectedTeam) throw new Error("Please select a position/team!");
+          
+          // Re-verify position is not taken
+          const participants = Object.values(t.participants || {});
+          if (teamSize === 1) {
+            if (participants.some(p => p.team === selectedTeam)) throw new Error("This seat is already taken!");
+          } else {
+            const teamCount = participants.filter(p => p.team === selectedTeam).length;
+            if (teamCount >= teamSize) throw new Error("This team is full!");
+          }
+
           const total =
             (cachedUserData.wallet_deposit || 0) +
             (cachedUserData.wallet?.winnings || 0);
@@ -3056,8 +3367,9 @@
             username: cachedUserData.username,
             appId: cachedUserData.appId,
             gameUid: uid,
-            gameUsername: ign,
-            joinedAt: Date.now(),
+            ign: ign,
+            team: selectedTeam,
+            timestamp: Date.now(),
             status: "Joined",
             uid: currentUser.uid,
           };
@@ -3170,28 +3482,28 @@
                     if (d.status === "initiated") {
                         statusText = "Deposit Initiated ⚠️";
                         amountText = `+ ₹${d.amount}`;
-                        amountColor = "text-gray-500";
+                        amountColor = "text-slate-500";
                     }
                     
                     return `
-                        <div class="bg-gray-50 p-3 rounded-2xl border border-gray-200 flex justify-between items-center backdrop-blur-sm">
-                            <div><p class="text-xs font-black uppercase text-black">${statusText}</p><p class="text-[10px] text-gray-500 font-bold">${d.createdAt ? new Date(d.createdAt).toLocaleString() : "N/A"}</p></div>
+                        <div class="bg-slate-50 p-3 rounded-2xl border border-slate-200 flex justify-between items-center backdrop-blur-sm">
+                            <div><p class="text-xs font-black uppercase text-slate-900">${statusText}</p><p class="text-[10px] text-slate-500 font-bold">${d.createdAt ? new Date(d.createdAt).toLocaleString() : "N/A"}</p></div>
                             <p class="text-sm font-black ${amountColor}">${amountText}</p>
                         </div>`;
                   }
                 )
-                .join("") : '<p class="text-center text-xs text-gray-500 py-4 font-bold uppercase">No Deposits</p>';
+                .join("") : '<p class="text-center text-xs text-slate-500 py-4 font-bold uppercase">No Deposits</p>';
 
             const withHtml =
               recentWiths.length > 0 ? recentWiths
                 .map(
                   (w) => `
-                        <div class="bg-gray-50 p-3 rounded-2xl border border-gray-200 flex justify-between items-center backdrop-blur-sm">
-                            <div><p class="text-xs font-black uppercase text-black">Withdraw (${w.status})</p><p class="text-[10px] text-gray-500 font-bold">${w.createdAt ? new Date(w.createdAt).toLocaleString() : "N/A"}</p></div>
+                        <div class="bg-slate-50 p-3 rounded-2xl border border-slate-200 flex justify-between items-center backdrop-blur-sm">
+                            <div><p class="text-xs font-black uppercase text-slate-900">Withdraw (${w.status})</p><p class="text-[10px] text-slate-500 font-bold">${w.createdAt ? new Date(w.createdAt).toLocaleString() : "N/A"}</p></div>
                             <p class="text-sm font-black text-red-600">- ₹${w.amount}</p>
                         </div>`,
                 )
-                .join("") : '<p class="text-center text-xs text-gray-500 py-4 font-bold uppercase">No Withdrawals</p>';
+                .join("") : '<p class="text-center text-xs text-slate-500 py-4 font-bold uppercase">No Withdrawals</p>';
 
             const depContainer = document.getElementById("deposit-history");
             if (depContainer) depContainer.innerHTML = depHtml;
@@ -3253,10 +3565,10 @@
                 txns
                   .map(
                     (t) => `
-                    <div class="bg-gray-50 p-3 rounded-2xl border border-gray-200 flex justify-between items-center backdrop-blur-sm">
+                    <div class="bg-slate-50 p-3 rounded-2xl border border-slate-200 flex justify-between items-center backdrop-blur-sm">
                         <div>
-                            <p class="text-xs font-black uppercase text-black">${t.message || t.description || (t.type === "credit" ? "Credit" : "Debit")}</p>
-                            <p class="text-[10px] text-gray-500 font-bold">${t.timestamp ? new Date(t.timestamp).toLocaleString() : "N/A"}</p>
+                            <p class="text-xs font-black uppercase text-slate-900">${t.message || t.description || (t.type === "credit" ? "Credit" : "Debit")}</p>
+                            <p class="text-[10px] text-slate-500 font-bold">${t.timestamp ? new Date(t.timestamp).toLocaleString() : "N/A"}</p>
                         </div>
                         <p class="text-sm font-black ${t.type === "credit" ? "text-blue-600" : "text-red-600"}">
                             ${t.type === "credit" ? "+" : "-"} ₹${t.amount}
@@ -3264,7 +3576,7 @@
                     </div>`,
                   )
                   .join("") ||
-                '<p class="text-center text-xs text-gray-500 py-4 font-bold uppercase">No Transactions Found</p>';
+                '<p class="text-center text-xs text-slate-500 py-4 font-bold uppercase">No Transactions Found</p>';
 
               const profileWalletHistory = document.getElementById(
                 "profile-wallet-history",
@@ -3507,11 +3819,11 @@
         const list = Object.entries(notifications)
           .map(
             ([id, n]) => `
-          <div class="p-4 border-b border-gray-200 bg-gray-50 ${n.read ? "" : "bg-blue-50"}">
-            ${n.imageUrl ? (n.linkUrl ? `<a href="${n.linkUrl}" target="_blank"><img src="${n.imageUrl}" alt="Notification Image" class="w-full h-auto rounded-xl mb-2 object-cover border border-gray-200"></a>` : `<img src="${n.imageUrl}" alt="Notification Image" class="w-full h-auto rounded-xl mb-2 object-cover border border-gray-200">`) : ""}
-            <p class="text-sm font-bold text-black">${n.message}</p>
+          <div class="p-4 border-b border-slate-200 bg-slate-50 ${n.read ? "" : "bg-blue-50"}">
+            ${n.imageUrl ? (n.linkUrl ? `<a href="${n.linkUrl}" target="_blank"><img src="${n.imageUrl}" alt="Notification Image" class="w-full h-auto rounded-xl mb-2 object-cover border border-slate-200"></a>` : `<img src="${n.imageUrl}" alt="Notification Image" class="w-full h-auto rounded-xl mb-2 object-cover border border-slate-200">`) : ""}
+            <p class="text-sm font-bold text-slate-900">${n.message}</p>
             ${n.linkUrl && !n.imageUrl ? `<a href="${n.linkUrl}" target="_blank" class="text-blue-600 text-xs font-bold mt-1 inline-block">View Link</a>` : ""}
-            <p class="text-[10px] text-gray-500 mt-1">${new Date(n.timestamp).toLocaleString()}</p>
+            <p class="text-[10px] text-slate-500 mt-1">${new Date(n.timestamp).toLocaleString()}</p>
           </div>
         `,
           )
@@ -3519,7 +3831,7 @@
           .join("");
         document.getElementById("notifications-list").innerHTML =
           list ||
-          '<p class="text-center py-4 text-gray-500">No notifications</p>';
+          '<p class="text-center py-4 text-slate-500">No notifications</p>';
 
         // Mark as read
         Object.keys(notifications).forEach((id) => {
@@ -3535,35 +3847,35 @@
       class="hidden fixed inset-0 z-[1000] flex items-center justify-center p-6 bg-black/80 backdrop-blur-xl"
     >
       <div
-        class="glass-card p-8 rounded-[2.5rem] shadow-2xl max-w-sm w-full text-center border border-gray-200"
+        class="glass-card shadow-[0_4px_20px_rgb(0,0,0,0.03)] p-8 rounded-[2.5rem] shadow-[0_20px_50px_rgb(0,0,0,0.1)] max-w-sm w-full text-center border border-slate-200"
       >
         <div id="popup-image-container" class="hidden mb-6">
           <img
             id="popup-image"
             src=""
             alt="Announcement"
-            class="w-full h-auto rounded-2xl object-cover border border-gray-200"
+            class="w-full h-auto rounded-2xl object-cover border border-slate-200"
           />
         </div>
         <div id="popup-icon" class="w-16 h-16 bg-blue-50 rounded-2xl flex items-center justify-center mx-auto mb-6 border border-blue-100">
           <i class="fas fa-bullhorn text-2xl text-blue-600"></i>
         </div>
-        <h3 class="text-xl font-serif font-black text-black uppercase tracking-tighter mb-2">
+        <h3 class="text-xl font-serif font-black text-slate-900 uppercase tracking-tighter mb-2">
           Announcement
         </h3>
-        <p id="popup-message" class="text-sm font-bold text-gray-500 mb-8"></p>
+        <p id="popup-message" class="text-sm font-bold text-slate-500 mb-8"></p>
         <div id="popup-link-container" class="hidden mb-4">
           <a
             id="popup-link"
             href="#"
             target="_blank"
-            class="w-full block py-4 bg-blue-600 text-white font-black rounded-2xl uppercase text-xs shadow-lg shadow-blue-500/20 border border-blue-500/30"
+            class="w-full block py-4 bg-blue-600 text-white font-black rounded-2xl uppercase text-xs shadow-[0_8px_30px_rgb(0,0,0,0.06)] shadow-blue-500/20 border border-blue-500/30"
             >View Link</a
           >
         </div>
         <button
           onclick="closePopup()"
-          class="w-full py-4 bg-gray-100 text-black font-black rounded-2xl uppercase text-xs border border-gray-200 hover:bg-gray-200 transition-colors"
+          class="w-full py-4 bg-slate-100 text-slate-900 font-black rounded-2xl uppercase text-xs border border-slate-200 hover:bg-slate-200 transition-colors"
         >
           Close
         </button>
