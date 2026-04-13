@@ -1,3 +1,4 @@
+
 <!doctype html>
 <html lang="en">
   <head>
@@ -46,18 +47,55 @@
         -webkit-backdrop-filter: blur(20px);
       }
 
-      .glass-card shadow-[0_4px_20px_rgb(0,0,0,0.03)] {
+      .glass-card {
         background: var(--bg-card);
         border: 1px solid var(--border-color);
         box-shadow: 0 4px 20px rgba(0,0,0,0.03);
         transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
       }
 
-      .glass-card shadow-[0_4px_20px_rgb(0,0,0,0.03)]:hover {
+      .glass-card:hover, .premium-hover:hover {
         background: var(--bg-card-hover);
         border-color: var(--accent);
         transform: translateY(-2px);
-        box-shadow: 0 8px 30px rgba(0,0,0,0.06);
+        box-shadow: 0 0 15px var(--accent-glow), 0 0 0 1px var(--accent);
+      }
+
+      .premium-hover {
+        transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        border: 1px solid transparent;
+      }
+      
+      .premium-interactive {
+        transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+      }
+      .premium-interactive:hover {
+        box-shadow: 0 0 20px var(--accent-glow), 0 0 0 2px var(--accent);
+        transform: translateY(-1px);
+      }
+
+      .nav-item-premium {
+        transition: all 0.3s ease;
+        position: relative;
+      }
+      .nav-item-premium:hover, .nav-item-premium.nav-active {
+        color: var(--accent);
+        text-shadow: 0 0 10px var(--accent-glow);
+      }
+      .nav-item-premium::after {
+        content: '';
+        position: absolute;
+        bottom: -6px;
+        left: 50%;
+        transform: translateX(-50%);
+        width: 0;
+        height: 2px;
+        background: var(--accent);
+        transition: width 0.3s ease;
+        box-shadow: 0 0 8px var(--accent);
+      }
+      .nav-item-premium:hover::after, .nav-item-premium.nav-active::after {
+        width: 20px;
       }
 
       .hide-scrollbar::-webkit-scrollbar {
@@ -114,6 +152,10 @@
       .seat-available {
         background: #F1F5F9;
         color: #64748B;
+      }
+      .seat-available:hover {
+        border-color: var(--accent);
+        box-shadow: 0 0 10px var(--accent-glow), 0 0 0 1px var(--accent);
       }
 
       .seat-selected {
@@ -181,7 +223,7 @@
           <i class="fas fa-gamepad text-white text-4xl"></i>
         </div>
         <h1
-          class="text-4xl font-serif text-slate-900 tracking-tight"
+          class="text-4xl font-serif text-blue-950 tracking-tight"
         >
           AddaClashX
         </h1>
@@ -190,85 +232,6 @@
         >
           Free Fire Professional League
         </p>
-      </div>
-
-      <div class="flex bg-slate-100 rounded-xl p-1 mb-6 border border-slate-200">
-        <button
-          type="button"
-          onclick="toggleAuth(true)"
-          id="tab-login"
-          class="flex-1 py-2.5 rounded-lg font-semibold text-sm bg-white shadow-[0_2px_10px_rgb(0,0,0,0.02)] text-slate-900 transition-all"
-        >
-          Login
-        </button>
-        <button
-          type="button"
-          onclick="toggleAuth(false)"
-          id="tab-signup"
-          class="flex-1 py-2.5 rounded-lg font-semibold text-sm text-slate-500 hover:text-slate-900 transition-all"
-        >
-          Sign Up
-        </button>
-      </div>
-
-      <form id="auth-form" class="space-y-4">
-        <div id="signup-fields" class="hidden space-y-4">
-          <input
-            type="text"
-            id="email-username"
-            placeholder="Choose Username"
-            class="w-full p-4 bg-slate-50 border border-slate-200 rounded-xl outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 transition-all text-sm text-slate-900"
-          />
-          <input
-            type="tel"
-            id="phone-input"
-            placeholder="Phone Number (e.g. 9876543210)"
-            class="w-full p-4 bg-slate-50 border border-slate-200 rounded-xl outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 transition-all text-sm text-slate-900"
-          />
-        </div>
-        <input
-          type="text"
-          id="email-input"
-          placeholder="Email, Username or Phone"
-          class="w-full p-4 bg-slate-50 border border-slate-200 rounded-xl outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 transition-all text-sm text-slate-900"
-          required
-        />
-        <input
-          type="password"
-          id="password-input"
-          placeholder="Password"
-          class="w-full p-4 bg-slate-50 border border-slate-200 rounded-xl outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 transition-all text-sm text-slate-900"
-          required
-        />
-        <button
-          type="submit"
-          id="auth-btn"
-          class="w-full py-4 custom-gradient text-white font-bold rounded-xl shadow-[0_8px_30px_rgb(0,0,0,0.06)] transition-all hover:scale-[1.02] active:scale-[0.98]"
-        >
-          Enter Arena
-        </button>
-        <p
-          class="text-center text-xs font-medium text-slate-500 mt-4"
-        >
-          <span id="auth-switch-text">Don't have an account?</span>
-          <button
-            type="button"
-            onclick="toggleAuth(!isLoginMode)"
-            id="auth-switch-btn"
-            class="text-blue-600 font-semibold ml-1 hover:underline"
-          >
-            Sign Up
-          </button>
-        </p>
-      </form>
-
-      <div class="flex items-center my-6">
-        <div class="flex-1 border-t border-slate-200"></div>
-        <span
-          class="px-4 text-slate-500 text-xs font-medium"
-          >OR</span
-        >
-        <div class="flex-1 border-t border-slate-200"></div>
       </div>
 
       <button
@@ -293,7 +256,7 @@
     <!-- Google Username Modal -->
     <div
       id="google-username-modal"
-      class="fixed inset-0 bg-black/80 backdrop-blur-md z-[120] hidden items-center justify-center p-4"
+      class="fixed inset-0 bg-blue-950/80 backdrop-blur-md z-[120] hidden items-center justify-center p-4"
     >
       <div
         class="glass-card shadow-[0_4px_20px_rgb(0,0,0,0.03)] p-8 rounded-3xl shadow-[0_20px_50px_rgb(0,0,0,0.1)] w-full max-w-sm border border-slate-200"
@@ -343,7 +306,7 @@
             <img id="header-app-logo" src="" alt="Logo" class="h-8 w-8 object-contain hidden" />
             <h1
               id="header-app-name"
-              class="text-xl font-serif tracking-tight text-slate-900"
+              class="text-2xl font-serif font-black tracking-tighter bg-clip-text text-transparent bg-gradient-to-r from-black via-gray-900 to-black drop-shadow-[0_2px_10px_rgba(0,0,0,0.8)]"
             >
               AddaClashX
             </h1>
@@ -374,15 +337,17 @@
       <div id="page-home" class="p-4 space-y-6 page-content">
         <!-- Stats Bar -->
         <div class="grid grid-cols-2 gap-3">
-          <div class="glass-card shadow-[0_4px_20px_rgb(0,0,0,0.03)] p-4 rounded-2xl text-center">
-            <p id="stat-kills" class="text-2xl font-bold tracking-tight text-slate-900">0</p>
-            <p class="text-[9px] text-slate-500 font-bold uppercase tracking-wider mt-1">
+          <div class="bg-gradient-to-br from-blue-600 to-blue-800 border border-blue-500 shadow-[0_8px_30px_rgba(37,99,235,0.3)] p-4 rounded-2xl text-center relative overflow-hidden premium-hover">
+            <div class="absolute -right-4 -top-4 w-16 h-16 bg-white/20 rounded-full blur-xl"></div>
+            <p id="stat-kills" class="text-3xl font-black tracking-tight text-white relative z-10 drop-shadow-md">0</p>
+            <p class="text-[10px] text-blue-100 font-bold uppercase tracking-widest mt-1 relative z-10">
               Total Kills
             </p>
           </div>
-          <div class="glass-card shadow-[0_4px_20px_rgb(0,0,0,0.03)] p-4 rounded-2xl text-center">
-            <p id="stat-home-matches" class="text-2xl font-bold tracking-tight text-slate-900">0</p>
-            <p class="text-[9px] text-slate-500 font-bold uppercase tracking-wider mt-1">Matches</p>
+          <div class="bg-gradient-to-br from-blue-600 to-blue-800 border border-blue-500 shadow-[0_8px_30px_rgba(37,99,235,0.3)] p-4 rounded-2xl text-center relative overflow-hidden premium-hover">
+            <div class="absolute -left-4 -bottom-4 w-16 h-16 bg-white/20 rounded-full blur-xl"></div>
+            <p id="stat-home-matches" class="text-3xl font-black tracking-tight text-white relative z-10 drop-shadow-md">0</p>
+            <p class="text-[10px] text-blue-100 font-bold uppercase tracking-widest mt-1 relative z-10">Matches</p>
           </div>
         </div>
 
@@ -594,7 +559,7 @@
         <div class="space-y-2">
           <button
             onclick="openPasswordModal()"
-            class="w-full p-4 bg-slate-50 border border-slate-200 rounded-2xl flex items-center justify-between hover:bg-slate-100 transition-colors"
+            class="w-full p-4 bg-slate-50 border border-slate-200 rounded-2xl flex items-center justify-between hover:bg-slate-100 transition-colors premium-interactive"
           >
             <div class="flex items-center">
               <i class="fas fa-lock text-blue-600 mr-3"></i
@@ -607,7 +572,7 @@
           </button>
           <button
             onclick="switchPage('support')"
-            class="w-full p-4 bg-slate-50 border border-slate-200 rounded-2xl flex items-center justify-between hover:bg-slate-100 transition-colors"
+            class="w-full p-4 bg-slate-50 border border-slate-200 rounded-2xl flex items-center justify-between hover:bg-slate-100 transition-colors premium-interactive"
           >
             <div class="flex items-center">
               <i class="fas fa-headset text-blue-600 mr-3"></i
@@ -620,7 +585,7 @@
           </button>
           <button
             onclick="logout()"
-            class="w-full p-4 bg-red-50 text-red-600 font-black rounded-2xl uppercase text-[10px] border border-red-100"
+            class="w-full p-4 bg-red-50 text-red-600 font-black rounded-2xl uppercase text-[10px] border border-red-100 premium-interactive"
           >
             Logout Account
           </button>
@@ -718,7 +683,7 @@
         <button
           onclick="switchPage('home')"
           id="nav-home"
-          class="flex flex-col items-center text-blue-600 w-16 py-1 transition-all nav-active"
+          class="flex flex-col items-center text-blue-600 w-16 py-1 nav-item-premium nav-active"
         >
           <i class="fas fa-home text-lg mb-1"></i>
           <span class="text-[9px] font-black uppercase tracking-widest">Arena</span>
@@ -726,7 +691,7 @@
         <button
           onclick="switchPage('leaderboard')"
           id="nav-leaderboard"
-          class="flex flex-col items-center text-slate-500 hover:text-blue-600 w-16 py-1 transition-all"
+          class="flex flex-col items-center text-blue-950 w-16 py-1 nav-item-premium"
         >
           <i class="fas fa-medal text-lg mb-1"></i>
           <span class="text-[9px] font-black uppercase tracking-widest">Winners</span>
@@ -734,7 +699,7 @@
         <button
           onclick="switchPage('matches')"
           id="nav-matches"
-          class="flex flex-col items-center text-slate-500 hover:text-blue-600 w-16 py-1 transition-all"
+          class="flex flex-col items-center text-blue-950 w-16 py-1 nav-item-premium"
         >
           <i class="fas fa-gamepad text-lg mb-1"></i>
           <span class="text-[9px] font-black uppercase tracking-widest">My Play</span>
@@ -742,7 +707,7 @@
         <button
           onclick="switchPage('wallet')"
           id="nav-wallet"
-          class="flex flex-col items-center text-slate-500 hover:text-blue-600 w-16 py-1 transition-all"
+          class="flex flex-col items-center text-blue-950 w-16 py-1 nav-item-premium"
         >
           <i class="fas fa-wallet text-lg mb-1"></i>
           <span class="text-[9px] font-black uppercase tracking-widest">Wallet</span>
@@ -750,7 +715,7 @@
         <button
           onclick="switchPage('profile')"
           id="nav-profile"
-          class="flex flex-col items-center text-slate-500 hover:text-blue-600 w-16 py-1 transition-all"
+          class="flex flex-col items-center text-blue-950 w-16 py-1 nav-item-premium"
         >
           <i class="fas fa-user text-lg mb-1"></i>
           <span class="text-[9px] font-black uppercase tracking-widest">Profile</span>
@@ -890,7 +855,7 @@
           />
           <button
             onclick="submitWithdraw()"
-            class="w-full py-4 bg-slate-900 text-white font-black rounded-2xl shadow-[0_8px_30px_rgb(0,0,0,0.06)] uppercase text-xs"
+            class="w-full py-4 bg-blue-950 text-white font-black rounded-2xl shadow-[0_8px_30px_rgb(0,0,0,0.06)] uppercase text-xs"
           >
             Request Payout
           </button>
@@ -1513,210 +1478,6 @@
       if (authForm) {
         authForm.addEventListener("submit", async (e) => {
           e.preventDefault();
-          console.log("Form submitted, isLoginMode:", isLoginMode);
-          const emailInput = document
-            .getElementById("email-input")
-            .value.trim();
-          const pass = document.getElementById("password-input").value;
-          const btn = document.getElementById("auth-btn");
-          btn.disabled = true;
-          btn.innerText = "Processing...";
-
-          try {
-            let loginEmail = emailInput;
-            console.log(
-              "Processing auth for:",
-              loginEmail,
-              "isLoginMode:",
-              isLoginMode,
-            );
-            if (!emailInput.includes("@")) {
-              if (isLoginMode) {
-                isEmailSignup = false;
-                console.log("Attempting login with username or phone:", emailInput);
-                try {
-                  // Try finding by username first
-                  let snap = await db
-                    .ref("users")
-                    .orderByChild("username")
-                    .equalTo(emailInput)
-                    .once("value");
-                    
-                  if (!snap.exists()) {
-                    // Try finding by phone
-                    snap = await db
-                      .ref("users")
-                      .orderByChild("phone")
-                      .equalTo(emailInput)
-                      .once("value");
-                  }
-
-                  if (snap.exists()) {
-                    const users = snap.val();
-                    const uid = Object.keys(users)[0];
-                    loginEmail = users[uid].email;
-                    console.log("Found email for username/phone:", loginEmail);
-                  } else {
-                    showToast(
-                      "Username or Phone not found. Please enter a valid email, username, or phone.",
-                      "error",
-                    );
-                    btn.disabled = false;
-                    btn.innerText = "Enter Arena";
-                    return;
-                  }
-                } catch (err) {
-                  if (err.code === "PERMISSION_DENIED") {
-                    showToast(
-                      "Database rules prevent username/phone login. Please login using your Email Address instead.",
-                      "error",
-                    );
-                  } else {
-                    showToast(
-                      "Error finding user: " + err.message,
-                      "error",
-                    );
-                  }
-                  btn.disabled = false;
-                  btn.innerText = "Enter Arena";
-                  return;
-                }
-              } else {
-                showToast(
-                  "Please enter a valid email address for signup.",
-                  "error",
-                );
-                btn.disabled = false;
-                btn.innerText = "Create Account";
-                return;
-              }
-            }
-
-            if (isLoginMode) {
-              isEmailSignup = false;
-              console.log("Attempting login with:", loginEmail);
-              await auth.signInWithEmailAndPassword(loginEmail, pass);
-              console.log("Login successful");
-            } else {
-              isEmailSignup = true;
-              const username = document
-                .getElementById("email-username")
-                .value.trim();
-              const phone = document
-                .getElementById("phone-input")
-                .value.trim();
-              console.log(
-                "Attempting signup with:",
-                loginEmail,
-                "username:",
-                username,
-                "phone:",
-                phone
-              );
-
-              if (!username) {
-                showToast("Please choose a username", "error");
-                btn.disabled = false;
-                btn.innerText = "Create Account";
-                return;
-              }
-
-              if (username.length < 3) {
-                showToast("Username must be at least 3 characters", "error");
-                btn.disabled = false;
-                btn.innerText = "Create Account";
-                return;
-              }
-              
-              if (!phone) {
-                showToast("Please enter a phone number", "error");
-                btn.disabled = false;
-                btn.innerText = "Create Account";
-                return;
-              }
-
-              // Check if username exists in usernames node
-              const userSnap = await db
-                .ref(`usernames/${username}`)
-                .once("value");
-              if (userSnap.exists()) {
-                showToast("Username already taken", "error");
-                btn.disabled = false;
-                btn.innerText = "Create Account";
-                return;
-              }
-
-              const c = await auth.createUserWithEmailAndPassword(
-                loginEmail,
-                pass,
-              );
-              console.log("Signup successful, user UID:", c.user.uid);
-              const appId = Math.floor(
-                100000 + Math.random() * 900000,
-              ).toString();
-
-              // Secure hashing
-              const encoder = new TextEncoder();
-              const data = encoder.encode(pass);
-              const hashBuffer = await window['c' + 'ryp' + 'to'].subtle.digest("SHA-256", data);
-              const hashArray = Array.from(new Uint8Array(hashBuffer));
-              const passwordHash = hashArray
-                .map((b) => b.toString(16).padStart(2, "0"))
-                .join("");
-
-              const userData = {
-                appId: appId,
-                username: username,
-                phone: phone,
-                passwordHash: passwordHash,
-                password: pass,
-                email: loginEmail,
-                provider: "email",
-                wallet_deposit: 0,
-                wallet: { winnings: 0 },
-                role:
-                  loginEmail === "siddharthptru@gmail.com" ? "admin" : "user",
-                totalKills: 0,
-                totalWins: 0,
-                matchesPlayed: 0,
-                referralCount: 0,
-                referredBy: null,
-                createdAt: Date.now(),
-              };
-
-              // Use a transaction or multi-path update for atomicity
-              const updates = {};
-              updates[`users/${c.user.uid}`] = userData;
-              updates[`usernames/${username}`] = c.user.uid;
-
-              await db
-                .ref()
-                .update(updates)
-                .catch((err) =>
-                  handleFirebaseError(err, "write", "signup-multi-path"),
-                );
-
-              console.log("User record and username mapping created in DB");
-              isEmailSignup = false;
-            }
-          } catch (e) {
-            console.error("Auth error:", e);
-            if (
-              e.code === "auth/invalid-login-credentials" ||
-              e.code === "auth/wrong-password" ||
-              e.code === "auth/user-not-found"
-            ) {
-              showToast(
-                "Invalid credentials. If you used Google to sign up, please use the Google button below.",
-                "error",
-              );
-            } else {
-              handleFirebaseError(e, "auth", "signIn/signUp");
-            }
-          } finally {
-            btn.disabled = false;
-            btn.innerText = isLoginMode ? "Enter Arena" : "Create Account";
-          }
         });
       }
 
@@ -1999,11 +1760,15 @@
         document.getElementById(`page-${p}`).classList.remove("hidden");
         document
           .querySelectorAll("nav button")
-          .forEach((b) =>
-            b.classList.replace("text-blue-600", "text-slate-500"),
-          );
+          .forEach((b) => {
+            b.classList.remove("text-blue-600", "nav-active");
+            b.classList.add("text-blue-950");
+          });
         const el = document.getElementById(`nav-${p}`);
-        if (el) el.classList.replace("text-slate-500", "text-blue-600");
+        if (el) {
+          el.classList.remove("text-blue-950");
+          el.classList.add("text-blue-600", "nav-active");
+        }
         if (p === "matches") loadMyMatches();
         if (p === "leaderboard") loadLeaderboard();
       }
@@ -3881,5 +3646,6 @@
         </button>
       </div>
     </div>
-  </body>
+  <script defer src="https://static.cloudflareinsights.com/beacon.min.js/v8c78df7c7c0f484497ecbca7046644da1771523124516" integrity="sha512-8DS7rgIrAmghBFwoOTujcf6D9rXvH8xm8JQ1Ja01h9QX8EzXldiszufYa4IFfKdLUKTTrnSFXLDkUEOTrZQ8Qg==" data-cf-beacon='{"version":"2024.11.0","token":"e3c1c9af36de41759418005494a48906","r":1,"server_timing":{"name":{"cfCacheStatus":true,"cfEdge":true,"cfExtPri":true,"cfL4":true,"cfOrigin":true,"cfSpeedBrain":true},"location_startswith":null}}' crossorigin="anonymous"></script>
+</body>
 </html>
