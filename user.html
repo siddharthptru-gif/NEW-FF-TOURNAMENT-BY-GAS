@@ -234,17 +234,51 @@
         </p>
       </div>
 
-      <button
-        type="button"
-        onclick="handleGoogleLogin()"
-        class="w-full py-4 bg-white border border-slate-200 text-slate-900 font-semibold rounded-xl shadow-[0_2px_10px_rgb(0,0,0,0.02)] hover:bg-slate-50 transition-all flex items-center justify-center"
-      >
-        <img
-          src="https://www.gstatic.com/firebasejs/ui/2.0.0/images/auth/google.svg"
-          class="w-5 h-5 mr-3"
-        />
-        Continue with Google
-      </button>
+      <!-- Auth Forms -->
+      <div id="auth-forms" class="w-full">
+        <!-- Tabs -->
+        <div class="flex border-b border-slate-200 mb-6">
+          <button id="tab-login" onclick="switchTab('login')" class="flex-1 py-3 text-sm font-bold text-blue-600 border-b-2 border-blue-600 transition-colors">Login</button>
+          <button id="tab-register" onclick="switchTab('register')" class="flex-1 py-3 text-sm font-bold text-slate-400 border-b-2 border-transparent transition-colors">Register</button>
+        </div>
+
+        <!-- Login Form -->
+        <form id="form-login" class="space-y-4" onsubmit="event.preventDefault(); handleEmailLogin();">
+          <input type="email" id="login-email" placeholder="Email Address" class="w-full p-4 bg-slate-50 border border-slate-200 rounded-2xl outline-none font-bold text-sm text-slate-900 focus:border-blue-500 transition-all font-sans" required />
+          <input type="password" id="login-password" placeholder="Password" class="w-full p-4 bg-slate-50 border border-slate-200 rounded-2xl outline-none font-bold text-sm text-slate-900 focus:border-blue-500 transition-all font-sans" required />
+          <button type="submit" class="w-full py-4 custom-gradient text-white font-black rounded-2xl shadow-[0_4px_10px_rgb(0,0,0,0.06)] uppercase tracking-widest active:scale-95 transition-all text-sm">
+            Login
+          </button>
+        </form>
+
+        <!-- Register Form -->
+        <form id="form-register" class="space-y-4 hidden" onsubmit="event.preventDefault(); handleEmailRegister();">
+          <input type="text" id="register-username" placeholder="Username" class="w-full p-4 bg-slate-50 border border-slate-200 rounded-2xl outline-none font-bold text-sm text-slate-900 focus:border-blue-500 transition-all font-sans" required />
+          <input type="email" id="register-email" placeholder="Email Address" class="w-full p-4 bg-slate-50 border border-slate-200 rounded-2xl outline-none font-bold text-sm text-slate-900 focus:border-blue-500 transition-all font-sans" required />
+          <input type="password" id="register-password" placeholder="Password (min. 6 chars)" class="w-full p-4 bg-slate-50 border border-slate-200 rounded-2xl outline-none font-bold text-sm text-slate-900 focus:border-blue-500 transition-all font-sans" required />
+          <button type="submit" class="w-full py-4 custom-gradient text-white font-black rounded-2xl shadow-[0_4px_10px_rgb(0,0,0,0.06)] uppercase tracking-widest active:scale-95 transition-all text-sm">
+            Register
+          </button>
+        </form>
+
+        <div class="relative flex items-center py-6">
+            <div class="flex-grow border-t border-slate-200"></div>
+            <span class="flex-shrink-0 mx-4 text-slate-400 text-[10px] font-bold uppercase tracking-widest">Or</span>
+            <div class="flex-grow border-t border-slate-200"></div>
+        </div>
+
+        <button
+          type="button"
+          onclick="handleGoogleLogin()"
+          class="w-full py-4 bg-white border border-slate-200 text-slate-900 font-semibold rounded-xl shadow-[0_2px_10px_rgb(0,0,0,0.02)] hover:bg-slate-50 transition-all flex items-center justify-center"
+        >
+          <img
+            src="https://www.gstatic.com/firebasejs/ui/2.0.0/images/auth/google.svg"
+            class="w-5 h-5 mr-3"
+          />
+          Continue with Google
+        </button>
+      </div>
 
       <!-- Footer for Auth Screen -->
       <div class="text-center mt-8 text-[9px] text-slate-500 font-bold uppercase tracking-widest">
@@ -1229,6 +1263,78 @@
       let customGameModes = {};
       let tournamentsData = null;
       let isEmailSignup = false;
+      let registeringUsername = "";
+
+      function switchTab(tab) {
+        document.getElementById('form-login').classList.toggle('hidden', tab !== 'login');
+        document.getElementById('form-register').classList.toggle('hidden', tab !== 'register');
+        
+        const loginTab = document.getElementById('tab-login');
+        const regTab = document.getElementById('tab-register');
+        
+        if (tab === 'login') {
+          loginTab.classList.replace('text-slate-400', 'text-blue-600');
+          loginTab.classList.replace('border-transparent', 'border-blue-600');
+          regTab.classList.replace('text-blue-600', 'text-slate-400');
+          regTab.classList.replace('border-blue-600', 'border-transparent');
+        } else {
+          regTab.classList.replace('text-slate-400', 'text-blue-600');
+          regTab.classList.replace('border-transparent', 'border-blue-600');
+          loginTab.classList.replace('text-blue-600', 'text-slate-400');
+          loginTab.classList.replace('border-blue-600', 'border-transparent');
+        }
+      }
+
+      async function handleEmailLogin() {
+        const email = document.getElementById("login-email").value.trim();
+        const password = document.getElementById("login-password").value.trim();
+        if (!email || !password) {
+          showToast("Please enter email and password.", "error");
+          return;
+        }
+        showLoading(true, "Logging in...");
+        try {
+          await auth.signInWithEmailAndPassword(email, password);
+          showLoading(false);
+        } catch (e) {
+          showLoading(false);
+          handleFirebaseError(e, "auth", "emailSignIn");
+        }
+      }
+
+      async function handleEmailRegister() {
+        const username = document.getElementById("register-username").value.trim();
+        const email = document.getElementById("register-email").value.trim();
+        const password = document.getElementById("register-password").value.trim();
+        
+        if (!username || !email || !password) {
+          showToast("Please fill all fields.", "error");
+          return;
+        }
+        if (password.length < 6) {
+          showToast("Password should be at least 6 characters.", "error");
+          return;
+        }
+        
+        showLoading(true, "Registering...");
+        try {
+          // Check if username exists
+          const userSnap = await db.ref(`usernames/${username}`).once("value");
+          if (userSnap.exists()) {
+            showLoading(false);
+            showToast("Username already taken. Please choose another one.", "error");
+            return;
+          }
+          
+          isEmailSignup = true;
+          registeringUsername = username;
+          await auth.createUserWithEmailAndPassword(email, password);
+          showLoading(false);
+        } catch (e) {
+          showLoading(false);
+          handleFirebaseError(e, "auth", "emailRegister");
+        }
+      }
       let pendingGoogleUser = null;
 
       function toggleAuth(l) {
@@ -1626,10 +1732,11 @@
                 } else {
                   // Create profile if missing
                   console.log("Creating default profile for UID:", u.uid);
+                  let finalUsername = registeringUsername || u.displayName || u.email.split("@")[0];
                   const userData = {
                     uid: u.uid,
                     email: u.email,
-                    username: u.displayName || u.email.split("@")[0],
+                    username: finalUsername,
                     wallet_deposit: 0,
                     wallet: { winnings: 0 },
                     wallet_bonus: 0,
@@ -1637,7 +1744,12 @@
                     createdAt: Date.now(),
                     role: "user",
                   };
-                  await db.ref(`users/${u.uid}`).set(userData);
+                  
+                  const updates = {};
+                  updates[`users/${u.uid}`] = userData;
+                  updates[`usernames/${finalUsername}`] = u.uid;
+                  
+                  await db.ref().update(updates);
                   authSection.classList.add("hidden");
                   appSection.classList.remove("hidden");
                   googleModal.classList.add("hidden");
